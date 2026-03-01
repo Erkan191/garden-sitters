@@ -12,12 +12,16 @@ export default function RequestsPage() {
 
   useEffect(() => {
     async function load() {
+      setLoading(true);
+
       const { data: userData } = await supabase.auth.getUser();
       if (!userData?.user) return router.push("/login");
 
       const { data, error } = await supabase
         .from("care_requests")
-        .select("id, title, postcode, start_date, end_date, price_offered_gbp, status, created_at")
+        .select(
+          "id, title, postcode, start_date, end_date, price_offered_gbp, status, created_at"
+        )
         .order("created_at", { ascending: false });
 
       if (error) setErrorMsg(error.message);
@@ -34,7 +38,9 @@ export default function RequestsPage() {
       <div className="mx-auto max-w-3xl">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">Care requests</h1>
-          <a className="underline" href="/requests/new">New request</a>
+          <a className="underline" href="/requests/new">
+            New request
+          </a>
         </div>
 
         {loading && <p className="mt-4">Loading...</p>}
@@ -46,7 +52,11 @@ export default function RequestsPage() {
               <p>No requests yet.</p>
             ) : (
               requests.map((r) => (
-                <div key={r.id} className="rounded-2xl border p-4">
+                <a
+                  key={r.id}
+                  href={`/requests/${r.id}`}
+                  className="block rounded-2xl border p-4 hover:bg-gray-50"
+                >
                   <h2 className="text-lg font-semibold">{r.title}</h2>
                   <p className="text-sm opacity-80">
                     {r.postcode || "No postcode"} • {r.start_date} → {r.end_date}
@@ -55,7 +65,7 @@ export default function RequestsPage() {
                     Status: {r.status}
                     {r.price_offered_gbp != null ? ` • £${r.price_offered_gbp}` : ""}
                   </p>
-                </div>
+                </a>
               ))
             )}
           </div>
