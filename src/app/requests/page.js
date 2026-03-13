@@ -1,37 +1,144 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+
+function buildReviewStats(reviews) {
+  const map = {};
+
+  for (const review of reviews || []) {
+    const id = review.reviewee_id;
+    if (!id) continue;
+
+    if (!map[id]) {
+      map[id] = {
+        total: 0,
+        count: 0,
+      };
+    }
+
+    map[id].total += Number(review.rating || 0);
+    map[id].count += 1;
+  }
+
+  return map;
+}
+
+function formatRating(stats) {
+  if (!stats || !stats.count) return "No reviews yet";
+  return `${(stats.total / stats.count).toFixed(1)} ★ (${stats.count})`;
+}
 
 export default function RequestsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState([]);
+  const [profilesById, setProfilesById] = useState({});
+  const [reviewStatsByUserId, setReviewStatsByUserId] = useState({});
+  const [unreadByRequestId, setUnreadByRequestId] = useState({});
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     async function load() {
       setLoading(true);
+      setErrorMsg("");
 
       const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) return router.push("/login");
+      if (!userData?.user) {
+        router.push("/login");
+        return;
+      }
 
       const { data, error } = await supabase
         .from("care_requests")
         .select(
-          "id, title, postcode, start_date, end_date, price_offered_gbp, status, created_at"
+          "id, owner_id, title, postcode, start_date, end_date, price_offered_gbp, status, created_at"
         )
         .order("created_at", { ascending: false });
 
-      if (error) setErrorMsg(error.message);
-      else setRequests(data ?? []);
+      if (error) {
+        setErrorMsg(error.message);
+        setRequests([]);
+        setProfilesById({});
+        setReviewStatsByUserId({});
+        setUnreadByRequestId({});
+        setLoading(false);
+        return;
+      }
+
+      const safeRequests = data ?? [];
+      setRequests(safeRequests);
+
+      const ownerIds = [...new Set(safeRequests.map((r) => r.owner_id).filter(Boolean))];
+
+      if (ownerIds.length > 0) {
+        const { data: profileRows, error: profileErr } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url, location")
+          .in("id", ownerIds);
+
+        if (profileErr) {
+          setErrorMsg(profileErr.message);
+        } else {
+          const profileMap = {};
+          for (const row of profileRows || []) {
+            profileMap[row.id] = row;
+          }
+          setProfilesById(profileMap);
+        }
+
+        const { data: reviewRows, error: reviewErr } = await supabase
+          .from("reviews")
+          .select("reviewee_id, rating")
+          .in("reviewee_id", ownerIds);
+
+        if (reviewErr) {
+          setErrorMsg(reviewErr.message);
+        } else {
+          setReviewStatsByUserId(buildReviewStats(reviewRows || []));
+        }
+      } else {
+        setProfilesById({});
+        setReviewStatsByUserId({});
+      }
+
+      const { data: unreadRows, error: unreadErr } = await supabase.rpc(
+        "get_my_unread_request_counts"
+      );
+
+      if (unreadErr) {
+        setErrorMsg(unreadErr.message);
+        setUnreadByRequestId({});
+      } else {
+        const unreadMap = {};
+        for (const row of unreadRows || []) {
+          unreadMap[row.request_id] = Number(row.unread_count || 0);
+        }
+        setUnreadByRequestId(unreadMap);
+      }
 
       setLoading(false);
     }
 
     load();
   }, [router]);
+
+  const requestCards = useMemo(() => {
+    return requests.map((request) => {
+      const ownerProfile = profilesById[request.owner_id];
+      const ownerName = ownerProfile?.full_name?.trim() || "Owner";
+      const ownerRating = formatRating(reviewStatsByUserId[request.owner_id]);
+      const unreadCount = unreadByRequestId[request.id] || 0;
+
+      return {
+        ...request,
+        ownerName,
+        ownerRating,
+        unreadCount,
+      };
+    });
+  }, [profilesById, requests, reviewStatsByUserId, unreadByRequestId]);
 
   return (
     <main className="min-h-screen p-6">
@@ -48,19 +155,37 @@ export default function RequestsPage() {
 
         {!loading && !errorMsg && (
           <div className="mt-6 space-y-3">
-            {requests.length === 0 ? (
+            {requestCards.length === 0 ? (
               <p>No requests yet.</p>
             ) : (
-              requests.map((r) => (
+              requestCards.map((r) => (
                 <a
                   key={r.id}
                   href={`/requests/${r.id}`}
-                  className="block rounded-2xl border p-4 hover:bg-gray-50"
+                  className="block rounded-2xl border p-4 hover:bg-gray-50 hover:text-black"
                 >
-                  <h2 className="text-lg font-semibold">{r.title}</h2>
-                  <p className="text-sm opacity-80">
+                  <div className="flex items-start justify-between gap-4">
+                    <h2 className="text-lg font-semibold">{r.title}</h2>
+
+                    {r.unreadCount > 0 && (
+                      <span className="rounded-full bg-black px-3 py-1 text-xs text-white">
+                        {r.unreadCount} unread
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="mt-2 text-sm opacity-80">
+                    Owner: {r.ownerName}
+                  </p>
+
+                  <p className="mt-1 text-sm opacity-80">
+                    Trust: {r.ownerRating}
+                  </p>
+
+                  <p className="mt-2 text-sm opacity-80">
                     {r.postcode || "No postcode"} • {r.start_date} → {r.end_date}
                   </p>
+
                   <p className="mt-1 text-sm opacity-80">
                     Status: {r.status}
                     {r.price_offered_gbp != null ? ` • £${r.price_offered_gbp}` : ""}
