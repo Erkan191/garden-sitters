@@ -4,6 +4,21 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
+function buildSkillTags(profile) {
+  if (!profile) return [];
+
+  const tags = [];
+
+  if (profile.skill_watering) tags.push("Watering");
+  if (profile.skill_harvesting) tags.push("Harvesting");
+  if (profile.skill_greenhouse) tags.push("Greenhouse");
+  if (profile.skill_veg_beds) tags.push("Veg beds");
+  if (profile.skill_pots) tags.push("Pots / containers");
+  if (profile.skill_seedlings) tags.push("Seedlings / young plants");
+
+  return tags;
+}
+
 export default function UserProfilePage() {
   const { id } = useParams();
   const router = useRouter();
@@ -32,7 +47,19 @@ export default function UserProfilePage() {
 
       const { data: profileData, error: profileErr } = await supabase
         .from("profiles")
-        .select("id, full_name, location, bio, avatar_url")
+        .select(`
+          id,
+          full_name,
+          location,
+          bio,
+          avatar_url,
+          skill_watering,
+          skill_harvesting,
+          skill_greenhouse,
+          skill_veg_beds,
+          skill_pots,
+          skill_seedlings
+        `)
         .eq("id", id)
         .maybeSingle();
 
@@ -96,6 +123,7 @@ export default function UserProfilePage() {
   const isOwnProfile = currentUserId === id;
   const displayName =
     profile?.full_name?.trim() || (isOwnProfile ? "You" : "User");
+  const skillTags = useMemo(() => buildSkillTags(profile), [profile]);
 
   return (
     <main className="min-h-screen p-6">
@@ -144,6 +172,19 @@ export default function UserProfilePage() {
                     <p className="mt-4 text-sm opacity-70">
                       No bio yet.
                     </p>
+                  )}
+
+                  {skillTags.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {skillTags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full border px-2 py-1 text-xs"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   )}
 
                   {isOwnProfile && (

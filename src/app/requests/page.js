@@ -50,6 +50,23 @@ function Avatar({ profile, fallback, size = "h-12 w-12" }) {
   );
 }
 
+function buildCareTags(request) {
+  const tags = [];
+
+  if (request.visit_frequency === "daily") tags.push("Daily visits");
+  if (request.visit_frequency === "every_2_days") tags.push("Every 2 days");
+  if (request.visit_frequency === "custom") tags.push("Custom visits");
+
+  if (request.need_watering) tags.push("Watering");
+  if (request.need_harvesting) tags.push("Harvesting");
+  if (request.has_greenhouse) tags.push("Greenhouse");
+  if (request.has_veg_beds) tags.push("Veg beds");
+  if (request.has_pots) tags.push("Pots");
+  if (request.has_seedlings) tags.push("Seedlings");
+
+  return tags.slice(0, 4);
+}
+
 export default function RequestsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -73,7 +90,7 @@ export default function RequestsPage() {
       const { data, error } = await supabase
         .from("care_requests")
         .select(
-          "id, owner_id, title, postcode, start_date, end_date, price_offered_gbp, status, created_at"
+          "id, owner_id, title, postcode, start_date, end_date, price_offered_gbp, status, created_at, visit_frequency, need_watering, need_harvesting, has_greenhouse, has_veg_beds, has_pots, has_seedlings"
         )
         .order("created_at", { ascending: false });
 
@@ -150,6 +167,7 @@ export default function RequestsPage() {
       const ownerName = ownerProfile?.full_name?.trim() || "Owner";
       const ownerRating = formatRating(reviewStatsByUserId[request.owner_id]);
       const unreadCount = unreadByRequestId[request.id] || 0;
+      const careTags = buildCareTags(request);
 
       return {
         ...request,
@@ -157,6 +175,7 @@ export default function RequestsPage() {
         ownerName,
         ownerRating,
         unreadCount,
+        careTags,
       };
     });
   }, [profilesById, requests, reviewStatsByUserId, unreadByRequestId]);
@@ -208,6 +227,19 @@ export default function RequestsPage() {
                           Status: {r.status}
                           {r.price_offered_gbp != null ? ` • £${r.price_offered_gbp}` : ""}
                         </p>
+
+                        {r.careTags.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {r.careTags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="rounded-full border px-2 py-1 text-xs"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 

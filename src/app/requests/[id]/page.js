@@ -30,24 +30,67 @@ function formatRating(stats) {
   return `${(stats.total / stats.count).toFixed(1)} ★ (${stats.count})`;
 }
 
-function Avatar({ profile, fallback, size = "h-14 w-14" }) {
+function Avatar({ profile, fallback, size = 56 }) {
+  const safeFallback =
+    typeof fallback === "string" && fallback.trim() !== ""
+      ? fallback.trim()
+      : "U";
+
   if (profile?.avatar_url) {
     return (
       <img
         src={profile.avatar_url}
-        alt={fallback}
-        className={`${size} rounded-full border object-cover`}
+        alt={safeFallback}
+        width={size}
+        height={size}
+        className="shrink-0 rounded-full border object-cover bg-gray-100"
+        style={{ width: size, height: size }}
       />
     );
   }
 
   return (
     <div
-      className={`${size} flex items-center justify-center rounded-full border text-base font-semibold`}
+      className="shrink-0 rounded-full border bg-gray-100 text-black font-semibold flex items-center justify-center"
+      style={{ width: size, height: size }}
     >
-      {fallback.slice(0, 1).toUpperCase()}
+      {safeFallback.slice(0, 1).toUpperCase()}
     </div>
   );
+}
+
+function buildCareTags(request) {
+  if (!request) return [];
+
+  const tags = [];
+
+  if (request.visit_frequency === "daily") tags.push("Once a day");
+  if (request.visit_frequency === "every_2_days") tags.push("Every 2 days");
+  if (request.visit_frequency === "custom") tags.push("Custom visits");
+
+  if (request.need_watering) tags.push("Watering needed");
+  if (request.need_harvesting) tags.push("Harvesting needed");
+  if (request.has_greenhouse) tags.push("Greenhouse");
+  if (request.has_veg_beds) tags.push("Veg beds");
+  if (request.has_pots) tags.push("Pots / containers");
+  if (request.has_seedlings) tags.push("Seedlings / young plants");
+
+  return tags;
+}
+
+function buildSkillTags(profile) {
+  if (!profile) return [];
+
+  const tags = [];
+
+  if (profile.skill_watering) tags.push("Watering");
+  if (profile.skill_harvesting) tags.push("Harvesting");
+  if (profile.skill_greenhouse) tags.push("Greenhouse");
+  if (profile.skill_veg_beds) tags.push("Veg beds");
+  if (profile.skill_pots) tags.push("Pots / containers");
+  if (profile.skill_seedlings) tags.push("Seedlings / young plants");
+
+  return tags;
 }
 
 export default function RequestDetailPage() {
@@ -122,7 +165,18 @@ export default function RequestDetailPage() {
     if (uniqueProfileIds.length > 0) {
       const { data: profileRows, error: profileErr } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url, location")
+        .select(`
+          id,
+          full_name,
+          avatar_url,
+          location,
+          skill_watering,
+          skill_harvesting,
+          skill_greenhouse,
+          skill_veg_beds,
+          skill_pots,
+          skill_seedlings
+        `)
         .in("id", uniqueProfileIds);
 
       if (profileErr) {
@@ -264,6 +318,8 @@ export default function RequestDetailPage() {
     String(req?.status) === "open" &&
     !myExistingOffer;
 
+  const careTags = buildCareTags(req);
+
   const offersWithTrust = useMemo(() => {
     return offers.map((offer) => {
       const gardenerProfile = profilesById[offer.gardener_id];
@@ -273,6 +329,7 @@ export default function RequestDetailPage() {
         gardenerName: gardenerProfile?.full_name?.trim() || "Gardener",
         gardenerLocation: gardenerProfile?.location?.trim() || "",
         gardenerRating: formatRating(reviewStatsByUserId[offer.gardener_id]),
+        gardenerSkillTags: buildSkillTags(gardenerProfile),
       };
     });
   }, [offers, profilesById, reviewStatsByUserId]);
@@ -342,6 +399,19 @@ export default function RequestDetailPage() {
               )}
             </div>
           </div>
+
+          {careTags.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {careTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border px-2 py-1 text-xs"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
 
           {req.details && <p className="mt-4 whitespace-pre-wrap">{req.details}</p>}
 
@@ -437,6 +507,19 @@ export default function RequestDetailPage() {
                           <p className="mt-1 text-sm opacity-80">
                             Location: {o.gardenerLocation}
                           </p>
+                        )}
+
+                        {o.gardenerSkillTags.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {o.gardenerSkillTags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="rounded-full border px-2 py-1 text-xs"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
                         )}
 
                         <p className="mt-2 text-sm opacity-80">
