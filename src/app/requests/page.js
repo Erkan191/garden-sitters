@@ -30,6 +30,26 @@ function formatRating(stats) {
   return `${(stats.total / stats.count).toFixed(1)} ★ (${stats.count})`;
 }
 
+function Avatar({ profile, fallback, size = "h-12 w-12" }) {
+  if (profile?.avatar_url) {
+    return (
+      <img
+        src={profile.avatar_url}
+        alt={fallback}
+        className={`${size} rounded-full border object-cover`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${size} flex items-center justify-center rounded-full border text-sm font-semibold`}
+    >
+      {fallback.slice(0, 1).toUpperCase()}
+    </div>
+  );
+}
+
 export default function RequestsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -133,6 +153,7 @@ export default function RequestsPage() {
 
       return {
         ...request,
+        ownerProfile,
         ownerName,
         ownerRating,
         unreadCount,
@@ -165,31 +186,37 @@ export default function RequestsPage() {
                   className="block rounded-2xl border p-4 hover:bg-gray-50 hover:text-black"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <h2 className="text-lg font-semibold">{r.title}</h2>
+                    <div className="flex min-w-0 items-start gap-3">
+                      <Avatar profile={r.ownerProfile} fallback={r.ownerName} />
+
+                      <div className="min-w-0">
+                        <h2 className="text-lg font-semibold">{r.title}</h2>
+
+                        <p className="mt-1 text-sm opacity-80">
+                          Owner: {r.ownerName}
+                        </p>
+
+                        <p className="mt-1 text-sm opacity-80">
+                          Trust: {r.ownerRating}
+                        </p>
+
+                        <p className="mt-2 text-sm opacity-80">
+                          {r.postcode || "No postcode"} • {r.start_date} → {r.end_date}
+                        </p>
+
+                        <p className="mt-1 text-sm opacity-80">
+                          Status: {r.status}
+                          {r.price_offered_gbp != null ? ` • £${r.price_offered_gbp}` : ""}
+                        </p>
+                      </div>
+                    </div>
 
                     {r.unreadCount > 0 && (
-                      <span className="rounded-full bg-black px-3 py-1 text-xs text-white">
+                      <span className="shrink-0 rounded-full bg-black px-3 py-1 text-xs text-white">
                         {r.unreadCount} unread
                       </span>
                     )}
                   </div>
-
-                  <p className="mt-2 text-sm opacity-80">
-                    Owner: {r.ownerName}
-                  </p>
-
-                  <p className="mt-1 text-sm opacity-80">
-                    Trust: {r.ownerRating}
-                  </p>
-
-                  <p className="mt-2 text-sm opacity-80">
-                    {r.postcode || "No postcode"} • {r.start_date} → {r.end_date}
-                  </p>
-
-                  <p className="mt-1 text-sm opacity-80">
-                    Status: {r.status}
-                    {r.price_offered_gbp != null ? ` • £${r.price_offered_gbp}` : ""}
-                  </p>
                 </a>
               ))
             )}

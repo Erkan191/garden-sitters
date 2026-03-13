@@ -31,7 +31,10 @@ export default function ChatPage() {
 
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
-    if (!user) return router.push("/login");
+    if (!user) {
+      router.push("/login");
+      return;
+    }
 
     setUserId(user.id);
 
@@ -62,8 +65,11 @@ export default function ChatPage() {
       .eq("request_id", id)
       .order("created_at", { ascending: true });
 
-    if (msgErr) setMsg(msgErr.message);
-    else setMessages(msgs ?? []);
+    if (msgErr) {
+      setMsg(msgErr.message);
+    } else {
+      setMessages(msgs ?? []);
+    }
 
     setLoading(false);
   }
@@ -96,7 +102,10 @@ export default function ChatPage() {
             return [...prev, newMsg];
           });
 
-          if (newMsg.sender_id !== userId) {
+          const { data: userData } = await supabase.auth.getUser();
+          const currentUserId = userData?.user?.id;
+
+          if (currentUserId && newMsg.sender_id !== currentUserId) {
             await markRead();
           }
         }
@@ -112,7 +121,7 @@ export default function ChatPage() {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, userId]);
+  }, [id]);
 
   async function sendMessage(e) {
     e.preventDefault();
@@ -131,7 +140,10 @@ export default function ChatPage() {
       body: text,
     });
 
-    if (error) return setMsg(error.message);
+    if (error) {
+      setMsg(error.message);
+      return;
+    }
 
     setBody("");
   }

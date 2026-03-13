@@ -30,6 +30,26 @@ function formatRating(stats) {
   return `${(stats.total / stats.count).toFixed(1)} ★ (${stats.count})`;
 }
 
+function Avatar({ profile, fallback, size = "h-14 w-14" }) {
+  if (profile?.avatar_url) {
+    return (
+      <img
+        src={profile.avatar_url}
+        alt={fallback}
+        className={`${size} rounded-full border object-cover`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${size} flex items-center justify-center rounded-full border text-base font-semibold`}
+    >
+      {fallback.slice(0, 1).toUpperCase()}
+    </div>
+  );
+}
+
 export default function RequestDetailPage() {
   const router = useRouter();
   const { id } = useParams();
@@ -231,12 +251,9 @@ export default function RequestDetailPage() {
   const canOpenChat =
     String(req?.status) === "accepted" && (isOwner || isAcceptedGardener);
 
-  const ownerName =
-    profilesById[req?.owner_id]?.full_name?.trim() || "Owner";
-
-  const ownerLocation =
-    profilesById[req?.owner_id]?.location?.trim() || "";
-
+  const ownerProfile = profilesById[req?.owner_id];
+  const ownerName = ownerProfile?.full_name?.trim() || "Owner";
+  const ownerLocation = ownerProfile?.location?.trim() || "";
   const ownerRating =
     req?.owner_id ? formatRating(reviewStatsByUserId[req.owner_id]) : "No reviews yet";
 
@@ -252,6 +269,7 @@ export default function RequestDetailPage() {
       const gardenerProfile = profilesById[offer.gardener_id];
       return {
         ...offer,
+        gardenerProfile,
         gardenerName: gardenerProfile?.full_name?.trim() || "Gardener",
         gardenerLocation: gardenerProfile?.location?.trim() || "",
         gardenerRating: formatRating(reviewStatsByUserId[offer.gardener_id]),
@@ -284,40 +302,46 @@ export default function RequestDetailPage() {
         </a>
 
         <div className="rounded-2xl border p-6">
-          <h1 className="text-2xl font-semibold">{req.title}</h1>
+          <div className="flex items-start gap-4">
+            <Avatar profile={ownerProfile} fallback={ownerName} />
 
-          <p className="mt-3 text-sm">
-            Owner:{" "}
-            <a href={`/users/${req.owner_id}`} className="underline">
-              {ownerName}
-            </a>
-          </p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-semibold">{req.title}</h1>
 
-          <p className="mt-1 text-sm opacity-80">
-            Trust: {ownerRating}
-          </p>
+              <p className="mt-3 text-sm">
+                Owner:{" "}
+                <a href={`/users/${req.owner_id}`} className="underline">
+                  {ownerName}
+                </a>
+              </p>
 
-          {ownerLocation && (
-            <p className="mt-1 text-sm opacity-80">
-              Location: {ownerLocation}
-            </p>
-          )}
+              <p className="mt-1 text-sm opacity-80">
+                Trust: {ownerRating}
+              </p>
 
-          <p className="mt-3 text-sm opacity-80">
-            {req.postcode || "No postcode"} • {req.start_date} → {req.end_date}
-          </p>
+              {ownerLocation && (
+                <p className="mt-1 text-sm opacity-80">
+                  Location: {ownerLocation}
+                </p>
+              )}
 
-          <p className="mt-2 text-sm opacity-80">Status: {String(req.status)}</p>
+              <p className="mt-3 text-sm opacity-80">
+                {req.postcode || "No postcode"} • {req.start_date} → {req.end_date}
+              </p>
 
-          {canOpenChat && (
-            <a className="mt-3 inline-block underline" href={`/requests/${id}/chat`}>
-              Open chat{unreadCount > 0 ? ` (${unreadCount} unread)` : ""}
-            </a>
-          )}
+              <p className="mt-2 text-sm opacity-80">Status: {String(req.status)}</p>
 
-          {req.price_offered_gbp != null && (
-            <p className="mt-2 text-sm">Price offered: £{req.price_offered_gbp}</p>
-          )}
+              {canOpenChat && (
+                <a className="mt-3 inline-block underline" href={`/requests/${id}/chat`}>
+                  Open chat{unreadCount > 0 ? ` (${unreadCount} unread)` : ""}
+                </a>
+              )}
+
+              {req.price_offered_gbp != null && (
+                <p className="mt-2 text-sm">Price offered: £{req.price_offered_gbp}</p>
+              )}
+            </div>
+          </div>
 
           {req.details && <p className="mt-4 whitespace-pre-wrap">{req.details}</p>}
 
@@ -394,38 +418,46 @@ export default function RequestDetailPage() {
               <div className="mt-4 space-y-3">
                 {offersWithTrust.map((o) => (
                   <div key={o.id} className="rounded-xl border p-4">
-                    <p className="text-sm">
-                      Gardener:{" "}
-                      <a href={`/users/${o.gardener_id}`} className="underline">
-                        {o.gardenerName}
-                      </a>
-                    </p>
+                    <div className="flex items-start gap-4">
+                      <Avatar profile={o.gardenerProfile} fallback={o.gardenerName} />
 
-                    <p className="mt-1 text-sm opacity-80">
-                      Trust: {o.gardenerRating}
-                    </p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm">
+                          Gardener:{" "}
+                          <a href={`/users/${o.gardener_id}`} className="underline">
+                            {o.gardenerName}
+                          </a>
+                        </p>
 
-                    {o.gardenerLocation && (
-                      <p className="mt-1 text-sm opacity-80">
-                        Location: {o.gardenerLocation}
-                      </p>
-                    )}
+                        <p className="mt-1 text-sm opacity-80">
+                          Trust: {o.gardenerRating}
+                        </p>
 
-                    <p className="mt-2 text-sm opacity-80">
-                      Status: {o.status}
-                      {o.proposed_price_gbp != null ? ` • £${o.proposed_price_gbp}` : ""}
-                    </p>
+                        {o.gardenerLocation && (
+                          <p className="mt-1 text-sm opacity-80">
+                            Location: {o.gardenerLocation}
+                          </p>
+                        )}
 
-                    {o.message && <p className="mt-2 whitespace-pre-wrap">{o.message}</p>}
+                        <p className="mt-2 text-sm opacity-80">
+                          Status: {o.status}
+                          {o.proposed_price_gbp != null ? ` • £${o.proposed_price_gbp}` : ""}
+                        </p>
 
-                    {String(req.status) === "open" && o.status === "pending" && (
-                      <button
-                        onClick={() => acceptOffer(o.id)}
-                        className="mt-3 rounded-xl bg-black px-3 py-2 text-white"
-                      >
-                        Accept offer
-                      </button>
-                    )}
+                        {o.message && (
+                          <p className="mt-2 whitespace-pre-wrap">{o.message}</p>
+                        )}
+
+                        {String(req.status) === "open" && o.status === "pending" && (
+                          <button
+                            onClick={() => acceptOffer(o.id)}
+                            className="mt-3 rounded-xl bg-black px-3 py-2 text-white"
+                          >
+                            Accept offer
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
