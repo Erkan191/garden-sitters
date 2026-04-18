@@ -7,19 +7,55 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-06-20",
 });
 
+const MAX_PRICE_GBP = 999999.99;
+const MAX_STRIPE_AMOUNT_PENCE = 99999999;
+const MIN_STRIPE_AMOUNT_PENCE = 50;
+
 function supabaseFromToken(token) {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
 }
 
+function isValidMoneyAmount(value) {
+  if (!Number.isFinite(value)) return false;
+  if (value <= 0) return false;
+  if (value > MAX_PRICE_GBP) return false;
+  if (Math.round(value * 100) !== value * 100) return false;
+  return true;
+}
+
 export async function POST(request) {
   try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return Response.json(
+        { error: "Server is missing STRIPE_SECRET_KEY" },
+        { status: 500 }
+      );
+    }
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return Response.json(
+        { error: "Server is missing Supabase environment variables" },
+        { status: 500 }
+      );
+    }
+
+    if (!process.env.NEXT_PUBLIC_SITE_URL) {
+      return Response.json(
+        { error: "Server is missing NEXT_PUBLIC_SITE_URL" },
+        { status: 500 }
+      );
+    }
+
     const authHeader = request.headers.get("authorization") || "";
     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-    if (!token) return Response.json({ error: "Missing token" }, { status: 401 });
+
+    if (!token) {
+      return Response.json({ error: "Missing token" }, { status: 401 });
+    }
 
     const supabase = supabaseFromToken(token);
 
@@ -27,13 +63,16 @@ export async function POST(request) {
     if (userErr || !userData?.user) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
+
     const userId = userData.user.id;
 
     const body = await request.json().catch(() => ({}));
-    const offerId = body.offerId;
-    if (!offerId) return Response.json({ error: "Missing offerId" }, { status: 400 });
+    const offerId = typeof body.offerId === "string" ? body.offerId.trim() : "";
 
-    // Offer
+    if (!offerId) {
+      return Response.json({ error: "Missing offerId" }, { status: 400 });
+    }
+
     const { data: offer, error: offerErr } = await supabase
       .from("offers")
       .select("id, request_id, gardener_id, proposed_price_gbp, status")
@@ -41,10 +80,12 @@ export async function POST(request) {
       .maybeSingle();
 
     if (offerErr || !offer) {
-      return Response.json({ error: offerErr?.message || "Offer not found" }, { status: 400 });
+      return Response.json(
+        { error: offerErr?.message || "Offer not found" },
+        { status: 400 }
+      );
     }
 
-    // Request
     const { data: reqRow, error: reqErr } = await supabase
       .from("care_requests")
       .select("id, owner_id, title, price_offered_gbp, status")
@@ -52,33 +93,52 @@ export async function POST(request) {
       .maybeSingle();
 
     if (reqErr || !reqRow) {
-      return Response.json({ error: reqErr?.message || "Request not found" }, { status: 400 });
-    }
-
-    // Only owner can pay
-    if (reqRow.owner_id !== userId) {
-      return Response.json({ error: "Only the owner can pay" }, { status: 403 });
-    }
-
-    // Only pay for accepted request/offer
-    if (reqRow.status !== "accepted" || offer.status !== "accepted") {
       return Response.json(
-        { error: "Request/offer must be accepted before paying" },
+        { error: reqErr?.message || "Request not found" },
         { status: 400 }
       );
     }
 
-    // Amount selection (offer proposed > request offered)
-    let amount = Number(offer.proposed_price_gbp ?? reqRow.price_offered_gbp ?? 0);
-    if (!amount || Number.isNaN(amount) || amount <= 0) {
-      return Response.json({ error: "No valid amount set for this job" }, { status: 400 });
+    if (reqRow.owner_id !== userId) {
+      return Response.json({ error: "Only the owner can pay" }, { status: 403 });
     }
 
-    // Platform fee (v1: 10%)
+    if (reqRow.status !== "accepted") {
+      return Response.json(
+        { error: "Request must be accepted before paying" },
+        { status: 400 }
+      );
+    }
+
+    if (offer.status !== "accepted") {
+      return Response.json(
+        { error: "Offer must be accepted before paying" },
+        { status: 400 }
+      );
+    }
+
+    let amount = Number(offer.proposed_price_gbp ?? reqRow.price_offered_gbp ?? 0);
+
+    if (!isValidMoneyAmount(amount)) {
+      return Response.json(
+        {
+          error:
+            "Amount must be between £0.01 and £999,999.99, with no more than 2 decimal places.",
+        },
+        { status: 400 }
+      );
+    }
+
     let fee = Math.round(amount * 0.1 * 100) / 100;
 
-    // --- Prevent duplicate bookings: reuse pending, block if paid ---
-    const { data: existingBooking } = await supabase
+    if (!isValidMoneyAmount(fee) && fee !== 0) {
+      return Response.json(
+        { error: "Calculated platform fee is invalid." },
+        { status: 400 }
+      );
+    }
+
+    const { data: existingBooking, error: existingBookingErr } = await supabase
       .from("bookings")
       .select("id, status, amount_gbp, platform_fee_gbp")
       .eq("request_id", reqRow.id)
@@ -89,6 +149,13 @@ export async function POST(request) {
       .limit(1)
       .maybeSingle();
 
+    if (existingBookingErr) {
+      return Response.json(
+        { error: existingBookingErr.message || "Failed to inspect existing bookings" },
+        { status: 400 }
+      );
+    }
+
     if (existingBooking?.status === "paid") {
       return Response.json(
         { error: "This booking is already paid.", bookingId: existingBooking.id },
@@ -96,14 +163,30 @@ export async function POST(request) {
       );
     }
 
-    // Reuse the stored amounts if we’re reusing an existing pending booking
     let bookingId = existingBooking?.id;
+
     if (existingBooking?.status === "pending_payment") {
-      amount = Number(existingBooking.amount_gbp ?? amount);
-      fee = Number(existingBooking.platform_fee_gbp ?? fee);
+      const storedAmount = Number(existingBooking.amount_gbp ?? amount);
+      const storedFee = Number(existingBooking.platform_fee_gbp ?? fee);
+
+      if (!isValidMoneyAmount(storedAmount)) {
+        return Response.json(
+          { error: "Existing booking has an invalid amount." },
+          { status: 400 }
+        );
+      }
+
+      if (!isValidMoneyAmount(storedFee) && storedFee !== 0) {
+        return Response.json(
+          { error: "Existing booking has an invalid platform fee." },
+          { status: 400 }
+        );
+      }
+
+      amount = storedAmount;
+      fee = storedFee;
     }
 
-    // Create booking only if none exists
     if (!bookingId) {
       const { data: booking, error: bookErr } = await supabase
         .from("bookings")
@@ -129,15 +212,31 @@ export async function POST(request) {
       bookingId = booking.id;
     }
 
-    // Stripe Checkout needs integer minor units
-    const amountPence = Math.round(Number(amount) * 100);
-    if (amountPence < 50) {
-      return Response.json({ error: "Amount too small for Checkout" }, { status: 400 });
+    const amountPence = Math.round(amount * 100);
+
+    if (!Number.isInteger(amountPence)) {
+      return Response.json(
+        { error: "Amount could not be converted safely for Checkout" },
+        { status: 400 }
+      );
+    }
+
+    if (amountPence < MIN_STRIPE_AMOUNT_PENCE) {
+      return Response.json(
+        { error: "Amount too small for Checkout" },
+        { status: 400 }
+      );
+    }
+
+    if (amountPence > MAX_STRIPE_AMOUNT_PENCE) {
+      return Response.json(
+        { error: "Amount too large for Checkout" },
+        { status: 400 }
+      );
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
-    // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       success_url: `${siteUrl}/bookings/${bookingId}/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -162,16 +261,20 @@ export async function POST(request) {
       },
     });
 
-    // Store session id on booking
     const { error: upErr } = await supabase
       .from("bookings")
       .update({ stripe_checkout_session_id: session.id })
       .eq("id", bookingId);
 
-    if (upErr) return Response.json({ error: upErr.message }, { status: 400 });
+    if (upErr) {
+      return Response.json({ error: upErr.message }, { status: 400 });
+    }
 
     return Response.json({ url: session.url, bookingId });
   } catch (err) {
-    return Response.json({ error: err.message || "Server error" }, { status: 500 });
+    return Response.json(
+      { error: err?.message || "Server error" },
+      { status: 500 }
+    );
   }
 }

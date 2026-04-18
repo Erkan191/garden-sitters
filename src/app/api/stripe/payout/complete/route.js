@@ -10,7 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 function supabaseFromToken(token) {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
 }
@@ -59,12 +59,10 @@ export async function POST(request) {
     return Response.json({ error: "Booking must be paid before payout" }, { status: 400 });
   }
 
-  // Mark booking completed + payout pending (this allows retries without losing state)
+  // Mark payout as pending, but do not mark completed until transfer succeeds
   const { error: markErr } = await supabase
     .from("bookings")
     .update({
-      status: "completed",
-      completed_at: new Date().toISOString(),
       payout_status: "pending",
       payout_error: null,
     })
@@ -136,10 +134,11 @@ export async function POST(request) {
     const { error: upErr } = await supabase
       .from("bookings")
       .update({
-        stripe_transfer_id: transfer.id,
+                stripe_transfer_id: transfer.id,
         payout_status: "paid",
         payout_error: null,
         status: "completed",
+        completed_at: new Date().toISOString(),
       })
       .eq("id", booking.id);
 
@@ -158,7 +157,7 @@ export async function POST(request) {
       .update({
         payout_status: "failed",
         payout_error: err.message || "Transfer failed",
-        status: "completed",
+        status: "paid",
       })
       .eq("id", booking.id);
 

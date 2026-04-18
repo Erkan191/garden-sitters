@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 function buildSkillTags(profile) {
@@ -21,6 +21,7 @@ function buildSkillTags(profile) {
 
 export default function MyProfilePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,6 +29,11 @@ export default function MyProfilePage() {
 
   const [userId, setUserId] = useState(null);
   const [email, setEmail] = useState("");
+
+  const [stripeAccountId, setStripeAccountId] = useState("");
+  const [stripeOnboardingComplete, setStripeOnboardingComplete] = useState(false);
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [stripeMsg, setStripeMsg] = useState("");
 
   const [fullName, setFullName] = useState("");
   const [location, setLocation] = useState("");
@@ -69,8 +75,10 @@ export default function MyProfilePage() {
           skill_harvesting,
           skill_greenhouse,
           skill_veg_beds,
-          skill_pots,
-          skill_seedlings
+                    skill_pots,
+          skill_seedlings,
+          stripe_account_id,
+          stripe_onboarding_complete
         `)
         .eq("id", user.id)
         .maybeSingle();
@@ -93,11 +101,119 @@ export default function MyProfilePage() {
       setSkillPots(Boolean(profile?.skill_pots));
       setSkillSeedlings(Boolean(profile?.skill_seedlings));
 
+      setStripeAccountId(profile?.stripe_account_id || "");
+      setStripeOnboardingComplete(Boolean(profile?.stripe_onboarding_complete));
+      setStripeMsg("");
+
       setLoading(false);
     }
 
     load();
   }, [router]);
+
+  useEffect(() => {
+    const stripeState = searchParams.get("stripe");
+
+    if (stripeState === "return" || stripeState === "refresh") {
+      refreshStripeStatus();
+    }
+  }, [searchParams]);
+
+  async function getAccessToken() {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error || !data?.session?.access_token) {
+      throw new Error("You are not logged in.");
+    }
+
+    return data.session.access_token;
+  }
+
+  async function refreshStripeStatus() {
+    setStripeLoading(true);
+    setStripeMsg("Checking Stripe status...");
+
+    try {
+      const token = await getAccessToken();
+
+      const res = await fetch("/api/stripe/connect/status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Could not check Stripe status");
+      }
+
+      setStripeAccountId(data.stripe_account_id || "");
+      setStripeOnboardingComplete(Boolean(data.onboardingComplete));
+
+      if (data.onboardingComplete) {
+        setStripeMsg("");
+      } else {
+        const currentlyDue = data.requirements?.currently_due || [];
+        const pendingVerification = data.requirements?.pending_verification || [];
+        const disabledReason = data.requirements?.disabled_reason;
+
+        const parts = ["Stripe account found, but onboarding is not complete yet."];
+
+        if (currentlyDue.length > 0) {
+          parts.push(`Still required: ${currentlyDue.join(", ")}`);
+        }
+
+        if (pendingVerification.length > 0) {
+          parts.push(`Pending verification: ${pendingVerification.join(", ")}`);
+        }
+
+        if (disabledReason) {
+          parts.push(`Reason: ${disabledReason}`);
+        }
+
+        setStripeMsg(parts.join(" "));
+      }
+    } catch (err) {
+      setStripeMsg(err.message || "Could not check Stripe status");
+    } finally {
+      setStripeLoading(false);
+    }
+  }
+
+  async function startStripeOnboarding() {
+    setStripeLoading(true);
+    setStripeMsg("Opening Stripe onboarding...");
+
+    try {
+      const token = await getAccessToken();
+
+      const res = await fetch("/api/stripe/connect/onboard", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Could not start Stripe onboarding");
+      }
+
+      if (!data.url) {
+        throw new Error("Stripe onboarding link was not returned");
+      }
+
+      window.location.href = data.url;
+    } catch (err) {
+      setStripeMsg(err.message || "Could not start Stripe onboarding");
+      setStripeLoading(false);
+    }
+  }
 
   async function saveProfile(e) {
     e.preventDefault();
@@ -175,6 +291,56 @@ export default function MyProfilePage() {
               <p className="mt-4 text-sm opacity-70">
                 Signed in as: {email || "Unknown email"}
               </p>
+
+              <div className="mt-6 rounded-2xl border p-4">
+                <p className="text-sm font-medium">Stripe payouts</p>
+
+                <p className="mt-2 text-sm opacity-80">
+                  {stripeOnboardingComplete
+                    ? "Payouts connected ✅"
+                    : stripeAccountId
+                      ? "Stripe account created, but onboarding is not complete yet."
+                      : "You have not connected Stripe yet."}
+                </p>
+
+                {stripeAccountId && (
+                  <p className="mt-2 break-all text-xs opacity-60">
+                    Stripe account: {stripeAccountId}
+                  </p>
+                )}
+
+                {stripeMsg && (
+                  <p className="mt-3 text-sm">{stripeMsg}</p>
+                )}
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {!stripeOnboardingComplete && (
+                    <button
+                      type="button"
+                      onClick={startStripeOnboarding}
+                      disabled={stripeLoading}
+                      className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-60"
+                    >
+                      {stripeLoading
+                        ? "Please wait..."
+                        : stripeAccountId
+                          ? "Continue Stripe setup"
+                          : "Connect Stripe for payouts"}
+                    </button>
+                  )}
+
+                  {stripeAccountId && (
+                    <button
+                      type="button"
+                      onClick={refreshStripeStatus}
+                      disabled={stripeLoading}
+                      className="rounded-xl border px-4 py-2 disabled:opacity-60"
+                    >
+                      Refresh Stripe status
+                    </button>
+                  )}
+                </div>
+              </div>
 
               <form onSubmit={saveProfile} className="mt-6 space-y-4">
                 <div>

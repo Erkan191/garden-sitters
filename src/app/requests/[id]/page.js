@@ -51,7 +51,7 @@ function Avatar({ profile, fallback, size = 56 }) {
 
   return (
     <div
-      className="shrink-0 rounded-full border bg-gray-100 text-black font-semibold flex items-center justify-center"
+      className="flex shrink-0 items-center justify-center rounded-full border bg-gray-100 font-semibold text-black"
       style={{ width: size, height: size }}
     >
       {safeFallback.slice(0, 1).toUpperCase()}
@@ -93,6 +93,95 @@ function buildSkillTags(profile) {
   return tags;
 }
 
+function buildMatchData(request, profile) {
+  if (!request || !profile) {
+    return {
+      goodMatches: [],
+      missingSkills: [],
+    };
+  }
+
+  const checks = [
+    { requestKey: "need_watering", skillKey: "skill_watering", label: "Watering" },
+    { requestKey: "need_harvesting", skillKey: "skill_harvesting", label: "Harvesting" },
+    { requestKey: "has_greenhouse", skillKey: "skill_greenhouse", label: "Greenhouse" },
+    { requestKey: "has_veg_beds", skillKey: "skill_veg_beds", label: "Veg beds" },
+    { requestKey: "has_pots", skillKey: "skill_pots", label: "Pots / containers" },
+    { requestKey: "has_seedlings", skillKey: "skill_seedlings", label: "Seedlings / young plants" },
+  ];
+
+  const relevantChecks = checks.filter((item) => request[item.requestKey]);
+
+  return {
+    goodMatches: relevantChecks
+      .filter((item) => profile[item.skillKey])
+      .map((item) => item.label),
+
+    missingSkills: relevantChecks
+      .filter((item) => !profile[item.skillKey])
+      .map((item) => item.label),
+  };
+}
+
+function formatShortDate(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function formatDateRange(start, end) {
+  if (!start && !end) return "No dates";
+  if (!start) return formatShortDate(end);
+  if (!end) return formatShortDate(start);
+  return `${formatShortDate(start)} → ${formatShortDate(end)}`;
+}
+
+function formatDateTime(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleString();
+}
+
+function formatPrice(value) {
+  if (value == null) return null;
+  return `£${Number(value).toFixed(0)}`;
+}
+
+function getStatusBadgeClass(status) {
+  if (status === "open") return "bg-green-100 text-green-800 border-green-200";
+  if (status === "accepted") return "bg-amber-100 text-amber-800 border-amber-200";
+  if (status === "completed") return "bg-emerald-100 text-emerald-800 border-emerald-200";
+  return "bg-gray-100 text-gray-700 border-gray-200";
+}
+
+function getStatusLabel(status) {
+  if (!status) return "Unknown";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function getOfferStatusBadgeClass(status) {
+  if (status === "pending") return "bg-gray-100 text-gray-700 border-gray-200";
+  if (status === "accepted") return "bg-green-100 text-green-800 border-green-200";
+  if (status === "rejected") return "bg-red-100 text-red-800 border-red-200";
+  return "bg-gray-100 text-gray-700 border-gray-200";
+}
+
+function getBookingStatusBadgeClass(status) {
+  if (status === "pending_payment") {
+    return "bg-yellow-100 text-yellow-800 border-yellow-200";
+  }
+  if (status === "paid") {
+    return "bg-blue-100 text-blue-800 border-blue-200";
+  }
+  if (status === "completed") {
+    return "bg-emerald-100 text-emerald-800 border-emerald-200";
+  }
+  return "bg-gray-100 text-gray-700 border-gray-200";
+}
+
+const MAX_PRICE_GBP = 999999.99;
+
 export default function RequestDetailPage() {
   const router = useRouter();
   const { id } = useParams();
@@ -100,11 +189,18 @@ export default function RequestDetailPage() {
   const [loading, setLoading] = useState(true);
   const [req, setReq] = useState(null);
   const [offers, setOffers] = useState([]);
+  const [booking, setBooking] = useState(null);
+  const [bookingReviews, setBookingReviews] = useState([]);
   const [userId, setUserId] = useState(null);
   const [msg, setMsg] = useState("");
 
   const [offerMessage, setOfferMessage] = useState("");
   const [offerPrice, setOfferPrice] = useState("");
+  const [completingBooking, setCompletingBooking] = useState(false);
+
+  const [reviewRating, setReviewRating] = useState("5");
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   const [profilesById, setProfilesById] = useState({});
   const [reviewStatsByUserId, setReviewStatsByUserId] = useState({});
@@ -117,13 +213,9 @@ export default function RequestDetailPage() {
     setMsg("");
 
     const { data: userData } = await supabase.auth.getUser();
-    const user = userData?.user;
-    if (!user) {
-      router.push("/login");
-      return;
-    }
+    const user = userData?.user || null;
 
-    setUserId(user.id);
+    setUserId(user?.id || null);
 
     const { data: requestData, error: requestError } = await supabase
       .from("care_requests")
@@ -139,24 +231,67 @@ export default function RequestDetailPage() {
 
     setReq(requestData);
 
-    const { data: offersData, error: offersError } = await supabase
-      .from("offers")
-      .select("id, message, proposed_price_gbp, status, created_at, gardener_id")
-      .eq("request_id", id)
-      .order("created_at", { ascending: false });
+    let safeOffers = [];
 
-    if (offersError) {
-      setMsg(offersError.message);
-      setOffers([]);
+    if (user) {
+      const { data: offersData, error: offersError } = await supabase
+        .from("offers")
+        .select("id, message, proposed_price_gbp, status, created_at, gardener_id")
+        .eq("request_id", id)
+        .order("created_at", { ascending: false });
+
+      if (offersError) {
+        setMsg(offersError.message);
+        setOffers([]);
+        setLoading(false);
+        return;
+      }
+
+      safeOffers = offersData ?? [];
+    }
+
+    setOffers(safeOffers);
+
+    const { data: bookingRow, error: bookingError } = await supabase
+      .from("bookings")
+      .select(
+        "id, request_id, offer_id, owner_id, gardener_id, amount_gbp, platform_fee_gbp, status, stripe_checkout_session_id, stripe_payment_intent_id, created_at, payout_status, payout_error, completed_at"
+      )
+      .eq("request_id", id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (bookingError) {
+      setMsg(bookingError.message);
+      setBooking(null);
+      setBookingReviews([]);
       setLoading(false);
       return;
     }
 
-    const safeOffers = offersData ?? [];
-    setOffers(safeOffers);
+    setBooking(bookingRow ?? null);
+
+    if (bookingRow?.id) {
+      const { data: bookingReviewRows, error: bookingReviewsError } = await supabase
+        .from("reviews")
+        .select("id, booking_id, reviewer_id, reviewee_id, rating, comment, created_at")
+        .eq("booking_id", bookingRow.id)
+        .order("created_at", { ascending: true });
+
+      if (bookingReviewsError) {
+        setMsg(bookingReviewsError.message);
+        setBookingReviews([]);
+      } else {
+        setBookingReviews(bookingReviewRows ?? []);
+      }
+    } else {
+      setBookingReviews([]);
+    }
 
     const profileIds = [
       requestData?.owner_id,
+      ...(bookingRow?.gardener_id ? [bookingRow.gardener_id] : []),
       ...safeOffers.map((o) => o.gardener_id),
     ].filter(Boolean);
 
@@ -204,9 +339,13 @@ export default function RequestDetailPage() {
       setReviewStatsByUserId({});
     }
 
-    const { data: unreadRows } = await supabase.rpc("get_my_unread_request_counts");
-    const matchingUnread = (unreadRows || []).find((row) => row.request_id === id);
-    setUnreadCount(Number(matchingUnread?.unread_count || 0));
+    if (user) {
+      const { data: unreadRows } = await supabase.rpc("get_my_unread_request_counts");
+      const matchingUnread = (unreadRows || []).find((row) => row.request_id === id);
+      setUnreadCount(Number(matchingUnread?.unread_count || 0));
+    } else {
+      setUnreadCount(0);
+    }
 
     setLoading(false);
   }
@@ -235,11 +374,26 @@ export default function RequestDetailPage() {
       return;
     }
 
+    const parsedOfferPrice = offerPrice === "" ? null : Number(offerPrice);
+
+    if (
+      parsedOfferPrice !== null &&
+      (!Number.isFinite(parsedOfferPrice) ||
+        parsedOfferPrice <= 0 ||
+        parsedOfferPrice > MAX_PRICE_GBP ||
+        Math.round(parsedOfferPrice * 100) !== parsedOfferPrice * 100)
+    ) {
+      setMsg(
+        "Price must be between £0.01 and £999,999.99, with no more than 2 decimal places."
+      );
+      return;
+    }
+
     const { error } = await supabase.from("offers").insert({
       request_id: id,
       gardener_id: user.id,
       message: offerMessage.trim() === "" ? null : offerMessage.trim(),
-      proposed_price_gbp: offerPrice === "" ? null : Number(offerPrice),
+      proposed_price_gbp: parsedOfferPrice,
     });
 
     if (error) {
@@ -251,7 +405,8 @@ export default function RequestDetailPage() {
         return;
       }
 
-      return setMsg(error.message);
+      setMsg(error.message);
+      return;
     }
 
     setMsg("Offer sent ✅");
@@ -282,7 +437,11 @@ export default function RequestDetailPage() {
 
     const { data } = await supabase.auth.getSession();
     const token = data?.session?.access_token;
-    if (!token) return setMsg("Not logged in.");
+
+    if (!token) {
+      setMsg("Not logged in.");
+      return;
+    }
 
     const res = await fetch("/api/stripe/checkout/create", {
       method: "POST",
@@ -294,9 +453,112 @@ export default function RequestDetailPage() {
     });
 
     const json = await res.json();
-    if (!res.ok) return setMsg(json.error || "Failed to create checkout session");
+
+    if (!res.ok) {
+      setMsg(json.error || "Failed to create checkout session");
+      return;
+    }
 
     window.location.href = json.url;
+  }
+
+  async function completeAndPayGardener() {
+    if (!booking?.id) return;
+
+    setCompletingBooking(true);
+    setMsg("Completing booking and paying gardener...");
+
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+
+    if (!token) {
+      setMsg("Please log in again.");
+      setCompletingBooking(false);
+      return;
+    }
+
+    const res = await fetch("/api/stripe/payout/complete", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ bookingId: booking.id }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      setMsg(json.error || "Failed to pay gardener");
+      setCompletingBooking(false);
+      return;
+    }
+
+    setMsg(`Completed ✅ Transfer: ${json.transferId}`);
+    setCompletingBooking(false);
+    await loadAll();
+  }
+
+  async function submitReview(e) {
+    e.preventDefault();
+
+    if (!booking?.id || booking.status !== "completed") {
+      setMsg("Reviews only unlock once the booking is completed.");
+      return;
+    }
+
+    if (!userId) {
+      router.push("/login");
+      return;
+    }
+
+    const ratingNumber = Number(reviewRating);
+
+    if (!Number.isInteger(ratingNumber) || ratingNumber < 1 || ratingNumber > 5) {
+      setMsg("Rating must be between 1 and 5.");
+      return;
+    }
+
+    let revieweeId = null;
+
+    if (userId === booking.owner_id) {
+      revieweeId = booking.gardener_id;
+    } else if (userId === booking.gardener_id) {
+      revieweeId = booking.owner_id;
+    } else {
+      setMsg("You cannot review this booking.");
+      return;
+    }
+
+    setReviewSubmitting(true);
+    setMsg("Submitting review...");
+
+    const { error } = await supabase.from("reviews").insert({
+      booking_id: booking.id,
+      reviewer_id: userId,
+      reviewee_id: revieweeId,
+      rating: ratingNumber,
+      comment: reviewComment.trim() === "" ? null : reviewComment.trim(),
+    });
+
+    if (error) {
+      if (
+        error.message?.toLowerCase().includes("duplicate") ||
+        error.message?.toLowerCase().includes("unique")
+      ) {
+        setMsg("You have already reviewed this booking.");
+      } else {
+        setMsg(error.message);
+      }
+      setReviewSubmitting(false);
+      return;
+    }
+
+    setReviewComment("");
+    setReviewRating("5");
+    setReviewSubmitting(false);
+    setMsg("Review submitted ✅");
+    await loadAll();
   }
 
   const acceptedOffer = offers.find((o) => o.status === "accepted");
@@ -310,6 +572,10 @@ export default function RequestDetailPage() {
   const ownerLocation = ownerProfile?.location?.trim() || "";
   const ownerRating =
     req?.owner_id ? formatRating(reviewStatsByUserId[req.owner_id]) : "No reviews yet";
+  const requestStatusLabel = getStatusLabel(req?.status);
+  const requestStatusBadgeClass = getStatusBadgeClass(req?.status);
+  const formattedRequestDateRange = formatDateRange(req?.start_date, req?.end_date);
+  const formattedRequestPrice = formatPrice(req?.price_offered_gbp);
 
   const myExistingOffer = offers.find((o) => o.gardener_id === userId);
 
@@ -320,9 +586,44 @@ export default function RequestDetailPage() {
 
   const careTags = buildCareTags(req);
 
+  const bookingGardenerProfile = booking?.gardener_id
+    ? profilesById[booking.gardener_id]
+    : null;
+
+  const bookingGardenerName =
+    bookingGardenerProfile?.full_name?.trim() || "Gardener";
+
+  const bookingGardenerRating = booking?.gardener_id
+    ? formatRating(reviewStatsByUserId[booking.gardener_id])
+    : "No reviews yet";
+
+  const bookingStatusLabel = getStatusLabel(booking?.status);
+  const bookingStatusBadgeClass = getBookingStatusBadgeClass(booking?.status);
+
+  const canReview =
+    booking?.status === "completed" &&
+    userId &&
+    (userId === booking.owner_id || userId === booking.gardener_id);
+
+  const myBookingReview = bookingReviews.find((review) => review.reviewer_id === userId);
+
+  const reviewTargetId =
+    userId === booking?.owner_id
+      ? booking?.gardener_id
+      : userId === booking?.gardener_id
+      ? booking?.owner_id
+      : null;
+
+  const reviewTargetProfile = reviewTargetId ? profilesById[reviewTargetId] : null;
+  const reviewTargetName =
+    reviewTargetProfile?.full_name?.trim() ||
+    (userId === booking?.owner_id ? "Gardener" : "Owner");
+
   const offersWithTrust = useMemo(() => {
     return offers.map((offer) => {
       const gardenerProfile = profilesById[offer.gardener_id];
+      const matchData = buildMatchData(req, gardenerProfile);
+
       return {
         ...offer,
         gardenerProfile,
@@ -330,9 +631,14 @@ export default function RequestDetailPage() {
         gardenerLocation: gardenerProfile?.location?.trim() || "",
         gardenerRating: formatRating(reviewStatsByUserId[offer.gardener_id]),
         gardenerSkillTags: buildSkillTags(gardenerProfile),
+        goodMatches: matchData.goodMatches,
+        missingSkills: matchData.missingSkills,
+        statusLabel: getStatusLabel(offer.status),
+        statusBadgeClass: getOfferStatusBadgeClass(offer.status),
+        formattedPrice: formatPrice(offer.proposed_price_gbp),
       };
     });
-  }, [offers, profilesById, reviewStatsByUserId]);
+  }, [offers, profilesById, reviewStatsByUserId, req]);
 
   if (loading) {
     return (
@@ -346,7 +652,7 @@ export default function RequestDetailPage() {
     return (
       <main className="min-h-screen p-6">
         <p>Request not found.</p>
-        {msg && <p className="mt-2">{msg}</p>}
+        {msg && <p className="mt-2 text-zinc-600">{msg}</p>}
       </main>
     );
   }
@@ -354,48 +660,57 @@ export default function RequestDetailPage() {
   return (
     <main className="min-h-screen p-6">
       <div className="mx-auto max-w-3xl space-y-6">
-        <a className="underline" href="/requests">
+        <a className="underline text-zinc-700" href="/requests">
           ← Back to requests
         </a>
 
-        <div className="rounded-2xl border p-6">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
           <div className="flex items-start gap-4">
             <Avatar profile={ownerProfile} fallback={ownerName} />
 
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-semibold">{req.title}</h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-semibold">{req.title}</h1>
 
-              <p className="mt-3 text-sm">
+                <span
+                  className={`rounded-full border px-2 py-1 text-xs font-medium ${requestStatusBadgeClass}`}
+                >
+                  {requestStatusLabel}
+                </span>
+              </div>
+
+              <p className="mt-3 text-sm text-zinc-700">
                 Owner:{" "}
                 <a href={`/users/${req.owner_id}`} className="underline">
                   {ownerName}
                 </a>
               </p>
 
-              <p className="mt-1 text-sm opacity-80">
-                Trust: {ownerRating}
-              </p>
+              <p className="mt-1 text-sm text-zinc-600">Trust: {ownerRating}</p>
 
               {ownerLocation && (
-                <p className="mt-1 text-sm opacity-80">
+                <p className="mt-1 text-sm text-zinc-600">
                   Location: {ownerLocation}
                 </p>
               )}
 
-              <p className="mt-3 text-sm opacity-80">
-                {req.postcode || "No postcode"} • {req.start_date} → {req.end_date}
+              <p className="mt-3 text-sm text-zinc-600">
+                {req.postcode || "No postcode"} • {formattedRequestDateRange}
               </p>
 
-              <p className="mt-2 text-sm opacity-80">Status: {String(req.status)}</p>
-
-              {canOpenChat && (
-                <a className="mt-3 inline-block underline" href={`/requests/${id}/chat`}>
-                  Open chat{unreadCount > 0 ? ` (${unreadCount} unread)` : ""}
-                </a>
+              {formattedRequestPrice && (
+                <p className="mt-2 text-sm text-zinc-600">
+                  Offered: {formattedRequestPrice}
+                </p>
               )}
 
-              {req.price_offered_gbp != null && (
-                <p className="mt-2 text-sm">Price offered: £{req.price_offered_gbp}</p>
+              {canOpenChat && (
+                <a
+                  className="mt-3 inline-block underline text-zinc-700"
+                  href={`/requests/${id}/chat`}
+                >
+                  Open chat{unreadCount > 0 ? ` (${unreadCount} unread)` : ""}
+                </a>
               )}
             </div>
           </div>
@@ -405,7 +720,7 @@ export default function RequestDetailPage() {
               {careTags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border px-2 py-1 text-xs"
+                  className="rounded-full border border-zinc-200 px-2 py-1 text-xs text-zinc-700"
                 >
                   {tag}
                 </span>
@@ -415,25 +730,207 @@ export default function RequestDetailPage() {
 
           {req.details && <p className="mt-4 whitespace-pre-wrap">{req.details}</p>}
 
-          {isOwner && String(req.status) === "accepted" && acceptedOffer && (
-            <button
-              onClick={() => bookAndPay(acceptedOffer.id)}
-              className="mt-4 rounded-xl bg-black px-4 py-2 text-white"
-            >
-              Book & Pay
-            </button>
-          )}
+          {isOwner &&
+            String(req.status) === "accepted" &&
+            acceptedOffer &&
+            !booking && (
+              <button
+                onClick={() => bookAndPay(acceptedOffer.id)}
+                className="mt-4 rounded-xl bg-black px-4 py-2 text-white"
+              >
+                Book and pay
+              </button>
+            )}
         </div>
 
+        {booking && (
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl font-semibold">Booking</h2>
+
+              <span
+                className={`rounded-full border px-2 py-1 text-xs font-medium ${bookingStatusBadgeClass}`}
+              >
+                {bookingStatusLabel}
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-2 text-sm text-zinc-600">
+              <p>
+                Gardener:{" "}
+                <a href={`/users/${booking.gardener_id}`} className="underline">
+                  {bookingGardenerName}
+                </a>
+              </p>
+
+              <p>Trust: {bookingGardenerRating}</p>
+
+              <p>Amount: {formatPrice(booking.amount_gbp) || "No amount"}</p>
+
+              <p>
+                Platform fee: {formatPrice(booking.platform_fee_gbp) || "No fee"}
+              </p>
+
+              <p>Payout status: {booking.payout_status || "unknown"}</p>
+
+              {booking.created_at && (
+                <p>Created: {formatDateTime(booking.created_at)}</p>
+              )}
+
+              {booking.completed_at && (
+                <p>Completed: {formatDateTime(booking.completed_at)}</p>
+              )}
+
+              {booking.payout_error && (
+                <p className="text-red-600">Payout error: {booking.payout_error}</p>
+              )}
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-3">
+              {isOwner && booking.status === "pending_payment" && acceptedOffer && (
+                <button
+                  onClick={() => bookAndPay(acceptedOffer.id)}
+                  className="rounded-xl bg-black px-4 py-2 text-white"
+                >
+                  Complete payment
+                </button>
+              )}
+
+              {isOwner && booking.status === "paid" && (
+                <button
+                  onClick={completeAndPayGardener}
+                  disabled={completingBooking}
+                  className="rounded-xl bg-black px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {completingBooking
+                    ? "Completing booking..."
+                    : "Complete booking and pay gardener"}
+                </button>
+              )}
+
+              {canOpenChat && (
+                <a
+                  href={`/requests/${id}/chat`}
+                  className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
+                >
+                  Open chat
+                </a>
+              )}
+            </div>
+
+            {booking.status === "completed" && (
+              <p className="mt-4 text-sm text-emerald-700">
+                This booking is complete.
+              </p>
+            )}
+          </div>
+        )}
+
+        {booking && booking.status === "completed" && (
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
+            <h2 className="text-xl font-semibold">Reviews</h2>
+
+            <div className="mt-4 space-y-4">
+              {bookingReviews.length === 0 ? (
+                <p className="text-sm text-zinc-600">
+                  No reviews have been left for this booking yet.
+                </p>
+              ) : (
+                bookingReviews.map((review) => {
+                  const reviewerProfile = profilesById[review.reviewer_id];
+                  const reviewerName =
+                    reviewerProfile?.full_name?.trim() || "User";
+
+                  return (
+                    <div
+                      key={review.id}
+                      className="rounded-xl border border-zinc-200 p-4"
+                    >
+                      <p className="text-sm text-zinc-700">
+                        Reviewer: {reviewerName}
+                      </p>
+                      <p className="mt-1 text-sm text-zinc-600">
+                        Rating: {review.rating} / 5
+                      </p>
+                      {review.comment && (
+                        <p className="mt-2 whitespace-pre-wrap text-zinc-800">
+                          {review.comment}
+                        </p>
+                      )}
+                      <p className="mt-2 text-xs text-zinc-500">
+                        {formatDateTime(review.created_at)}
+                      </p>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {canReview && !myBookingReview && (
+              <form onSubmit={submitReview} className="mt-6 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    Leave a review for {reviewTargetName}
+                  </h3>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    Leave an honest review of how it went.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-sm text-zinc-700">Rating</label>
+                  <select
+                    className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-zinc-900"
+                    value={reviewRating}
+                    onChange={(e) => setReviewRating(e.target.value)}
+                  >
+                    <option value="5">5 - Excellent</option>
+                    <option value="4">4 - Good</option>
+                    <option value="3">3 - Okay</option>
+                    <option value="2">2 - Poor</option>
+                    <option value="1">1 - Very poor</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-zinc-700">
+                    Comment (optional)
+                  </label>
+                  <textarea
+                    className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-zinc-900"
+                    rows={4}
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="How did it go?"
+                  />
+                </div>
+
+                <button
+                  disabled={reviewSubmitting}
+                  className="rounded-xl bg-black px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {reviewSubmitting ? "Submitting review..." : "Submit review"}
+                </button>
+              </form>
+            )}
+
+            {canReview && myBookingReview && (
+              <p className="mt-6 text-sm text-zinc-600">
+                You have already left a review for this booking.
+              </p>
+            )}
+          </div>
+        )}
+
         {canSubmitOffer && (
-          <div className="rounded-2xl border p-6">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
             <h2 className="text-xl font-semibold">Offer to help</h2>
 
             <form onSubmit={submitOffer} className="mt-4 space-y-3">
               <div>
-                <label className="text-sm">Message (optional)</label>
+                <label className="text-sm text-zinc-700">Message (optional)</label>
                 <textarea
-                  className="mt-1 w-full rounded-xl border p-2"
+                  className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-zinc-900"
                   value={offerMessage}
                   onChange={(e) => setOfferMessage(e.target.value)}
                   rows={4}
@@ -441,13 +938,22 @@ export default function RequestDetailPage() {
               </div>
 
               <div>
-                <label className="text-sm">Proposed price (£) (optional)</label>
+                <label className="text-sm text-zinc-700">
+                  Proposed price (£) (optional)
+                </label>
                 <input
-                  className="mt-1 w-full rounded-xl border p-2"
+                  className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-zinc-900"
+                  type="number"
+                  min="0.01"
+                  max="999999.99"
+                  step="0.01"
                   value={offerPrice}
                   onChange={(e) => setOfferPrice(e.target.value)}
                   inputMode="decimal"
                 />
+                <p className="mt-1 text-xs text-zinc-500">
+                  Maximum £999,999.99
+                </p>
               </div>
 
               <button className="rounded-xl bg-black px-4 py-2 text-white">
@@ -458,19 +964,26 @@ export default function RequestDetailPage() {
         )}
 
         {!isOwner && String(req.status) === "open" && myExistingOffer && (
-          <div className="rounded-2xl border p-6">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
             <h2 className="text-xl font-semibold">Your offer</h2>
 
-            <p className="mt-3 text-sm opacity-80">
+            <p className="mt-3 text-sm text-zinc-600">
               You already sent an offer for this request.
             </p>
 
-            <p className="mt-2 text-sm opacity-80">
-              Status: {myExistingOffer.status}
-              {myExistingOffer.proposed_price_gbp != null
-                ? ` • £${myExistingOffer.proposed_price_gbp}`
-                : ""}
-            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-zinc-600">
+              <span
+                className={`rounded-full border px-2 py-1 text-xs font-medium ${getOfferStatusBadgeClass(
+                  myExistingOffer.status
+                )}`}
+              >
+                {getStatusLabel(myExistingOffer.status)}
+              </span>
+
+              {myExistingOffer.proposed_price_gbp != null && (
+                <span>• {formatPrice(myExistingOffer.proposed_price_gbp)}</span>
+              )}
+            </div>
 
             {myExistingOffer.message && (
               <p className="mt-3 whitespace-pre-wrap">{myExistingOffer.message}</p>
@@ -479,32 +992,35 @@ export default function RequestDetailPage() {
         )}
 
         {isOwner && (
-          <div className="rounded-2xl border p-6">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
             <h2 className="text-xl font-semibold">Offers</h2>
 
             {offersWithTrust.length === 0 ? (
-              <p className="mt-3 text-sm opacity-80">No offers yet.</p>
+              <p className="mt-3 text-sm text-zinc-600">No offers yet.</p>
             ) : (
               <div className="mt-4 space-y-3">
                 {offersWithTrust.map((o) => (
-                  <div key={o.id} className="rounded-xl border p-4">
+                  <div
+                    key={o.id}
+                    className="rounded-xl border border-zinc-200 p-4"
+                  >
                     <div className="flex items-start gap-4">
                       <Avatar profile={o.gardenerProfile} fallback={o.gardenerName} />
 
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm">
+                        <p className="text-sm text-zinc-700">
                           Gardener:{" "}
                           <a href={`/users/${o.gardener_id}`} className="underline">
                             {o.gardenerName}
                           </a>
                         </p>
 
-                        <p className="mt-1 text-sm opacity-80">
+                        <p className="mt-1 text-sm text-zinc-600">
                           Trust: {o.gardenerRating}
                         </p>
 
                         {o.gardenerLocation && (
-                          <p className="mt-1 text-sm opacity-80">
+                          <p className="mt-1 text-sm text-zinc-600">
                             Location: {o.gardenerLocation}
                           </p>
                         )}
@@ -514,7 +1030,7 @@ export default function RequestDetailPage() {
                             {o.gardenerSkillTags.map((tag) => (
                               <span
                                 key={tag}
-                                className="rounded-full border px-2 py-1 text-xs"
+                                className="rounded-full border border-zinc-200 px-2 py-1 text-xs text-zinc-700"
                               >
                                 {tag}
                               </span>
@@ -522,10 +1038,31 @@ export default function RequestDetailPage() {
                           </div>
                         )}
 
-                        <p className="mt-2 text-sm opacity-80">
-                          Status: {o.status}
-                          {o.proposed_price_gbp != null ? ` • £${o.proposed_price_gbp}` : ""}
-                        </p>
+                        {(o.goodMatches.length > 0 || o.missingSkills.length > 0) && (
+                          <div className="mt-3 space-y-1 text-sm">
+                            {o.goodMatches.length > 0 && (
+                              <p className="text-zinc-600">
+                                Good match: {o.goodMatches.join(", ")}
+                              </p>
+                            )}
+
+                            {o.missingSkills.length > 0 && (
+                              <p className="text-zinc-500">
+                                Missing: {o.missingSkills.join(", ")}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-zinc-600">
+                          <span
+                            className={`rounded-full border px-2 py-1 text-xs font-medium ${o.statusBadgeClass}`}
+                          >
+                            {o.statusLabel}
+                          </span>
+
+                          {o.formattedPrice && <span>• {o.formattedPrice}</span>}
+                        </div>
 
                         {o.message && (
                           <p className="mt-2 whitespace-pre-wrap">{o.message}</p>
@@ -548,7 +1085,7 @@ export default function RequestDetailPage() {
           </div>
         )}
 
-        {msg && <p className="text-sm opacity-80">{msg}</p>}
+        {msg && <p className="text-sm text-zinc-600">{msg}</p>}
       </div>
     </main>
   );

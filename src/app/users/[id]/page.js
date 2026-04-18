@@ -35,15 +35,10 @@ export default function UserProfilePage() {
       setLoading(true);
       setMsg("");
 
-      const { data: userData, error: userErr } = await supabase.auth.getUser();
-      const user = userData?.user;
+            const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user || null;
 
-      if (userErr || !user) {
-        router.push("/login");
-        return;
-      }
-
-      setCurrentUserId(user.id);
+      setCurrentUserId(user?.id || null);
 
       const { data: profileData, error: profileErr } = await supabase
         .from("profiles")
