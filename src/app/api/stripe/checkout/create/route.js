@@ -19,12 +19,22 @@ function supabaseFromToken(token) {
   );
 }
 
+function moneyToPence(value) {
+  if (!Number.isFinite(value)) return null;
+  if (value <= 0) return null;
+  if (value > MAX_PRICE_GBP) return null;
+
+  const pence = Math.round(value * 100);
+
+  // Allow tiny JavaScript floating point wobble.
+  if (Math.abs(value * 100 - pence) > 0.000001) return null;
+
+  return pence;
+}
+
 function isValidMoneyAmount(value) {
-  if (!Number.isFinite(value)) return false;
-  if (value <= 0) return false;
-  if (value > MAX_PRICE_GBP) return false;
-  if (Math.round(value * 100) !== value * 100) return false;
-  return true;
+  const pence = moneyToPence(value);
+  return pence !== null && pence > 0 && pence <= MAX_STRIPE_AMOUNT_PENCE;
 }
 
 export async function POST(request) {
@@ -36,7 +46,10 @@ export async function POST(request) {
       );
     }
 
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+    ) {
       return Response.json(
         { error: "Server is missing Supabase environment variables" },
         { status: 500 }
@@ -129,9 +142,19 @@ export async function POST(request) {
       );
     }
 
-    let fee = Math.round(amount * 0.1 * 100) / 100;
+    const amountPenceForFee = moneyToPence(amount);
 
-    if (!isValidMoneyAmount(fee) && fee !== 0) {
+    if (amountPenceForFee === null) {
+      return Response.json(
+        { error: "Amount could not be converted safely for Checkout" },
+        { status: 400 }
+      );
+    }
+
+    const feePence = Math.round(amountPenceForFee * 0.1);
+    let fee = feePence / 100;
+
+    if (feePence < 0 || feePence > MAX_STRIPE_AMOUNT_PENCE) {
       return Response.json(
         { error: "Calculated platform fee is invalid." },
         { status: 400 }
@@ -212,9 +235,9 @@ export async function POST(request) {
       bookingId = booking.id;
     }
 
-    const amountPence = Math.round(amount * 100);
+    const amountPence = moneyToPence(amount);
 
-    if (!Number.isInteger(amountPence)) {
+    if (amountPence === null) {
       return Response.json(
         { error: "Amount could not be converted safely for Checkout" },
         { status: 400 }

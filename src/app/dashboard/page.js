@@ -38,6 +38,13 @@ function getStatusLabel(status) {
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
+function getRequestStatusBadgeClass(status) {
+  if (status === "open") return "bg-green-100 text-green-800 border-green-200";
+  if (status === "accepted") return "bg-amber-100 text-amber-800 border-amber-200";
+  if (status === "completed") return "bg-emerald-100 text-emerald-800 border-emerald-200";
+  return "bg-gray-100 text-gray-700 border-gray-200";
+}
+
 function getOfferStatusBadgeClass(status) {
   if (status === "pending") return "bg-gray-100 text-gray-700 border-gray-200";
   if (status === "accepted") return "bg-green-100 text-green-800 border-green-200";
@@ -64,12 +71,14 @@ function buildRequestTags(request) {
 
 export default function DashboardPage() {
   const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [userId, setUserId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
+  const [profileError, setProfileError] = useState("");
 
-    const [requests, setRequests] = useState([]);
+  const [requests, setRequests] = useState([]);
+
   const [requestsError, setRequestsError] = useState("");
   const [offerCountsByRequestId, setOfferCountsByRequestId] = useState({});
   const [acceptedOfferByRequestId, setAcceptedOfferByRequestId] = useState({});
@@ -101,10 +110,11 @@ export default function DashboardPage() {
       setEmail(currentUser.email ?? "");
       setUserId(currentUser.id ?? "");
 
-      const [
+            const [
         { data: requestRows, error: requestError },
         { data: offerRows, error: offerError },
         { data: unreadRows, error: unreadError },
+        { data: profileRow, error: profileLoadError },
       ] = await Promise.all([
         supabase
           .from("care_requests")
@@ -121,9 +131,24 @@ export default function DashboardPage() {
           .order("created_at", { ascending: false }),
 
         supabase.rpc("get_my_unread_request_counts"),
+
+        supabase
+          .from("profiles")
+          .select("id, full_name, stripe_account_id, stripe_onboarding_complete")
+          .eq("id", currentUser.id)
+          .maybeSingle(),
       ]);
 
       const safeRequests = requestRows ?? [];
+      const safeProfile = profileRow ?? null;
+
+      if (profileLoadError) {
+        setProfile(null);
+        setProfileError(profileLoadError.message);
+      } else {
+        setProfile(safeProfile);
+        setProfileError("");
+      }
 
       if (requestError) {
         setRequests([]);
@@ -167,7 +192,7 @@ export default function DashboardPage() {
         }
       }
 
-            if (unreadError) {
+      if (unreadError) {
         setUnreadCountsByRequestId({});
       } else {
         const safeUnreadRows = unreadRows ?? [];
@@ -227,7 +252,7 @@ export default function DashboardPage() {
     load();
   }, [router]);
 
-    async function logout() {
+  async function logout() {
     await supabase.auth.signOut();
     router.push("/login");
   }
@@ -301,9 +326,36 @@ export default function DashboardPage() {
     return offer.status === offerFilter;
   });
 
+  const displayName =
+    profile?.full_name?.trim() || email.split("@")[0] || "there";
+
+  const totalUnreadCount = Object.values(unreadCountsByRequestId).reduce(
+    (sum, count) => sum + Number(count || 0),
+    0
+  );
+
+  const openRequestsCount = requests.filter(
+    (request) => request.status === "open"
+  ).length;
+
+  const completedRequestsCount = requests.filter(
+    (request) => request.status === "completed"
+  ).length;
+
+  const closedRequestsCount = requests.filter(
+    (request) => request.status === "closed"
+  ).length;
+
+  const pendingOffersCount = offers.filter(
+    (offer) => offer.status === "pending"
+  ).length;
+
+  const payoutConnected = Boolean(profile?.stripe_onboarding_complete);
+  const profileReady = Boolean(profile?.full_name?.trim());
+
   if (loading) {
     return (
-      <main className="px-6 py-12">
+      <main className="min-h-screen bg-stone-50 px-6 py-12">
         <div className="mx-auto max-w-6xl">
           <div className="rounded-3xl border border-zinc-200 bg-white p-8 text-zinc-900 shadow-sm">
             <p className="text-sm text-zinc-500">Loading dashboard...</p>
@@ -314,81 +366,176 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="px-6 py-12">
+    <main className="min-h-screen bg-stone-50 px-6 py-12">
       <div className="mx-auto max-w-6xl space-y-8">
-        <section className="rounded-3xl border border-zinc-200 bg-white p-8 text-zinc-900 shadow-sm">
-          <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
-            Dashboard
-          </p>
+        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/60 p-8 text-zinc-900 shadow-[0_18px_50px_rgba(0,0,0,0.08)]">
+          <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-900/70">
+                Watch My Plot
+              </p>
 
-          <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
-            Welcome back
-          </h1>
+              <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
+                Welcome back, {displayName}
+              </h1>
 
-          <p className="mt-3 text-sm text-zinc-600">Logged in as: {email}</p>
+              <p className="mt-3 max-w-2xl text-sm text-zinc-600">
+                This is your Watch My Plot home base for both sides of the community:
+                post requests, track offers, jump into chats, and keep your profile and payout setup in order.
+              </p>
+
+              <p className="mt-3 text-sm text-zinc-500">Logged in as: {email}</p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  href="/requests"
+                  className="inline-block rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800"
+                >
+                  Browse requests
+                </Link>
+
+                <Link
+                  href="/requests/new"
+                  className="inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                >
+                  Post a request
+                </Link>
+
+                <Link
+                  href="/profile"
+                  className="inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                >
+                  Edit profile
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-emerald-100 bg-white/80 p-5 shadow-sm backdrop-blur">
+              <p className="text-sm font-medium text-zinc-900">
+                Profile and payouts
+              </p>
+
+              <p className="mt-2 text-sm text-zinc-600">
+                Keep both your public profile and payout setup in good shape so owners can book you confidently.
+              </p>
+
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
+                  <div>
+                    <p className="text-sm font-medium text-zinc-900">Public profile</p>
+                    <p className="text-xs text-zinc-500">
+                      {profileReady ? "Basic profile details added" : "Add your name and details"}
+                    </p>
+                  </div>
+
+                  <span
+                    className={`rounded-full border px-2 py-1 text-xs font-medium ${
+                      profileReady
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-amber-200 bg-amber-50 text-amber-700"
+                    }`}
+                  >
+                    {profileReady ? "Ready" : "Needs work"}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
+                  <div>
+                    <p className="text-sm font-medium text-zinc-900">Payout setup</p>
+                    <p className="text-xs text-zinc-500">
+                      {payoutConnected ? "Stripe payouts connected" : "Finish Stripe payout setup"}
+                    </p>
+                  </div>
+
+                  <span
+                    className={`rounded-full border px-2 py-1 text-xs font-medium ${
+                      payoutConnected
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-amber-200 bg-amber-50 text-amber-700"
+                    }`}
+                  >
+                    {payoutConnected ? "Connected" : "Needed"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link
+                  href="/profile"
+                  className="inline-block rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800"
+                >
+                  Manage profile
+                </Link>
+
+                <Link
+                  href={`/users/${userId}`}
+                  className="inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                >
+                  View public profile
+                </Link>
+              </div>
+
+              {profileError && (
+                <p className="mt-3 text-sm text-amber-700">
+                  Could not load profile status: {profileError}
+                </p>
+              )}
+            </div>
+          </div>
         </section>
 
-        
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900 shadow-sm">
-            <h2 className="text-lg font-semibold">Browse care requests</h2>
-            <p className="mt-2 text-sm text-zinc-600">
-              Look through live requests and find jobs that suit your skills.
+
+                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-[1.5rem] border border-emerald-100 bg-white p-6 text-zinc-900 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-emerald-800/70">
+              Owner side
             </p>
-
-            <Link
-              href="/requests"
-              className="mt-4 inline-block rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
-            >
-              Open requests
-            </Link>
+            <p className="mt-3 text-sm text-zinc-500">Your requests</p>
+            <p className="mt-2 text-3xl font-semibold">{requests.length}</p>
+            <p className="mt-2 text-sm text-zinc-600">
+              {openRequestsCount} open • {acceptedOwnerRequests.length} live •{" "}
+              {completedRequestsCount} completed • {closedRequestsCount} closed
+            </p>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900 shadow-sm">
-            <h2 className="text-lg font-semibold">Your public profile</h2>
-            <p className="mt-2 text-sm text-zinc-600">
-              See how owners will view your profile, reviews, and trust signals.
+          <div className="rounded-[1.5rem] border border-sky-100 bg-white p-6 text-zinc-900 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-sky-800/70">
+              Gardener side
             </p>
-
-            <Link
-              href={`/users/${userId}`}
-              className="mt-4 inline-block rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
-            >
-              View profile
-            </Link>
+            <p className="mt-3 text-sm text-zinc-500">Your offers</p>
+            <p className="mt-2 text-3xl font-semibold">{offers.length}</p>
+            <p className="mt-2 text-sm text-zinc-600">
+              {pendingOffersCount} pending • {acceptedGardenerOffers.length} accepted
+            </p>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900 shadow-sm">
-            <h2 className="text-lg font-semibold">Create a request</h2>
-            <p className="mt-2 text-sm text-zinc-600">
-              Post a new care request for your garden, veg beds, greenhouse, or pots.
+          <div className="rounded-[1.5rem] border border-amber-100 bg-white p-6 text-zinc-900 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-amber-800/70">
+              In progress
             </p>
-
-            <Link
-              href="/requests/new"
-              className="mt-4 inline-block rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
-            >
-              Post a request
-            </Link>
+            <p className="mt-3 text-sm text-zinc-500">Live work</p>
+            <p className="mt-2 text-3xl font-semibold">
+              {acceptedOwnerRequests.length + acceptedGardenerOffers.length}
+            </p>
+            <p className="mt-2 text-sm text-zinc-600">
+              Accepted requests and jobs currently in progress.
+            </p>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900 shadow-sm">
-            <h2 className="text-lg font-semibold">Account</h2>
-            <p className="mt-2 text-sm text-zinc-600">
-              Sign out securely when you’re done.
+          <div className="rounded-[1.5rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
+              Messages
             </p>
-
-            <button
-              onClick={logout}
-              className="mt-4 rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
-            >
-              Log out
-            </button>
+            <p className="mt-3 text-sm text-zinc-500">Unread chats</p>
+            <p className="mt-2 text-3xl font-semibold">{totalUnreadCount}</p>
+            <p className="mt-2 text-sm text-zinc-600">
+              Messages waiting across your active requests and jobs.
+            </p>
           </div>
         </section>
 
-                <section className="rounded-3xl border border-zinc-200 bg-white p-8 text-zinc-900 shadow-sm">
+        <section className="rounded-[2rem] border border-stone-200 bg-white/95 p-8 text-zinc-900 shadow-[0_12px_35px_rgba(0,0,0,0.06)]">
           <div className="flex flex-col gap-2">
             <h2 className="text-xl font-semibold">Live work</h2>
             <p className="text-sm text-zinc-600">
@@ -397,7 +544,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+            <div className="rounded-[1.5rem] border border-stone-200 bg-white p-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-semibold text-zinc-900">
@@ -415,10 +562,19 @@ export default function DashboardPage() {
               </div>
 
               {acceptedOwnerRequests.length === 0 ? (
-                <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 p-4">
-                  <p className="text-sm text-zinc-600">
+                <div className="mt-4 rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-4">
+                  <p className="text-sm font-medium text-zinc-700">
                     No accepted requests yet.
                   </p>
+                  <p className="mt-2 text-sm text-zinc-500">
+                    When someone accepts one of your offers, it will appear here for quick access.
+                  </p>
+                  <Link
+                    href="/requests/new"
+                    className="mt-3 inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-100"
+                  >
+                    Post a request
+                  </Link>
                 </div>
               ) : (
                 <div className="mt-4 space-y-3">
@@ -466,15 +622,15 @@ export default function DashboardPage() {
                             >
                               {payingOfferId === acceptedOffer.id
                                 ? "Creating checkout..."
-                                : "Book & Pay"}
+                                : "Book and pay"}
                             </button>
                           )}
 
-                                                  {paymentError && (
-                          <p className="mt-3 text-sm text-red-600">
-                            {paymentError}
-                          </p>
-                        )}
+                          {paymentError && (
+                            <p className="mt-3 text-sm text-red-600">
+                              {paymentError}
+                            </p>
+                          )}
 
                           <Link
                             href={`/requests/${request.id}`}
@@ -490,7 +646,7 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+            <div className="rounded-[1.5rem] border border-stone-200 bg-white p-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-semibold text-zinc-900">
@@ -508,10 +664,19 @@ export default function DashboardPage() {
               </div>
 
               {acceptedGardenerOffers.length === 0 ? (
-                <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 p-4">
-                  <p className="text-sm text-zinc-600">
+                <div className="mt-4 rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-4">
+                  <p className="text-sm font-medium text-zinc-700">
                     No accepted jobs yet.
                   </p>
+                  <p className="mt-2 text-sm text-zinc-500">
+                    Accepted gardening jobs will show here so you can jump straight into live work.
+                  </p>
+                  <Link
+                    href="/requests"
+                    className="mt-3 inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-100"
+                  >
+                    Browse requests
+                  </Link>
                 </div>
               ) : (
                 <div className="mt-4 space-y-3">
@@ -571,9 +736,9 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-zinc-200 bg-white p-8 text-zinc-900 shadow-sm">
-          
-                    <div className="flex flex-col gap-4">
+        <section className="rounded-[2rem] border border-stone-200 bg-white/95 p-8 text-zinc-900 shadow-[0_12px_35px_rgba(0,0,0,0.06)]">
+
+          <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-semibold">Your requests</h2>
@@ -591,46 +756,52 @@ export default function DashboardPage() {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setRequestFilter("all")}
-                className={`rounded-full border px-3 py-1 text-sm ${
-                  requestFilter === "all"
+                className={`rounded-full border px-3 py-1 text-sm ${requestFilter === "all"
                     ? "border-black bg-black text-white"
                     : "border-zinc-300 text-zinc-700"
-                }`}
+                  }`}
               >
                 All
               </button>
 
               <button
                 onClick={() => setRequestFilter("open")}
-                className={`rounded-full border px-3 py-1 text-sm ${
-                  requestFilter === "open"
+                className={`rounded-full border px-3 py-1 text-sm ${requestFilter === "open"
                     ? "border-black bg-black text-white"
                     : "border-zinc-300 text-zinc-700"
-                }`}
+                  }`}
               >
                 Open
               </button>
 
               <button
                 onClick={() => setRequestFilter("accepted")}
-                className={`rounded-full border px-3 py-1 text-sm ${
-                  requestFilter === "accepted"
+                className={`rounded-full border px-3 py-1 text-sm ${requestFilter === "accepted"
                     ? "border-black bg-black text-white"
                     : "border-zinc-300 text-zinc-700"
-                }`}
+                  }`}
               >
                 Accepted
               </button>
 
               <button
                 onClick={() => setRequestFilter("completed")}
-                className={`rounded-full border px-3 py-1 text-sm ${
-                  requestFilter === "completed"
+                className={`rounded-full border px-3 py-1 text-sm ${requestFilter === "completed"
                     ? "border-black bg-black text-white"
                     : "border-zinc-300 text-zinc-700"
-                }`}
+                  }`}
               >
                 Completed
+              </button>
+
+              <button
+                onClick={() => setRequestFilter("closed")}
+                className={`rounded-full border px-3 py-1 text-sm ${requestFilter === "closed"
+                    ? "border-black bg-black text-white"
+                    : "border-zinc-300 text-zinc-700"
+                  }`}
+              >
+                Closed
               </button>
             </div>
           </div>
@@ -640,13 +811,19 @@ export default function DashboardPage() {
               Could not load your requests: {requestsError}
             </p>
           ) : filteredRequests.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 p-6">
-              <p className="text-sm text-zinc-600">
+            <div className="mt-6 rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-6">
+              <p className="text-sm font-medium text-zinc-700">
                 No requests match this filter.
               </p>
               <p className="mt-2 text-sm text-zinc-500">
-                Try another status or create a new request.
+                Try another status or post a new request to get work started.
               </p>
+              <Link
+                href="/requests/new"
+                className="mt-4 inline-block rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+              >
+                Post a request
+              </Link>
             </div>
           ) : (
             <div className="mt-6 space-y-4">
@@ -658,7 +835,7 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={request.id}
-                    className="rounded-2xl border border-zinc-200 bg-white p-5"
+                    className="rounded-[1.5rem] border border-stone-200 bg-white p-5"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
@@ -671,9 +848,15 @@ export default function DashboardPage() {
                           {formatDateRange(request.start_date, request.end_date)}
                         </p>
 
-                        <p className="mt-1 text-sm text-zinc-500">
-                          Status: {getStatusLabel(request.status)}
-                        </p>
+                        <div className="mt-2">
+                          <span
+                            className={`rounded-full border px-2 py-1 text-xs font-medium ${getRequestStatusBadgeClass(
+                              request.status
+                            )}`}
+                          >
+                            {getStatusLabel(request.status)}
+                          </span>
+                        </div>
                       </div>
 
                       <div className="sm:text-right">
@@ -706,13 +889,31 @@ export default function DashboardPage() {
                       </div>
                     )}
 
-                                        <div className="mt-4 flex flex-wrap gap-3">
+                    <div className="mt-4 flex flex-wrap gap-3">
                       <Link
                         href={`/requests/${request.id}`}
                         className="inline-block rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
                       >
                         View request
                       </Link>
+
+                      {request.status === "open" && (
+                        <Link
+                          href={`/requests/${request.id}/edit`}
+                          className="inline-block rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
+                        >
+                          Edit request
+                        </Link>
+                      )}
+
+                      {request.status === "closed" && (
+                        <Link
+                          href={`/requests/${request.id}`}
+                          className="inline-block rounded-xl border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700"
+                        >
+                          Reopen request
+                        </Link>
+                      )}
 
                       {request.status === "accepted" && (
                         <Link
@@ -730,7 +931,7 @@ export default function DashboardPage() {
           )}
         </section>
 
-        <section className="rounded-3xl border border-zinc-200 bg-white p-8 text-zinc-900 shadow-sm">
+        <section className="rounded-[2rem] border border-stone-200 bg-white/95 p-8 text-zinc-900 shadow-[0_12px_35px_rgba(0,0,0,0.06)]">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -749,44 +950,40 @@ export default function DashboardPage() {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setOfferFilter("all")}
-                className={`rounded-full border px-3 py-1 text-sm ${
-                  offerFilter === "all"
+                className={`rounded-full border px-3 py-1 text-sm ${offerFilter === "all"
                     ? "border-black bg-black text-white"
                     : "border-zinc-300 text-zinc-700"
-                }`}
+                  }`}
               >
                 All
               </button>
 
               <button
                 onClick={() => setOfferFilter("pending")}
-                className={`rounded-full border px-3 py-1 text-sm ${
-                  offerFilter === "pending"
+                className={`rounded-full border px-3 py-1 text-sm ${offerFilter === "pending"
                     ? "border-black bg-black text-white"
                     : "border-zinc-300 text-zinc-700"
-                }`}
+                  }`}
               >
                 Pending
               </button>
 
               <button
                 onClick={() => setOfferFilter("accepted")}
-                className={`rounded-full border px-3 py-1 text-sm ${
-                  offerFilter === "accepted"
+                className={`rounded-full border px-3 py-1 text-sm ${offerFilter === "accepted"
                     ? "border-black bg-black text-white"
                     : "border-zinc-300 text-zinc-700"
-                }`}
+                  }`}
               >
                 Accepted
               </button>
 
               <button
                 onClick={() => setOfferFilter("rejected")}
-                className={`rounded-full border px-3 py-1 text-sm ${
-                  offerFilter === "rejected"
+                className={`rounded-full border px-3 py-1 text-sm ${offerFilter === "rejected"
                     ? "border-black bg-black text-white"
                     : "border-zinc-300 text-zinc-700"
-                }`}
+                  }`}
               >
                 Rejected
               </button>
@@ -798,13 +995,19 @@ export default function DashboardPage() {
               Could not load your offers: {offersError}
             </p>
           ) : filteredOffers.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 p-6">
-              <p className="text-sm text-zinc-600">
+            <div className="mt-6 rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-6">
+              <p className="text-sm font-medium text-zinc-700">
                 No offers match this filter.
               </p>
               <p className="mt-2 text-sm text-zinc-500">
                 Try another status or browse requests and send a new offer.
               </p>
+              <Link
+                href="/requests"
+                className="mt-4 inline-block rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+              >
+                Browse requests
+              </Link>
             </div>
           ) : (
             <div className="mt-6 space-y-4">
@@ -815,7 +1018,7 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={offer.id}
-                    className="rounded-2xl border border-zinc-200 bg-white p-5"
+                    className="rounded-[1.5rem] border border-stone-200 bg-white p-5"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
@@ -889,13 +1092,59 @@ export default function DashboardPage() {
         </section>
 
 
-        <section className="rounded-3xl border border-zinc-200 bg-white p-8 text-zinc-900 shadow-sm">
-          <h2 className="text-xl font-semibold">What this page is for</h2>
-          <p className="mt-3 max-w-3xl text-sm text-zinc-600">
-            This is your signed-in home base. It now shows the requests you’ve
-            posted and the offers you’ve sent, so both sides of the marketplace
-            have a clear place to check their activity.
-          </p>
+        <section className="rounded-[2rem] border border-stone-200 bg-white/95 p-8 text-zinc-900 shadow-[0_12px_35px_rgba(0,0,0,0.06)]">
+          <div className="flex flex-col gap-3">
+            <h2 className="text-xl font-semibold">Quick links</h2>
+            <p className="text-sm text-zinc-600">
+              A few useful shortcuts for keeping your account in good shape.
+            </p>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-[1.5rem] border border-stone-200 p-5">
+              <h3 className="text-base font-semibold">Profile and payouts</h3>
+              <p className="mt-2 text-sm text-zinc-600">
+                {payoutConnected
+                  ? "Your payout setup is connected and ready."
+                  : "Finish your profile and payout setup before taking on paid work."}
+              </p>
+
+              <Link
+                href="/profile"
+                className="mt-4 inline-block rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+              >
+                Manage profile
+              </Link>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-stone-200 p-5">
+              <h3 className="text-base font-semibold">Your public profile</h3>
+              <p className="mt-2 text-sm text-zinc-600">
+                See your profile the same way owners and gardeners will see it.
+              </p>
+
+              <Link
+                href={`/users/${userId}`}
+                className="mt-4 inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+              >
+                View public profile
+              </Link>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-stone-200 p-5">
+              <h3 className="text-base font-semibold">Account</h3>
+              <p className="mt-2 text-sm text-zinc-600">
+                Sign out securely when you’re done.
+              </p>
+
+              <button
+                onClick={logout}
+                className="mt-4 rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+              >
+                Log out
+              </button>
+            </div>
+          </div>
         </section>
       </div>
     </main>

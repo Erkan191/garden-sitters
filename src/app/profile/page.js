@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -17,6 +18,26 @@ function buildSkillTags(profile) {
   if (profile.skill_seedlings) tags.push("Seedlings / young plants");
 
   return tags;
+}
+
+function SkillCheckbox({ checked, onChange, label, helper }) {
+  return (
+    <label className="rounded-[1.25rem] border border-stone-200 bg-stone-50/70 p-4 text-sm text-zinc-700">
+      <div className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={onChange}
+          className="mt-1 accent-emerald-900"
+        />
+
+        <div>
+          <p className="font-medium text-zinc-900">{label}</p>
+          {helper && <p className="mt-1 text-xs leading-5 text-zinc-500">{helper}</p>}
+        </div>
+      </div>
+    </label>
+  );
 }
 
 export default function MyProfilePage() {
@@ -75,7 +96,7 @@ export default function MyProfilePage() {
           skill_harvesting,
           skill_greenhouse,
           skill_veg_beds,
-                    skill_pots,
+          skill_pots,
           skill_seedlings,
           stripe_account_id,
           stripe_onboarding_complete
@@ -117,6 +138,7 @@ export default function MyProfilePage() {
     if (stripeState === "return" || stripeState === "refresh") {
       refreshStripeStatus();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   async function getAccessToken() {
@@ -272,54 +294,300 @@ export default function MyProfilePage() {
     skillSeedlings,
   ]);
 
+  const displayName = fullName.trim() || "Your name";
+  const displayLocation = location.trim() || "Your area";
+  const displayBio =
+    bio.trim() ||
+    "Tell owners and gardeners a bit about your growing experience, what you’re comfortable helping with, and why people can trust you.";
+
+  const inputClass =
+    "mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:bg-white";
+
+  const labelClass = "text-sm font-medium text-zinc-700";
+
   return (
-    <main className="min-h-screen p-6">
-      <div className="mx-auto max-w-2xl space-y-4">
-        <a href="/dashboard" className="underline">
+    <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Link
+          href="/dashboard"
+          className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"
+        >
           ← Back to dashboard
-        </a>
+        </Link>
 
-        <div className="rounded-2xl border p-6">
-          <h1 className="text-2xl font-semibold">Your profile</h1>
-
-          {loading ? (
-            <p className="mt-4">Loading...</p>
-          ) : (
-            <>
-              {msg && <p className="mt-4">{msg}</p>}
-
-              <p className="mt-4 text-sm opacity-70">
-                Signed in as: {email || "Unknown email"}
+        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                Your profile
               </p>
 
-              <div className="mt-6 rounded-2xl border p-4">
-                <p className="text-sm font-medium">Stripe payouts</p>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+                Build trust before people book you.
+              </h1>
 
-                <p className="mt-2 text-sm opacity-80">
-                  {stripeOnboardingComplete
-                    ? "Payouts connected ✅"
-                    : stripeAccountId
-                      ? "Stripe account created, but onboarding is not complete yet."
-                      : "You have not connected Stripe yet."}
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
+                Your public profile is what owners and gardeners see before deciding
+                whether to work with you. Add a clear bio, location, skills, and payout
+                setup if you want to receive payments.
+              </p>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-emerald-100 bg-white/75 p-4 shadow-sm">
+              <p className="text-sm font-medium text-zinc-900">
+                Signed in as
+              </p>
+              <p className="mt-1 break-all text-sm leading-6 text-zinc-600">
+                {email || "Unknown email"}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {loading ? (
+          <div className="rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+            Loading profile...
+          </div>
+        ) : (
+          <form
+            onSubmit={saveProfile}
+            className="grid gap-6 lg:grid-cols-[1fr_0.42fr] lg:items-start"
+          >
+            <section className="space-y-6 rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+              <div>
+                <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                  Profile details
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+                  Tell people who you are
+                </h2>
+              </div>
+
+              {msg && (
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-zinc-600">
+                  {msg}
+                </div>
+              )}
+
+              <div>
+                <label className={labelClass}>Name</label>
+                <input
+                  className={inputClass}
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Your name"
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Location</label>
+                <input
+                  className={inputClass}
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Town or area"
+                />
+                <p className="mt-1 text-xs text-zinc-500">
+                  Keep it broad, like Enfield, Palmers Green, or North London.
+                </p>
+              </div>
+
+              <div>
+                <label className={labelClass}>Profile photo URL</label>
+                <input
+                  className={inputClass}
+                  type="text"
+                  value={avatarUrl}
+                  onChange={(e) => setAvatarUrl(e.target.value)}
+                  placeholder="https://..."
+                />
+                <p className="mt-1 text-xs text-zinc-500">
+                  For now this uses an image URL. Proper uploads can come later.
+                </p>
+              </div>
+
+              <div>
+                <label className={labelClass}>Bio</label>
+                <textarea
+                  className={`${inputClass} min-h-36 resize-y leading-6`}
+                  rows={6}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell people a bit about yourself and your gardening experience."
+                />
+              </div>
+
+              <div className="rounded-[1.5rem] border border-stone-200 bg-white p-4">
+                <p className="text-sm font-medium text-zinc-900">
+                  Gardening skills
+                </p>
+                <p className="mt-1 text-sm leading-6 text-zinc-600">
+                  These help owners understand whether you’re a good fit for specific
+                  care requests.
                 </p>
 
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <SkillCheckbox
+                    checked={skillWatering}
+                    onChange={(e) => setSkillWatering(e.target.checked)}
+                    label="Watering"
+                    helper="Beds, pots, greenhouses, and general plant care."
+                  />
+
+                  <SkillCheckbox
+                    checked={skillHarvesting}
+                    onChange={(e) => setSkillHarvesting(e.target.checked)}
+                    label="Harvesting"
+                    helper="Picking crops at the right time so plants keep producing."
+                  />
+
+                  <SkillCheckbox
+                    checked={skillGreenhouse}
+                    onChange={(e) => setSkillGreenhouse(e.target.checked)}
+                    label="Greenhouse"
+                    helper="Vents, watering routines, tomatoes, cucumbers, seedlings."
+                  />
+
+                  <SkillCheckbox
+                    checked={skillVegBeds}
+                    onChange={(e) => setSkillVegBeds(e.target.checked)}
+                    label="Veg beds"
+                    helper="Raised beds, allotment-style plots, and productive beds."
+                  />
+
+                  <SkillCheckbox
+                    checked={skillPots}
+                    onChange={(e) => setSkillPots(e.target.checked)}
+                    label="Pots / containers"
+                    helper="Containers that dry out quickly in warmer weather."
+                  />
+
+                  <SkillCheckbox
+                    checked={skillSeedlings}
+                    onChange={(e) => setSkillSeedlings(e.target.checked)}
+                    label="Seedlings / young plants"
+                    helper="Small plants that need careful checking."
+                  />
+                </div>
+
+                {previewTags.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {previewTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-stone-200 bg-stone-50 px-2 py-1 text-xs text-zinc-700"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {saving ? "Saving..." : "Save profile"}
+              </button>
+            </section>
+
+            <aside className="space-y-4 lg:sticky lg:top-6">
+              <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+                <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                  Public preview
+                </p>
+
+                <div className="mt-4 flex items-start gap-4">
+                  {avatarUrl.trim() !== "" ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Profile preview"
+                      className="h-20 w-20 rounded-full border border-stone-200 bg-stone-100 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-20 w-20 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 text-2xl font-semibold text-emerald-900">
+                      {displayName.slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+
+                  <div className="min-w-0">
+                    <h2 className="text-xl font-semibold text-zinc-900">
+                      {displayName}
+                    </h2>
+                    <p className="mt-1 text-sm text-zinc-600">
+                      {displayLocation}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-4 whitespace-pre-wrap rounded-[1.25rem] border border-stone-200 bg-stone-50/70 p-4 text-sm leading-6 text-zinc-700">
+                  {displayBio}
+                </p>
+
+                {previewTags.length > 0 ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {previewTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-stone-200 bg-white px-2 py-1 text-xs text-zinc-700"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-zinc-500">
+                    Select skills to show them here.
+                  </p>
+                )}
+              </section>
+
+              <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+                <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                  Stripe payouts
+                </p>
+
+                <h2 className="mt-1 text-xl font-semibold text-zinc-900">
+                  Get paid for completed jobs
+                </h2>
+
+                <p className="mt-3 text-sm leading-6 text-zinc-600">
+                  {stripeOnboardingComplete
+                    ? "Payouts are connected. You can receive payments when bookings are completed."
+                    : stripeAccountId
+                      ? "Your Stripe account exists, but onboarding is not complete yet."
+                      : "Connect Stripe if you want to receive payouts as a gardener."}
+                </p>
+
+                {stripeOnboardingComplete && (
+                  <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm font-medium text-emerald-900">
+                    Payouts connected ✅
+                  </div>
+                )}
+
                 {stripeAccountId && (
-                  <p className="mt-2 break-all text-xs opacity-60">
+                  <p className="mt-3 break-all text-xs text-zinc-500">
                     Stripe account: {stripeAccountId}
                   </p>
                 )}
 
                 {stripeMsg && (
-                  <p className="mt-3 text-sm">{stripeMsg}</p>
+                  <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm leading-6 text-zinc-600">
+                    {stripeMsg}
+                  </div>
                 )}
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-5 flex flex-col gap-2">
                   {!stripeOnboardingComplete && (
                     <button
                       type="button"
                       onClick={startStripeOnboarding}
                       disabled={stripeLoading}
-                      className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-60"
+                      className="rounded-xl bg-emerald-900 px-4 py-3 text-sm font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {stripeLoading
                         ? "Please wait..."
@@ -334,154 +602,16 @@ export default function MyProfilePage() {
                       type="button"
                       onClick={refreshStripeStatus}
                       disabled={stripeLoading}
-                      className="rounded-xl border px-4 py-2 disabled:opacity-60"
+                      className="rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-zinc-900 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Refresh Stripe status
                     </button>
                   )}
                 </div>
-              </div>
-
-              <form onSubmit={saveProfile} className="mt-6 space-y-4">
-                <div>
-                  <label className="text-sm">Name</label>
-                  <input
-                    className="mt-1 w-full rounded-xl border p-2"
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Your name"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm">Location</label>
-                  <input
-                    className="mt-1 w-full rounded-xl border p-2"
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Town or area"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm">Profile photo URL</label>
-                  <input
-                    className="mt-1 w-full rounded-xl border p-2"
-                    type="text"
-                    value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    placeholder="https://..."
-                  />
-                </div>
-
-                {avatarUrl.trim() !== "" && (
-                  <div className="rounded-2xl border p-4">
-                    <p className="mb-3 text-sm opacity-70">Preview</p>
-                    <img
-                      src={avatarUrl}
-                      alt="Profile preview"
-                      className="h-24 w-24 rounded-full border object-cover"
-                    />
-                  </div>
-                )}
-
-                <div className="rounded-2xl border p-4">
-                  <p className="text-sm font-medium">Gardening skills</p>
-
-                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={skillWatering}
-                        onChange={(e) => setSkillWatering(e.target.checked)}
-                      />
-                      Watering
-                    </label>
-
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={skillHarvesting}
-                        onChange={(e) => setSkillHarvesting(e.target.checked)}
-                      />
-                      Harvesting
-                    </label>
-
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={skillGreenhouse}
-                        onChange={(e) => setSkillGreenhouse(e.target.checked)}
-                      />
-                      Greenhouse
-                    </label>
-
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={skillVegBeds}
-                        onChange={(e) => setSkillVegBeds(e.target.checked)}
-                      />
-                      Veg beds
-                    </label>
-
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={skillPots}
-                        onChange={(e) => setSkillPots(e.target.checked)}
-                      />
-                      Pots / containers
-                    </label>
-
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={skillSeedlings}
-                        onChange={(e) => setSkillSeedlings(e.target.checked)}
-                      />
-                      Seedlings / young plants
-                    </label>
-                  </div>
-
-                  {previewTags.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {previewTags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border px-2 py-1 text-xs"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-sm">Bio</label>
-                  <textarea
-                    className="mt-1 w-full rounded-xl border p-2"
-                    rows={5}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Tell people a bit about yourself and your gardening experience"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-60"
-                >
-                  {saving ? "Saving..." : "Save profile"}
-                </button>
-              </form>
-            </>
-          )}
-        </div>
+              </section>
+            </aside>
+          </form>
+        )}
       </div>
     </main>
   );

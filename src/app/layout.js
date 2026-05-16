@@ -13,22 +13,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Garden Sitters",
+  title: "Watch My Plot",
   description:
-    "Find local gardeners to care for your plants and veg while you're away.",
+    "Find growers and gardeners to look after veg beds, greenhouses, pots, and gardens while you're away.",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-zinc-50 text-black antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} bg-stone-50 text-zinc-900 antialiased`}
       >
         <div className="min-h-screen">
-          <header className="border-b border-zinc-200 bg-white text-zinc-900">
+          <header className="border-b border-stone-200 bg-white/90 text-zinc-900 backdrop-blur">
             <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
               <Link href="/" className="text-xl font-semibold text-zinc-900">
-                Garden Sitters
+                Watch My Plot
               </Link>
 
               <nav className="flex items-center gap-4 text-sm text-zinc-700">
@@ -53,10 +53,9 @@ export default function RootLayout({ children }) {
 
           <div>{children}</div>
 
-          <footer className="mt-16 border-t border-zinc-200 bg-white">
+          <footer className="mt-16 border-t border-stone-200 bg-white/90">
             <div className="mx-auto max-w-6xl px-6 py-6 text-sm text-zinc-500">
-              Garden Sitters — local gardeners helping gardeners while they’re
-              away.
+              Watch My Plot — growers helping growers keep plots, veg beds, greenhouses, and gardens thriving while they’re away.
             </div>
           </footer>
         </div>

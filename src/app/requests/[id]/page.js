@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -43,7 +44,7 @@ function Avatar({ profile, fallback, size = 56 }) {
         alt={safeFallback}
         width={size}
         height={size}
-        className="shrink-0 rounded-full border object-cover bg-gray-100"
+        className="shrink-0 rounded-full border border-stone-200 bg-stone-100 object-cover"
         style={{ width: size, height: size }}
       />
     );
@@ -51,7 +52,7 @@ function Avatar({ profile, fallback, size = 56 }) {
 
   return (
     <div
-      className="flex shrink-0 items-center justify-center rounded-full border bg-gray-100 font-semibold text-black"
+      className="flex shrink-0 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 font-semibold text-emerald-900"
       style={{ width: size, height: size }}
     >
       {safeFallback.slice(0, 1).toUpperCase()}
@@ -149,10 +150,11 @@ function formatPrice(value) {
 }
 
 function getStatusBadgeClass(status) {
-  if (status === "open") return "bg-green-100 text-green-800 border-green-200";
-  if (status === "accepted") return "bg-amber-100 text-amber-800 border-amber-200";
-  if (status === "completed") return "bg-emerald-100 text-emerald-800 border-emerald-200";
-  return "bg-gray-100 text-gray-700 border-gray-200";
+  if (status === "open") return "bg-emerald-50 text-emerald-800 border-emerald-100";
+  if (status === "accepted") return "bg-amber-50 text-amber-800 border-amber-100";
+  if (status === "completed") return "bg-stone-100 text-stone-700 border-stone-200";
+  if (status === "closed") return "bg-zinc-100 text-zinc-600 border-zinc-200";
+  return "bg-stone-100 text-stone-700 border-stone-200";
 }
 
 function getStatusLabel(status) {
@@ -161,24 +163,24 @@ function getStatusLabel(status) {
 }
 
 function getOfferStatusBadgeClass(status) {
-  if (status === "pending") return "bg-gray-100 text-gray-700 border-gray-200";
-  if (status === "accepted") return "bg-green-100 text-green-800 border-green-200";
-  if (status === "rejected") return "bg-red-100 text-red-800 border-red-200";
-  return "bg-gray-100 text-gray-700 border-gray-200";
+  if (status === "pending") return "bg-stone-100 text-stone-700 border-stone-200";
+  if (status === "accepted") return "bg-emerald-50 text-emerald-800 border-emerald-100";
+  if (status === "rejected") return "bg-red-50 text-red-700 border-red-100";
+  return "bg-stone-100 text-stone-700 border-stone-200";
 }
-
 function getBookingStatusBadgeClass(status) {
   if (status === "pending_payment") {
-    return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    return "bg-amber-50 text-amber-800 border-amber-100";
   }
   if (status === "paid") {
-    return "bg-blue-100 text-blue-800 border-blue-200";
+    return "bg-sky-50 text-sky-800 border-sky-100";
   }
   if (status === "completed") {
-    return "bg-emerald-100 text-emerald-800 border-emerald-200";
+    return "bg-emerald-50 text-emerald-800 border-emerald-100";
   }
-  return "bg-gray-100 text-gray-700 border-gray-200";
+  return "bg-stone-100 text-stone-700 border-stone-200";
 }
+
 
 const MAX_PRICE_GBP = 999999.99;
 
@@ -197,6 +199,11 @@ export default function RequestDetailPage() {
   const [offerMessage, setOfferMessage] = useState("");
   const [offerPrice, setOfferPrice] = useState("");
   const [completingBooking, setCompletingBooking] = useState(false);
+  const [deletingRequest, setDeletingRequest] = useState(false);
+  const [closingRequest, setClosingRequest] = useState(false);
+  const [reopeningRequest, setReopeningRequest] = useState(false);
+  const [withdrawingOfferId, setWithdrawingOfferId] = useState("");
+  const [rejectingOfferId, setRejectingOfferId] = useState("");
 
   const [reviewRating, setReviewRating] = useState("5");
   const [reviewComment, setReviewComment] = useState("");
@@ -415,6 +422,101 @@ export default function RequestDetailPage() {
     await loadAll();
   }
 
+    async function withdrawOffer(offerId) {
+    setWithdrawingOfferId(offerId);
+    setMsg("Withdrawing offer...");
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+
+      if (!token) {
+        setMsg("Please log in again.");
+        setWithdrawingOfferId("");
+        return;
+      }
+
+      const res = await fetch("/api/offers/withdraw", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ offerId }),
+      });
+
+      const text = await res.text();
+      let json = {};
+
+      try {
+        json = text ? JSON.parse(text) : {};
+      } catch {
+        json = {};
+      }
+
+      if (!res.ok) {
+        setMsg(json.error || "Failed to withdraw offer");
+        setWithdrawingOfferId("");
+        return;
+      }
+
+      setWithdrawingOfferId("");
+      setMsg("Offer withdrawn ✅");
+      await loadAll();
+    } catch (error) {
+      setMsg("Something went wrong withdrawing this offer.");
+      setWithdrawingOfferId("");
+    }
+  }
+
+  async function rejectOffer(offerId) {
+    setRejectingOfferId(offerId);
+    setMsg("Rejecting offer...");
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+
+      if (!token) {
+        setMsg("Please log in again.");
+        setRejectingOfferId("");
+        return;
+      }
+
+      const res = await fetch("/api/offers/reject", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ offerId }),
+      });
+
+      const text = await res.text();
+      let json = {};
+
+      try {
+        json = text ? JSON.parse(text) : {};
+      } catch {
+        json = {};
+      }
+
+      if (!res.ok) {
+        setMsg(json.error || "Failed to reject offer");
+        setRejectingOfferId("");
+        return;
+      }
+
+      setRejectingOfferId("");
+      setMsg("Offer rejected ✅");
+      await loadAll();
+    } catch (error) {
+      setMsg("Something went wrong rejecting this offer.");
+      setRejectingOfferId("");
+    }
+  }
+
+
   async function acceptOffer(offerId) {
     setMsg("Accepting offer...");
 
@@ -461,6 +563,176 @@ export default function RequestDetailPage() {
 
     window.location.href = json.url;
   }
+
+     async function reopenRequest() {
+    if (!req?.id) return;
+
+    const confirmed = window.confirm(
+      "Reopen this request? Gardeners will be able to send offers on it again."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setReopeningRequest(true);
+    setMsg("Reopening request...");
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+
+      if (!token) {
+        setMsg("Please log in again.");
+        setReopeningRequest(false);
+        return;
+      }
+
+      const res = await fetch("/api/requests/reopen", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ requestId: req.id }),
+      });
+
+      const text = await res.text();
+      let json = {};
+
+      try {
+        json = text ? JSON.parse(text) : {};
+      } catch {
+        json = {};
+      }
+
+      if (!res.ok) {
+        setMsg(json.error || "Failed to reopen request");
+        setReopeningRequest(false);
+        return;
+      }
+
+      setReopeningRequest(false);
+      await loadAll();
+      setMsg("Request reopened ✅");
+    } catch (error) {
+      setMsg("Something went wrong reopening this request.");
+      setReopeningRequest(false);
+    }
+  }
+
+  async function closeRequest() {
+    if (!req?.id) return;
+
+    const confirmed = window.confirm(
+      "Close this request? It will stay visible to you, but gardeners will no longer be able to offer on it."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setClosingRequest(true);
+    setMsg("Closing request...");
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+
+      if (!token) {
+        setMsg("Please log in again.");
+        setClosingRequest(false);
+        return;
+      }
+
+      const res = await fetch("/api/requests/close", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ requestId: req.id }),
+      });
+
+      const text = await res.text();
+      let json = {};
+
+      try {
+        json = text ? JSON.parse(text) : {};
+      } catch {
+        json = {};
+      }
+
+      if (!res.ok) {
+        setMsg(json.error || "Failed to close request");
+        setClosingRequest(false);
+        return;
+      }
+
+      setClosingRequest(false);
+      await loadAll();
+      setMsg("Request closed ✅");
+    } catch (error) {
+      setMsg("Something went wrong closing this request.");
+      setClosingRequest(false);
+    }
+  }
+
+  async function deleteRequest() {
+    if (!req?.id) return;
+
+    const confirmed = window.confirm(
+      "Delete this open request? This will also remove any offers on it."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingRequest(true);
+    setMsg("Deleting request...");
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+
+      if (!token) {
+        setMsg("Please log in again.");
+        setDeletingRequest(false);
+        return;
+      }
+
+      const res = await fetch("/api/requests/delete", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ requestId: req.id }),
+      });
+
+      const text = await res.text();
+      let json = {};
+
+      try {
+        json = text ? JSON.parse(text) : {};
+      } catch {
+        json = {};
+      }
+
+      if (!res.ok) {
+        setMsg(json.error || "Failed to delete request");
+        setDeletingRequest(false);
+        return;
+      }
+
+      window.location.href = "/dashboard";
+    } catch (error) {
+      setMsg("Something went wrong deleting this request.");
+      setDeletingRequest(false);
+    }
+  }
+
 
   async function completeAndPayGardener() {
     if (!booking?.id) return;
@@ -640,108 +912,226 @@ export default function RequestDetailPage() {
     });
   }, [offers, profilesById, reviewStatsByUserId, req]);
 
-  if (loading) {
+    if (loading) {
     return (
-      <main className="min-h-screen p-6">
-        <p>Loading...</p>
+      <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+        <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+          Loading request...
+        </div>
       </main>
     );
   }
 
   if (!req) {
     return (
-      <main className="min-h-screen p-6">
-        <p>Request not found.</p>
-        {msg && <p className="mt-2 text-zinc-600">{msg}</p>}
+      <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+        <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 shadow-sm">
+          <p className="font-medium text-zinc-900">Request not found.</p>
+          {msg && <p className="mt-2 text-sm text-zinc-600">{msg}</p>}
+
+          <Link
+            href="/requests"
+            className="mt-4 inline-flex rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+          >
+            Back to requests
+          </Link>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen p-6">
-      <div className="mx-auto max-w-3xl space-y-6">
-        <a className="underline text-zinc-700" href="/requests">
+    <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Link
+          className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"
+          href="/requests"
+        >
           ← Back to requests
-        </a>
+        </Link>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
-          <div className="flex items-start gap-4">
-            <Avatar profile={ownerProfile} fallback={ownerName} />
+                <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+          <div className="grid gap-6 lg:grid-cols-[1fr_0.35fr] lg:items-start">
+            <div>
+              <div className="flex items-start gap-4">
+                <Avatar profile={ownerProfile} fallback={ownerName} />
 
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold">{req.title}</h1>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-2xl font-semibold text-zinc-900">
+                      {req.title}
+                    </h1>
 
-                <span
-                  className={`rounded-full border px-2 py-1 text-xs font-medium ${requestStatusBadgeClass}`}
-                >
-                  {requestStatusLabel}
-                </span>
+                    <span
+                      className={`rounded-full border px-2 py-1 text-xs font-medium ${requestStatusBadgeClass}`}
+                    >
+                      {requestStatusLabel}
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-sm text-zinc-700">
+                    Owner:{" "}
+                    <Link
+                      href={`/users/${req.owner_id}`}
+                      className="font-medium text-emerald-900 hover:underline"
+                    >
+                      {ownerName}
+                    </Link>
+                  </p>
+
+                  <p className="mt-1 text-sm text-zinc-600">
+                    Trust: {ownerRating}
+                  </p>
+
+                  {ownerLocation && (
+                    <p className="mt-1 text-sm text-zinc-600">
+                      Location: {ownerLocation}
+                    </p>
+                  )}
+
+                  <p className="mt-3 text-sm text-zinc-600">
+                    {req.postcode || "No postcode"} • {formattedRequestDateRange}
+                  </p>
+
+                  {formattedRequestPrice && (
+                    <p className="mt-2 text-sm font-medium text-emerald-900">
+                      Offered: {formattedRequestPrice}
+                    </p>
+                  )}
+
+                  {canOpenChat && (
+                    <Link
+                      className="mt-4 inline-flex rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-900 hover:bg-emerald-50"
+                      href={`/requests/${id}/chat`}
+                    >
+                      Open chat{unreadCount > 0 ? ` (${unreadCount} unread)` : ""}
+                    </Link>
+                  )}
+                </div>
               </div>
 
-              <p className="mt-3 text-sm text-zinc-700">
-                Owner:{" "}
-                <a href={`/users/${req.owner_id}`} className="underline">
-                  {ownerName}
-                </a>
-              </p>
+              {careTags.length > 0 && (
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {careTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-stone-200 bg-white/80 px-2 py-1 text-xs text-zinc-700"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
 
-              <p className="mt-1 text-sm text-zinc-600">Trust: {ownerRating}</p>
-
-              {ownerLocation && (
-                <p className="mt-1 text-sm text-zinc-600">
-                  Location: {ownerLocation}
+              {req.details && (
+                <p className="mt-5 whitespace-pre-wrap rounded-[1.25rem] border border-stone-200 bg-white/75 p-4 text-sm leading-6 text-zinc-700">
+                  {req.details}
                 </p>
               )}
 
-              <p className="mt-3 text-sm text-zinc-600">
-                {req.postcode || "No postcode"} • {formattedRequestDateRange}
-              </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                {isOwner && String(req.status) === "open" && (
+                  <>
+                    <Link
+                      href={`/requests/${req.id}/edit`}
+                      className="inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                    >
+                      Edit request
+                    </Link>
 
-              {formattedRequestPrice && (
-                <p className="mt-2 text-sm text-zinc-600">
-                  Offered: {formattedRequestPrice}
-                </p>
-              )}
+                    <button
+                      type="button"
+                      onClick={closeRequest}
+                      disabled={closingRequest}
+                      className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {closingRequest ? "Closing..." : "Close request"}
+                    </button>
 
-              {canOpenChat && (
-                <a
-                  className="mt-3 inline-block underline text-zinc-700"
-                  href={`/requests/${id}/chat`}
-                >
-                  Open chat{unreadCount > 0 ? ` (${unreadCount} unread)` : ""}
-                </a>
-              )}
+                    <button
+                      type="button"
+                      onClick={deleteRequest}
+                      disabled={deletingRequest}
+                      className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {deletingRequest ? "Deleting..." : "Delete request"}
+                    </button>
+                  </>
+                )}
+
+                {isOwner && String(req.status) === "closed" && (
+                  <button
+                    type="button"
+                    onClick={reopenRequest}
+                    disabled={reopeningRequest}
+                    className="rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {reopeningRequest ? "Reopening..." : "Reopen request"}
+                  </button>
+                )}
+
+                {isOwner &&
+                  String(req.status) === "accepted" &&
+                  acceptedOffer &&
+                  !booking && (
+                    <div className="w-full rounded-[1.25rem] border border-emerald-100 bg-white/80 p-4">
+                      <p className="text-sm font-medium text-zinc-900">
+                        Ready to confirm this booking?
+                      </p>
+
+                      <p className="mt-1 text-sm leading-6 text-zinc-600">
+                        You’ll pay securely through Watch My Plot. The gardener is only
+                        paid after the job is marked complete.
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() => bookAndPay(acceptedOffer.id)}
+                        className="mt-4 rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800"
+                      >
+                        Confirm booking and pay securely
+                      </button>
+                    </div>
+                  )}
+              </div>
             </div>
+
+            <aside className="rounded-[1.5rem] border border-emerald-100 bg-white/80 p-5 shadow-sm">
+              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                Request summary
+              </p>
+
+              <div className="mt-4 space-y-3 text-sm text-zinc-600">
+                <p>
+                  <span className="font-medium text-zinc-900">Area:</span>{" "}
+                  {req.postcode || "No postcode"}
+                </p>
+                <p>
+                  <span className="font-medium text-zinc-900">Dates:</span>{" "}
+                  {formattedRequestDateRange}
+                </p>
+                <p>
+                  <span className="font-medium text-zinc-900">Budget:</span>{" "}
+                  {formattedRequestPrice || "Not set"}
+                </p>
+                <p>
+                  <span className="font-medium text-zinc-900">Status:</span>{" "}
+                  {requestStatusLabel}
+                </p>
+              </div>
+
+              {!userId && (
+                <Link
+                  href="/login"
+                  className="mt-5 inline-flex w-full justify-center rounded-xl bg-emerald-900 px-4 py-3 text-sm font-medium text-white hover:bg-emerald-800"
+                >
+                  Log in to send an offer
+                </Link>
+              )}
+            </aside>
           </div>
+        </section>
 
-          {careTags.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {careTags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-zinc-200 px-2 py-1 text-xs text-zinc-700"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {req.details && <p className="mt-4 whitespace-pre-wrap">{req.details}</p>}
-
-          {isOwner &&
-            String(req.status) === "accepted" &&
-            acceptedOffer &&
-            !booking && (
-              <button
-                onClick={() => bookAndPay(acceptedOffer.id)}
-                className="mt-4 rounded-xl bg-black px-4 py-2 text-white"
-              >
-                Book and pay
-              </button>
-            )}
-        </div>
 
         {booking && (
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
@@ -792,7 +1182,7 @@ export default function RequestDetailPage() {
                   onClick={() => bookAndPay(acceptedOffer.id)}
                   className="rounded-xl bg-black px-4 py-2 text-white"
                 >
-                  Complete payment
+                  Confirm booking and pay securely
                 </button>
               )}
 
@@ -923,14 +1313,25 @@ export default function RequestDetailPage() {
         )}
 
         {canSubmitOffer && (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
-            <h2 className="text-xl font-semibold">Offer to help</h2>
+          <section className="rounded-[2rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-sm">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                Send an offer
+              </p>
+              <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+                Offer to help with this plot
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
+                Tell the owner why you’re a good fit and suggest a price if you want to.
+                A useful message is better than a vague one.
+              </p>
+            </div>
 
             <form onSubmit={submitOffer} className="mt-4 space-y-3">
               <div>
                 <label className="text-sm text-zinc-700">Message (optional)</label>
                 <textarea
-                  className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-zinc-900"
+                  className="mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:bg-white"
                   value={offerMessage}
                   onChange={(e) => setOfferMessage(e.target.value)}
                   rows={4}
@@ -942,7 +1343,7 @@ export default function RequestDetailPage() {
                   Proposed price (£) (optional)
                 </label>
                 <input
-                  className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-zinc-900"
+                  className="mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:bg-white"
                   type="number"
                   min="0.01"
                   max="999999.99"
@@ -956,19 +1357,24 @@ export default function RequestDetailPage() {
                 </p>
               </div>
 
-              <button className="rounded-xl bg-black px-4 py-2 text-white">
+              <button className="rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
                 Send offer
               </button>
             </form>
-          </div>
+          </section>
         )}
 
         {!isOwner && String(req.status) === "open" && myExistingOffer && (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
-            <h2 className="text-xl font-semibold">Your offer</h2>
+          <section className="rounded-[2rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-sm">
+            <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              Your offer
+            </p>
+            <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+              You’ve offered to help
+            </h2>
 
-            <p className="mt-3 text-sm text-zinc-600">
-              You already sent an offer for this request.
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
+              Your offer has been sent to the owner.
             </p>
 
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-zinc-600">
@@ -986,23 +1392,57 @@ export default function RequestDetailPage() {
             </div>
 
             {myExistingOffer.message && (
-              <p className="mt-3 whitespace-pre-wrap">{myExistingOffer.message}</p>
+              <p className="mt-4 whitespace-pre-wrap rounded-xl border border-stone-200 bg-stone-50/70 p-4 text-sm leading-6 text-zinc-700">
+                {myExistingOffer.message}
+              </p>
             )}
-          </div>
+
+            {myExistingOffer.status === "pending" && (
+              <button
+                type="button"
+                onClick={() => withdrawOffer(myExistingOffer.id)}
+                disabled={withdrawingOfferId === myExistingOffer.id}
+                className="mt-4 rounded-xl border border-red-300 px-4 py-2 text-sm font-medium text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {withdrawingOfferId === myExistingOffer.id
+                  ? "Withdrawing..."
+                  : "Withdraw offer"}
+              </button>
+            )}
+          </section>
         )}
 
         {isOwner && (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
-            <h2 className="text-xl font-semibold">Offers</h2>
+          <section className="rounded-[2rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                  Offers
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+                  Gardeners offering to help
+                </h2>
+              </div>
+
+              <p className="text-sm text-zinc-500">
+                {offersWithTrust.length} offer
+                {offersWithTrust.length === 1 ? "" : "s"}
+              </p>
+            </div>
 
             {offersWithTrust.length === 0 ? (
-              <p className="mt-3 text-sm text-zinc-600">No offers yet.</p>
+              <div className="mt-4 rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-5">
+                <p className="text-sm font-medium text-zinc-900">No offers yet.</p>
+                <p className="mt-1 text-sm leading-6 text-zinc-600">
+                  When gardeners offer to help with this request, they’ll appear here.
+                </p>
+              </div>
             ) : (
               <div className="mt-4 space-y-3">
                 {offersWithTrust.map((o) => (
                   <div
                     key={o.id}
-                    className="rounded-xl border border-zinc-200 p-4"
+                    className="rounded-[1.5rem] border border-stone-200 bg-stone-50/60 p-5"
                   >
                     <div className="flex items-start gap-4">
                       <Avatar profile={o.gardenerProfile} fallback={o.gardenerName} />
@@ -1010,9 +1450,12 @@ export default function RequestDetailPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm text-zinc-700">
                           Gardener:{" "}
-                          <a href={`/users/${o.gardener_id}`} className="underline">
+                          <Link
+                            href={`/users/${o.gardener_id}`}
+                            className="font-medium text-emerald-900 hover:underline"
+                          >
                             {o.gardenerName}
-                          </a>
+                          </Link>
                         </p>
 
                         <p className="mt-1 text-sm text-zinc-600">
@@ -1030,7 +1473,7 @@ export default function RequestDetailPage() {
                             {o.gardenerSkillTags.map((tag) => (
                               <span
                                 key={tag}
-                                className="rounded-full border border-zinc-200 px-2 py-1 text-xs text-zinc-700"
+                                className="rounded-full border border-stone-200 bg-white px-2 py-1 text-xs text-zinc-700"
                               >
                                 {tag}
                               </span>
@@ -1039,15 +1482,15 @@ export default function RequestDetailPage() {
                         )}
 
                         {(o.goodMatches.length > 0 || o.missingSkills.length > 0) && (
-                          <div className="mt-3 space-y-1 text-sm">
+                          <div className="mt-3 rounded-xl border border-stone-200 bg-white p-3 text-sm">
                             {o.goodMatches.length > 0 && (
-                              <p className="text-zinc-600">
+                              <p className="text-emerald-900">
                                 Good match: {o.goodMatches.join(", ")}
                               </p>
                             )}
 
                             {o.missingSkills.length > 0 && (
-                              <p className="text-zinc-500">
+                              <p className="mt-1 text-zinc-500">
                                 Missing: {o.missingSkills.join(", ")}
                               </p>
                             )}
@@ -1061,28 +1504,45 @@ export default function RequestDetailPage() {
                             {o.statusLabel}
                           </span>
 
-                          {o.formattedPrice && <span>• {o.formattedPrice}</span>}
+                          {o.formattedPrice && (
+                            <span className="font-medium text-emerald-900">
+                              • {o.formattedPrice}
+                            </span>
+                          )}
                         </div>
 
                         {o.message && (
-                          <p className="mt-2 whitespace-pre-wrap">{o.message}</p>
+                          <p className="mt-3 whitespace-pre-wrap rounded-xl bg-white p-3 text-sm leading-6 text-zinc-700">
+                            {o.message}
+                          </p>
                         )}
 
-                        {String(req.status) === "open" && o.status === "pending" && (
-                          <button
-                            onClick={() => acceptOffer(o.id)}
-                            className="mt-3 rounded-xl bg-black px-3 py-2 text-white"
-                          >
-                            Accept offer
-                          </button>
-                        )}
+                                                  {String(req.status) === "open" && o.status === "pending" && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <button
+                                onClick={() => acceptOffer(o.id)}
+                                className="rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+                              >
+                                Accept offer
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => rejectOffer(o.id)}
+                                disabled={rejectingOfferId === o.id}
+                                className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {rejectingOfferId === o.id ? "Rejecting..." : "Reject offer"}
+                              </button>
+                            </div>
+                          )}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </section>
         )}
 
         {msg && <p className="text-sm text-zinc-600">{msg}</p>}

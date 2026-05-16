@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -25,7 +26,7 @@ export default function BookingSuccessPage() {
       }
 
       if (!sessionId) {
-        setMsg("Missing session_id in URL.");
+        setMsg("Missing Stripe checkout confirmation. Please return to your booking.");
         return;
       }
 
@@ -41,7 +42,7 @@ export default function BookingSuccessPage() {
       const json = await res.json();
 
       if (!res.ok) {
-        setMsg(json.error || "Failed to confirm payment");
+        setMsg(json.error || "Failed to confirm payment.");
         return;
       }
 
@@ -49,19 +50,15 @@ export default function BookingSuccessPage() {
 
       const { data: bookingRow } = await supabase
         .from("bookings")
-        .select("status, completed_at, payout_status, stripe_transfer_id")
+        .select("status, completed_at, payout_status, stripe_transfer_id, request_id")
         .eq("id", id)
         .maybeSingle();
 
       if (bookingRow?.status === "completed") {
         setCompleted(true);
-        setMsg(
-          bookingRow?.stripe_transfer_id
-            ? `Completed ✅ Transfer: ${bookingRow.stripe_transfer_id}`
-            : "Completed ✅"
-        );
+        setMsg("Booking completed and gardener payout triggered ✅");
       } else {
-        setMsg("Payment confirmed ✅ Booking is paid.");
+        setMsg("Payment confirmed ✅ Booking is now paid.");
       }
     }
 
@@ -70,7 +67,7 @@ export default function BookingSuccessPage() {
 
   async function completeAndPay() {
     setCompleting(true);
-    setMsg("Completing booking and paying gardener...");
+    setMsg("Completing booking and triggering gardener payout...");
 
     const { data } = await supabase.auth.getSession();
     const token = data?.session?.access_token;
@@ -93,50 +90,98 @@ export default function BookingSuccessPage() {
     const json = await res.json();
 
     if (!res.ok) {
-      setMsg(json.error || "Failed to pay gardener");
+      setMsg(json.error || "Failed to complete booking and pay gardener.");
       setCompleting(false);
       return;
     }
 
     setCompleted(true);
     setCompleting(false);
-    setMsg(`Completed ✅ Transfer: ${json.transferId}`);
+    setMsg("Booking completed and gardener payout triggered ✅");
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6">
-      <div className="w-full max-w-xl rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
-        <h1 className="text-2xl font-semibold">Booking success</h1>
+    <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 text-center shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 text-2xl">
+            ✓
+          </div>
 
-        <p className="mt-4 text-zinc-700">{msg}</p>
-
-        {paid && !completed && (
-          <button
-            onClick={completeAndPay}
-            disabled={completing}
-            className="mt-4 inline-flex items-center justify-center rounded-xl border border-black bg-black px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {completing ? "Completing booking..." : "Mark completed + Pay gardener"}
-          </button>
-        )}
-
-        {completed && (
-          <p className="mt-4 text-sm text-emerald-700">
-            This booking has been marked completed.
+          <p className="mt-6 text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+            Payment
           </p>
-        )}
 
-        <div className="mt-6 flex flex-wrap gap-4">
-          <a className="underline text-zinc-700" href={`/requests`}>
-            Back to requests
-          </a>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+            Booking payment received.
+          </h1>
 
-          <a className="underline text-zinc-700" href={`/dashboard`}>
-            Go to dashboard
-          </a>
-        </div>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
+            Your payment has been confirmed. The booking is now paid, and you can
+            return to the request to chat, check the booking status, or complete the
+            job when the care has been carried out.
+          </p>
+        </section>
 
-        <p className="mt-3 text-sm text-zinc-500">Booking id: {id}</p>
+        <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                Status
+              </p>
+
+              <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+                {completed ? "Booking completed" : paid ? "Booking paid" : "Confirming payment"}
+              </h2>
+
+              <p className="mt-3 text-sm leading-6 text-zinc-600">
+                {msg}
+              </p>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-emerald-100 bg-emerald-50/70 p-4 text-sm leading-6 text-emerald-950 sm:max-w-xs">
+              {completed
+                ? "The booking is complete. Reviews can now be left where available."
+                : paid
+                  ? "Only mark the booking complete once the work has actually been done."
+                  : "This usually only takes a few seconds."}
+            </div>
+          </div>
+
+          {paid && !completed && (
+            <div className="mt-6 rounded-[1.5rem] border border-emerald-100 bg-emerald-50/70 p-4 text-sm leading-6 text-emerald-950">
+              <p className="font-medium">Booking confirmed and paid securely.</p>
+              <p className="mt-1">
+                The gardener is not paid out yet. Come back after the plot care has
+                been completed to mark the booking complete and release the gardener
+                payout.
+              </p>
+            </div>
+          )}
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              href={`/bookings/${id}`}
+              className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+            >
+              View booking
+            </Link>
+
+            <Link
+              href="/dashboard"
+              className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+            >
+              Go to dashboard
+            </Link>
+
+            <Link
+              href="/requests"
+              className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+            >
+              Browse requests
+            </Link>
+          </div>
+        </section>
       </div>
     </main>
   );
