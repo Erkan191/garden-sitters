@@ -133,28 +133,82 @@ export default function NewReviewPage() {
     router.push(`/bookings/${bookingId}`);
   }
 
+  const inputClass =
+    "mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:bg-white";
+
+  const labelClass = "text-sm font-medium text-zinc-700";
+
   return (
-    <main className="min-h-screen p-6">
-      <div className="mx-auto max-w-xl space-y-4">
-        <Link href="/bookings" className="underline">
-          ← Back to bookings
+    <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Link
+          href="/bookings"
+          className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"
+        >
+          Back to bookings
         </Link>
 
-        <div className="rounded-2xl border p-6">
-          <h1 className="text-2xl font-semibold">Leave a review</h1>
+        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                Review
+              </p>
 
-          {loading && <p className="mt-4">{msg || "Loading..."}</p>}
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+                Leave a review.
+              </h1>
+
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
+                Share a clear, fair note about how the booking went. Reviews are
+                only available after a booking has been completed.
+              </p>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-emerald-100 bg-white/75 p-4 shadow-sm">
+              <p className="text-sm font-medium text-zinc-900">
+                Keep it useful
+              </p>
+              <p className="mt-1 text-sm leading-6 text-zinc-600">
+                Mention reliability, communication, and whether the agreed garden
+                care was handled well.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+          <div>
+            <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              Booking feedback
+            </p>
+            <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+              How did it go?
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-zinc-600">
+              A short, honest review helps the next owner or gardener decide
+              whether this person is a good fit.
+            </p>
+          </div>
+
+          {loading && (
+            <div className="mt-5 rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-5 text-sm text-zinc-600">
+              {msg || "Checking whether this booking can be reviewed..."}
+            </div>
+          )}
 
           {!loading && msg && (
-            <p className="mt-4">{msg}</p>
+            <div className="mt-5 rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-5 text-sm leading-6 text-zinc-600">
+              {msg}
+            </div>
           )}
 
           {!loading && canSubmit && (
-            <form onSubmit={submitReview} className="mt-4 space-y-4">
+            <form onSubmit={submitReview} className="mt-6 space-y-5">
               <div>
-                <label className="text-sm">Rating</label>
+                <label className={labelClass}>Rating</label>
                 <select
-                  className="mt-1 w-full rounded-xl border p-2"
+                  className={inputClass}
                   value={rating}
                   onChange={(e) => setRating(Number(e.target.value))}
                 >
@@ -167,25 +221,28 @@ export default function NewReviewPage() {
               </div>
 
               <div>
-                <label className="text-sm">Comment (optional)</label>
+                <label className={labelClass}>Comment (optional)</label>
                 <textarea
-                  className="mt-1 w-full rounded-xl border p-2"
+                  className={`${inputClass} min-h-32 resize-y leading-6`}
                   rows={4}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  placeholder="Anything helpful for others?"
+                  placeholder="What should others know about working with this person?"
                 />
+                <p className="mt-1 text-xs leading-5 text-zinc-500">
+                  Helpful reviews are specific, fair, and focused on the booking.
+                </p>
               </div>
 
               <button
                 type="submit"
-                className="rounded-xl bg-black px-4 py-2 text-white"
+                className="rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800"
               >
                 Submit review
               </button>
             </form>
           )}
-        </div>
+        </section>
       </div>
     </main>
   );
