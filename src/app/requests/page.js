@@ -345,7 +345,7 @@ export default function RequestsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+    <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
       <div className="mx-auto max-w-6xl space-y-8">
         <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
           <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr] lg:items-end">

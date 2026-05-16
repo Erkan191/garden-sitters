@@ -925,7 +925,7 @@ export default function RequestDetailPage() {
 
     if (loading) {
     return (
-      <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+      <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
         <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
           Loading request...
         </div>
@@ -935,7 +935,7 @@ export default function RequestDetailPage() {
 
   if (!req) {
     return (
-      <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+      <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
         <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 shadow-sm">
           <p className="font-medium text-zinc-900">Request not found.</p>
           {msg && <p className="mt-2 text-sm text-zinc-600">{msg}</p>}
@@ -952,7 +952,7 @@ export default function RequestDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+    <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <Link
           className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"
@@ -1040,12 +1040,12 @@ export default function RequestDetailPage() {
                 </p>
               )}
 
-              <div className="mt-5 flex flex-wrap gap-3">
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 {isOwner && String(req.status) === "open" && (
                   <>
                     <Link
                       href={`/requests/${req.id}/edit`}
-                      className="inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                      className="inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-center text-sm font-medium text-zinc-900 hover:bg-stone-50 sm:w-auto"
                     >
                       Edit request
                     </Link>
@@ -1054,7 +1054,7 @@ export default function RequestDetailPage() {
                       type="button"
                       onClick={closeRequest}
                       disabled={closingRequest}
-                      className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                     >
                       {closingRequest ? "Closing..." : "Close request"}
                     </button>
@@ -1063,7 +1063,7 @@ export default function RequestDetailPage() {
                       type="button"
                       onClick={deleteRequest}
                       disabled={deletingRequest}
-                      className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                     >
                       {deletingRequest ? "Deleting..." : "Delete request"}
                     </button>
@@ -1075,7 +1075,7 @@ export default function RequestDetailPage() {
                     type="button"
                     onClick={reopenRequest}
                     disabled={reopeningRequest}
-                    className="rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                   >
                     {reopeningRequest ? "Reopening..." : "Reopen request"}
                   </button>
@@ -1539,11 +1539,11 @@ export default function RequestDetailPage() {
                         )}
 
                                                   {String(req.status) === "open" && o.status === "pending" && (
-                            <div className="mt-3 flex flex-wrap gap-2">
+                            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                               {o.payoutReady ? (
                                 <button
                                   onClick={() => acceptOffer(o.id)}
-                                  className="rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+                                  className="w-full rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 sm:w-auto"
                                 >
                                   Accept offer
                                 </button>
@@ -1551,7 +1551,7 @@ export default function RequestDetailPage() {
                                 <button
                                   type="button"
                                   disabled
-                                  className="cursor-not-allowed rounded-xl border border-amber-100 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 opacity-90"
+                                  className="w-full cursor-not-allowed rounded-xl border border-amber-100 bg-amber-50 px-4 py-2 text-left text-sm font-medium text-amber-800 opacity-90 sm:w-auto sm:text-center"
                                 >
                                   Gardener needs to connect payouts before this offer can be accepted.
                                 </button>
@@ -1561,7 +1561,7 @@ export default function RequestDetailPage() {
                                 type="button"
                                 onClick={() => rejectOffer(o.id)}
                                 disabled={rejectingOfferId === o.id}
-                                className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="w-full rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                               >
                                 {rejectingOfferId === o.id ? "Rejecting..." : "Reject offer"}
                               </button>

@@ -306,7 +306,7 @@ export default function MyProfilePage() {
   const labelClass = "text-sm font-medium text-zinc-700";
 
   return (
-    <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+    <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <Link
           href="/dashboard"

@@ -42,12 +42,12 @@ export default function Header() {
 
   return (
     <header className="border-b border-stone-200 bg-white/90 text-zinc-900 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+      <div className="mx-auto flex max-w-6xl flex-col items-start gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <Link href="/" className="text-xl font-semibold text-zinc-900">
           Watch My Plot
         </Link>
 
-        <nav className="flex items-center gap-4 text-sm text-zinc-700">
+        <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-700">
           <Link href="/" className="hover:text-zinc-900 hover:underline">
             Home
           </Link>

@@ -239,7 +239,7 @@ export default function BookingDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+      <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
         <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
           Loading booking...
         </div>
@@ -249,7 +249,7 @@ export default function BookingDetailPage() {
 
   if (!booking) {
     return (
-      <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+      <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
         <div className="mx-auto max-w-6xl rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <p className="font-medium text-zinc-900">Booking not found.</p>
           {msg && <p className="mt-2 text-sm text-zinc-600">{msg}</p>}
@@ -266,7 +266,7 @@ export default function BookingDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+    <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <Link
           href="/bookings"
@@ -501,7 +501,7 @@ export default function BookingDetailPage() {
                   type="button"
                   onClick={completeAndPayGardener}
                   disabled={completingBooking}
-                  className="mt-5 w-full rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-5 w-full whitespace-normal rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium leading-5 text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {completingBooking
                     ? "Trying payout..."

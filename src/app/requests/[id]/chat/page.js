@@ -178,7 +178,7 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+      <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
         <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
           Loading chat...
         </div>
@@ -187,7 +187,7 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
+    <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <Link
           className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"

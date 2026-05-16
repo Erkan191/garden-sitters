@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-stone-50 px-6 py-12 text-zinc-900">
+    <main className="min-h-screen bg-stone-50 px-4 py-12 text-zinc-900 sm:px-6">
       <div className="mx-auto max-w-6xl space-y-16">
         <section className="relative isolate grid gap-10 overflow-hidden rounded-[2.5rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/80 p-6 shadow-[0_24px_70px_rgba(0,0,0,0.08)] sm:p-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:p-10">
           <div className="pointer-events-none absolute -right-24 -top-24 -z-10 h-72 w-72 rounded-full bg-emerald-100/80 blur-3xl" />
@@ -271,4 +271,3 @@ export default function HomePage() {
     </main>
   );
 }
-
