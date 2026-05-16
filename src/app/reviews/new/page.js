@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -135,9 +136,9 @@ export default function NewReviewPage() {
   return (
     <main className="min-h-screen p-6">
       <div className="mx-auto max-w-xl space-y-4">
-        <a href="/bookings" className="underline">
+        <Link href="/bookings" className="underline">
           ← Back to bookings
-        </a>
+        </Link>
 
         <div className="rounded-2xl border p-6">
           <h1 className="text-2xl font-semibold">Leave a review</h1>

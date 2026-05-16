@@ -297,7 +297,7 @@ export default function DashboardPage() {
         return;
       }
 
-      window.location.href = json.url;
+      window.location.assign(json.url);
     } catch (error) {
       setPaymentErrorByRequestId((prev) => ({
         ...prev,
