@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function NewReviewPage() {
+function NewReviewPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId");
@@ -245,5 +245,21 @@ export default function NewReviewPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function NewReviewPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
+          <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+            Loading review form...
+          </div>
+        </main>
+      }
+    >
+      <NewReviewPageContent />
+    </Suspense>
   );
 }
