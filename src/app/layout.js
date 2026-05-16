@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import Header from "./Header";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,31 +25,7 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} bg-stone-50 text-zinc-900 antialiased`}
       >
         <div className="min-h-screen">
-          <header className="border-b border-stone-200 bg-white/90 text-zinc-900 backdrop-blur">
-            <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-              <Link href="/" className="text-xl font-semibold text-zinc-900">
-                Watch My Plot
-              </Link>
-
-              <nav className="flex items-center gap-4 text-sm text-zinc-700">
-                <Link href="/" className="hover:text-zinc-900 hover:underline">
-                  Home
-                </Link>
-                <Link
-                  href="/requests"
-                  className="hover:text-zinc-900 hover:underline"
-                >
-                  Browse requests
-                </Link>
-                <Link
-                  href="/login"
-                  className="hover:text-zinc-900 hover:underline"
-                >
-                  Log in
-                </Link>
-              </nav>
-            </div>
-          </header>
+          <Header />
 
           <div>{children}</div>
 
