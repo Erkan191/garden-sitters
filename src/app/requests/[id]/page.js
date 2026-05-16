@@ -317,7 +317,8 @@ export default function RequestDetailPage() {
           skill_greenhouse,
           skill_veg_beds,
           skill_pots,
-          skill_seedlings
+          skill_seedlings,
+          stripe_onboarding_complete
         `)
         .in("id", uniqueProfileIds);
 
@@ -518,6 +519,15 @@ export default function RequestDetailPage() {
 
 
   async function acceptOffer(offerId) {
+    const offer = offers.find((row) => row.id === offerId);
+    const gardenerProfile = offer ? profilesById[offer.gardener_id] : null;
+    const payoutReady = Boolean(gardenerProfile?.stripe_onboarding_complete);
+
+    if (!payoutReady) {
+      setMsg("Gardener needs to connect payouts before this offer can be accepted.");
+      return;
+    }
+
     setMsg("Accepting offer...");
 
     const { error } = await supabase.rpc("accept_offer_safely", {
@@ -903,6 +913,7 @@ export default function RequestDetailPage() {
         gardenerLocation: gardenerProfile?.location?.trim() || "",
         gardenerRating: formatRating(reviewStatsByUserId[offer.gardener_id]),
         gardenerSkillTags: buildSkillTags(gardenerProfile),
+        payoutReady: Boolean(gardenerProfile?.stripe_onboarding_complete),
         goodMatches: matchData.goodMatches,
         missingSkills: matchData.missingSkills,
         statusLabel: getStatusLabel(offer.status),
@@ -1509,6 +1520,16 @@ export default function RequestDetailPage() {
                               • {o.formattedPrice}
                             </span>
                           )}
+
+                          <span
+                            className={`rounded-full border px-2 py-1 text-xs font-medium ${
+                              o.payoutReady
+                                ? "border-emerald-100 bg-emerald-50 text-emerald-800"
+                                : "border-amber-100 bg-amber-50 text-amber-800"
+                            }`}
+                          >
+                            {o.payoutReady ? "Payouts ready" : "Needs payout setup"}
+                          </span>
                         </div>
 
                         {o.message && (
@@ -1519,12 +1540,22 @@ export default function RequestDetailPage() {
 
                                                   {String(req.status) === "open" && o.status === "pending" && (
                             <div className="mt-3 flex flex-wrap gap-2">
-                              <button
-                                onClick={() => acceptOffer(o.id)}
-                                className="rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
-                              >
-                                Accept offer
-                              </button>
+                              {o.payoutReady ? (
+                                <button
+                                  onClick={() => acceptOffer(o.id)}
+                                  className="rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+                                >
+                                  Accept offer
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled
+                                  className="cursor-not-allowed rounded-xl border border-amber-100 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 opacity-90"
+                                >
+                                  Gardener needs to connect payouts before this offer can be accepted.
+                                </button>
+                              )}
 
                               <button
                                 type="button"
