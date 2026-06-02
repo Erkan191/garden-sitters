@@ -3,10 +3,6 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-06-20",
-});
-
 const MAX_PRICE_GBP = 999999.99;
 const MAX_STRIPE_AMOUNT_PENCE = 99999999;
 const MIN_STRIPE_AMOUNT_PENCE = 50;
@@ -17,6 +13,15 @@ function supabaseFromToken(token) {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
+}
+
+function getStripe() {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecretKey) return null;
+
+  return new Stripe(stripeSecretKey, {
+    apiVersion: "2024-06-20",
+  });
 }
 
 function moneyToPence(value) {
@@ -39,7 +44,8 @@ function isValidMoneyAmount(value) {
 
 export async function POST(request) {
   try {
-    if (!process.env.STRIPE_SECRET_KEY) {
+    const stripe = getStripe();
+    if (!stripe) {
       return Response.json(
         { error: "Server is missing STRIPE_SECRET_KEY" },
         { status: 500 }

@@ -3,10 +3,6 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-06-20",
-});
-
 function supabaseFromToken(token) {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -17,8 +13,25 @@ function supabaseFromToken(token) {
   );
 }
 
+function getStripe() {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecretKey) return null;
+
+  return new Stripe(stripeSecretKey, {
+    apiVersion: "2024-06-20",
+  });
+}
+
 export async function POST(request) {
   try {
+    const stripe = getStripe();
+    if (!stripe) {
+      return Response.json(
+        { error: "Server is missing STRIPE_SECRET_KEY" },
+        { status: 500 }
+      );
+    }
+
     const authHeader = request.headers.get("authorization") || "";
     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
     if (!token) return Response.json({ error: "Missing token" }, { status: 401 });

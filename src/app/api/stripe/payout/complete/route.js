@@ -3,16 +3,21 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-06-20",
-});
-
 function supabaseFromToken(token) {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
+}
+
+function getStripe() {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecretKey) return null;
+
+  return new Stripe(stripeSecretKey, {
+    apiVersion: "2024-06-20",
+  });
 }
 
 export async function POST(request) {
@@ -57,6 +62,14 @@ export async function POST(request) {
   // Must be paid first
   if (booking.status !== "paid" && booking.status !== "completed") {
     return Response.json({ error: "Booking must be paid before payout" }, { status: 400 });
+  }
+
+  const stripe = getStripe();
+  if (!stripe) {
+    return Response.json(
+      { error: "Server is missing STRIPE_SECRET_KEY" },
+      { status: 500 }
+    );
   }
 
   // Mark payout as pending, but do not mark completed until transfer succeeds

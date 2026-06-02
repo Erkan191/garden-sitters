@@ -3,16 +3,21 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-06-20",
-});
-
 function supabaseFromToken(token) {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
+}
+
+function getStripe() {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecretKey) return null;
+
+  return new Stripe(stripeSecretKey, {
+    apiVersion: "2024-06-20",
+  });
 }
 
 export async function POST(request) {
@@ -52,20 +57,23 @@ export async function POST(request) {
       return Response.json({ error: "Only the owner can confirm payment" }, { status: 403 });
     }
 
-    // session must match what we stored (basic tamper check)
-    if (booking.stripe_checkout_session_id && booking.stripe_checkout_session_id !== sessionId) {
-      return Response.json({ error: "Session does not match booking" }, { status: 400 });
+    const stripe = getStripe();
+    if (!stripe) {
+      return Response.json(
+        { error: "Server is missing STRIPE_SECRET_KEY" },
+        { status: 500 }
+      );
     }
 
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ["payment_intent"],
     });
 
-    const paid =
-      session.payment_status === "paid" ||
-      (session.payment_intent && session.payment_intent.status === "succeeded");
+    if (String(session.metadata?.booking_id || "") !== String(bookingId)) {
+      return Response.json({ error: "Session does not match booking" }, { status: 400 });
+    }
 
-    if (!paid) {
+    if (session.payment_status !== "paid") {
       return Response.json({ error: "Payment not completed yet" }, { status: 400 });
     }
 
