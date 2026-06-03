@@ -1173,8 +1173,14 @@ export default function RequestDetailPage() {
                 </p>
                 <p>
                   <span className="font-medium text-zinc-900">Status:</span>{" "}
-                  {requestStatusLabel}
+                  {topStatusLabel}
                 </p>
+                {booking && (
+                  <p>
+                    <span className="font-medium text-zinc-900">Payout:</span>{" "}
+                    {payoutStatusLabel}
+                  </p>
+                )}
               </div>
 
               {!userId && (

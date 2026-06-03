@@ -52,6 +52,40 @@ function getOfferStatusBadgeClass(status) {
   return "bg-gray-100 text-gray-700 border-gray-200";
 }
 
+function getBookingStatusLabel(status, fallbackStatus) {
+  if (status === "pending_payment") return "Payment pending";
+  if (status === "paid") return "Booking paid";
+  if (status === "completed") return "Completed";
+  return getStatusLabel(fallbackStatus);
+}
+
+function getBookingStatusBadgeClass(status, fallbackStatus) {
+  if (status === "pending_payment") {
+    return "bg-amber-100 text-amber-800 border-amber-200";
+  }
+  if (status === "paid") {
+    return "bg-sky-100 text-sky-800 border-sky-200";
+  }
+  if (status === "completed") {
+    return "bg-emerald-100 text-emerald-800 border-emerald-200";
+  }
+  return getRequestStatusBadgeClass(fallbackStatus);
+}
+
+function getPayoutStatusLabel(status) {
+  if (status === "paid") return "Payout paid";
+  if (status === "pending") return "Payout pending";
+  if (status === "failed") return "Payout failed";
+  return "Payout not started";
+}
+
+function getPayoutStatusBadgeClass(status) {
+  if (status === "paid") return "bg-emerald-100 text-emerald-800 border-emerald-200";
+  if (status === "pending") return "bg-amber-100 text-amber-800 border-amber-200";
+  if (status === "failed") return "bg-red-100 text-red-800 border-red-200";
+  return "bg-gray-100 text-gray-700 border-gray-200";
+}
+
 function buildRequestTags(request) {
   if (!request) return [];
 
@@ -88,6 +122,7 @@ export default function DashboardPage() {
 
   const [offersError, setOffersError] = useState("");
   const [requestsById, setRequestsById] = useState({});
+  const [bookingByRequestId, setBookingByRequestId] = useState({});
 
   const [requestFilter, setRequestFilter] = useState("all");
   const [offerFilter, setOfferFilter] = useState("all");
@@ -141,6 +176,36 @@ export default function DashboardPage() {
 
       const safeRequests = requestRows ?? [];
       const safeProfile = profileRow ?? null;
+      const ownerRequestIds = requestError
+        ? []
+        : [...new Set(safeRequests.map((request) => request.id).filter(Boolean))];
+
+      async function loadBookingsForRequestIds(requestIds) {
+        const uniqueRequestIds = [...new Set(requestIds.filter(Boolean))];
+
+        if (uniqueRequestIds.length === 0) {
+          setBookingByRequestId({});
+          return;
+        }
+
+        const { data: bookingRows, error: bookingError } = await supabase
+          .from("bookings")
+          .select("id, request_id, offer_id, status, payout_status, stripe_transfer_id")
+          .in("request_id", uniqueRequestIds);
+
+        if (bookingError) {
+          setBookingByRequestId({});
+          return;
+        }
+
+        const bookingMap = {};
+
+        for (const row of bookingRows ?? []) {
+          bookingMap[row.request_id] = row;
+        }
+
+        setBookingByRequestId(bookingMap);
+      }
 
       if (profileLoadError) {
         setProfile(null);
@@ -157,10 +222,6 @@ export default function DashboardPage() {
       } else {
         setRequests(safeRequests);
         setRequestsError("");
-
-        const ownerRequestIds = [
-          ...new Set(safeRequests.map((request) => request.id).filter(Boolean)),
-        ];
 
         if (ownerRequestIds.length === 0) {
           setOfferCountsByRequestId({});
@@ -211,6 +272,7 @@ export default function DashboardPage() {
         setOffers([]);
         setOffersError(offerError.message);
         setRequestsById({});
+        await loadBookingsForRequestIds(ownerRequestIds);
         setLoading(false);
         return;
       }
@@ -224,6 +286,7 @@ export default function DashboardPage() {
 
       if (requestIds.length === 0) {
         setRequestsById({});
+        await loadBookingsForRequestIds(ownerRequestIds);
         setLoading(false);
         return;
       }
@@ -236,6 +299,7 @@ export default function DashboardPage() {
       if (relatedRequestsError) {
         setRequestsById({});
         setOffersError(relatedRequestsError.message);
+        await loadBookingsForRequestIds(ownerRequestIds);
         setLoading(false);
         return;
       }
@@ -246,6 +310,7 @@ export default function DashboardPage() {
       }
 
       setRequestsById(requestMap);
+      await loadBookingsForRequestIds([...ownerRequestIds, ...requestIds]);
       setLoading(false);
     }
 
@@ -307,17 +372,35 @@ export default function DashboardPage() {
     }
   }
 
-  const acceptedOwnerRequests = requests.filter(
-    (request) => request.status === "accepted"
-  );
+  const liveOwnerRequests = requests.filter((request) => {
+    const booking = bookingByRequestId[request.id];
+    return request.status === "accepted" && booking?.status !== "completed";
+  });
 
-  const acceptedGardenerOffers = offers.filter((offer) => {
+  const liveGardenerOffers = offers.filter((offer) => {
     const request = requestsById[offer.request_id];
-    return offer.status === "accepted" && request?.status === "accepted";
+    const booking = bookingByRequestId[offer.request_id];
+    return (
+      offer.status === "accepted" &&
+      request?.status === "accepted" &&
+      booking?.status !== "completed"
+    );
   });
 
   const filteredRequests = requests.filter((request) => {
     if (requestFilter === "all") return true;
+    if (requestFilter === "completed") {
+      return (
+        request.status === "completed" ||
+        bookingByRequestId[request.id]?.status === "completed"
+      );
+    }
+    if (requestFilter === "accepted") {
+      return (
+        request.status === "accepted" &&
+        bookingByRequestId[request.id]?.status !== "completed"
+      );
+    }
     return request.status === requestFilter;
   });
 
@@ -338,9 +421,12 @@ export default function DashboardPage() {
     (request) => request.status === "open"
   ).length;
 
-  const completedRequestsCount = requests.filter(
-    (request) => request.status === "completed"
-  ).length;
+  const completedRequestsCount = requests.filter((request) => {
+    return (
+      request.status === "completed" ||
+      bookingByRequestId[request.id]?.status === "completed"
+    );
+  }).length;
 
   const closedRequestsCount = requests.filter(
     (request) => request.status === "closed"
@@ -494,7 +580,7 @@ export default function DashboardPage() {
             <p className="mt-3 text-sm text-zinc-500">Your requests</p>
             <p className="mt-2 text-3xl font-semibold">{requests.length}</p>
             <p className="mt-2 text-sm text-zinc-600">
-              {openRequestsCount} open • {acceptedOwnerRequests.length} live •{" "}
+              {openRequestsCount} open • {liveOwnerRequests.length} live •{" "}
               {completedRequestsCount} completed • {closedRequestsCount} closed
             </p>
           </div>
@@ -506,7 +592,7 @@ export default function DashboardPage() {
             <p className="mt-3 text-sm text-zinc-500">Your offers</p>
             <p className="mt-2 text-3xl font-semibold">{offers.length}</p>
             <p className="mt-2 text-sm text-zinc-600">
-              {pendingOffersCount} pending • {acceptedGardenerOffers.length} accepted
+              {pendingOffersCount} pending • {liveGardenerOffers.length} live
             </p>
           </div>
 
@@ -516,10 +602,10 @@ export default function DashboardPage() {
             </p>
             <p className="mt-3 text-sm text-zinc-500">Live work</p>
             <p className="mt-2 text-3xl font-semibold">
-              {acceptedOwnerRequests.length + acceptedGardenerOffers.length}
+              {liveOwnerRequests.length + liveGardenerOffers.length}
             </p>
             <p className="mt-2 text-sm text-zinc-600">
-              Accepted requests and jobs currently in progress.
+              Accepted, payment-pending, or paid jobs currently in progress.
             </p>
           </div>
 
@@ -539,7 +625,7 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-2">
             <h2 className="text-xl font-semibold">Live work</h2>
             <p className="text-sm text-zinc-600">
-              Accepted jobs and active chats that need attention.
+              Jobs and active chats that still need attention.
             </p>
           </div>
 
@@ -548,23 +634,23 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-semibold text-zinc-900">
-                    Accepted requests
+                    Requests needing action
                   </h3>
                   <p className="mt-1 text-sm text-zinc-600">
-                    Requests you own that are now live.
+                    Accepted, payment-pending, or paid requests that still need your attention.
                   </p>
                 </div>
 
                 <div className="text-sm text-zinc-500">
-                  {acceptedOwnerRequests.length}{" "}
-                  {acceptedOwnerRequests.length === 1 ? "request" : "requests"}
+                  {liveOwnerRequests.length}{" "}
+                  {liveOwnerRequests.length === 1 ? "request" : "requests"}
                 </div>
               </div>
 
-              {acceptedOwnerRequests.length === 0 ? (
+              {liveOwnerRequests.length === 0 ? (
                 <div className="mt-4 rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-4">
                   <p className="text-sm font-medium text-zinc-700">
-                    No accepted requests yet.
+                    No live requests need action.
                   </p>
                   <p className="mt-2 text-sm text-zinc-500">
                     When someone accepts one of your offers, it will appear here for quick access.
@@ -578,11 +664,15 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="mt-4 space-y-3">
-                  {acceptedOwnerRequests.map((request) => {
+                  {liveOwnerRequests.map((request) => {
                     const unreadCount =
                       unreadCountsByRequestId[request.id] ?? 0;
                     const acceptedOffer =
                       acceptedOfferByRequestId[request.id] ?? null;
+                    const booking = bookingByRequestId[request.id] ?? null;
+                    const canBookAndPay =
+                      acceptedOffer &&
+                      (!booking || booking.status === "pending_payment");
                     const paymentError =
                       paymentErrorByRequestId[request.id] ?? "";
 
@@ -601,6 +691,25 @@ export default function DashboardPage() {
                         </p>
 
                         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
+                          <span
+                            className={`rounded-full border px-2 py-1 text-xs font-medium ${getBookingStatusBadgeClass(
+                              booking?.status,
+                              request.status
+                            )}`}
+                          >
+                            {getBookingStatusLabel(booking?.status, request.status)}
+                          </span>
+
+                          {booking && (
+                            <span
+                              className={`rounded-full border px-2 py-1 text-xs font-medium ${getPayoutStatusBadgeClass(
+                                booking.payout_status
+                              )}`}
+                            >
+                              {getPayoutStatusLabel(booking.payout_status)}
+                            </span>
+                          )}
+
                           <span>{formatPrice(request.price_offered_gbp) || "No price"}</span>
                           <span>•</span>
                           <span>{unreadCount} unread</span>
@@ -614,7 +723,7 @@ export default function DashboardPage() {
                             Open chat
                           </Link>
 
-                          {acceptedOffer && (
+                          {canBookAndPay && (
                             <button
                               onClick={() => bookAndPay(acceptedOffer.id, request.id)}
                               disabled={payingOfferId === acceptedOffer.id}
@@ -650,23 +759,23 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-semibold text-zinc-900">
-                    Accepted jobs
+                    Live jobs
                   </h3>
                   <p className="mt-1 text-sm text-zinc-600">
-                    Jobs you’ve won as a gardener.
+                    Jobs you’ve won as a gardener that are not completed yet.
                   </p>
                 </div>
 
                 <div className="text-sm text-zinc-500">
-                  {acceptedGardenerOffers.length}{" "}
-                  {acceptedGardenerOffers.length === 1 ? "job" : "jobs"}
+                  {liveGardenerOffers.length}{" "}
+                  {liveGardenerOffers.length === 1 ? "job" : "jobs"}
                 </div>
               </div>
 
-              {acceptedGardenerOffers.length === 0 ? (
+              {liveGardenerOffers.length === 0 ? (
                 <div className="mt-4 rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-4">
                   <p className="text-sm font-medium text-zinc-700">
-                    No accepted jobs yet.
+                    No live jobs yet.
                   </p>
                   <p className="mt-2 text-sm text-zinc-500">
                     Accepted gardening jobs will show here so you can jump straight into live work.
@@ -680,8 +789,9 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="mt-4 space-y-3">
-                  {acceptedGardenerOffers.map((offer) => {
+                  {liveGardenerOffers.map((offer) => {
                     const request = requestsById[offer.request_id];
+                    const booking = bookingByRequestId[offer.request_id] ?? null;
                     const unreadCount =
                       unreadCountsByRequestId[offer.request_id] ?? 0;
 
@@ -703,6 +813,25 @@ export default function DashboardPage() {
                         </p>
 
                         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
+                          <span
+                            className={`rounded-full border px-2 py-1 text-xs font-medium ${getBookingStatusBadgeClass(
+                              booking?.status,
+                              request?.status
+                            )}`}
+                          >
+                            {getBookingStatusLabel(booking?.status, request?.status)}
+                          </span>
+
+                          {booking && (
+                            <span
+                              className={`rounded-full border px-2 py-1 text-xs font-medium ${getPayoutStatusBadgeClass(
+                                booking.payout_status
+                              )}`}
+                            >
+                              {getPayoutStatusLabel(booking.payout_status)}
+                            </span>
+                          )}
+
                           <span>
                             {offer.proposed_price_gbp != null
                               ? formatPrice(offer.proposed_price_gbp)
@@ -831,6 +960,7 @@ export default function DashboardPage() {
                 const requestTags = buildRequestTags(request);
                 const offerCount = offerCountsByRequestId[request.id] ?? 0;
                 const unreadCount = unreadCountsByRequestId[request.id] ?? 0;
+                const booking = bookingByRequestId[request.id] ?? null;
 
                 return (
                   <div
@@ -850,12 +980,23 @@ export default function DashboardPage() {
 
                         <div className="mt-2">
                           <span
-                            className={`rounded-full border px-2 py-1 text-xs font-medium ${getRequestStatusBadgeClass(
+                            className={`rounded-full border px-2 py-1 text-xs font-medium ${getBookingStatusBadgeClass(
+                              booking?.status,
                               request.status
                             )}`}
                           >
-                            {getStatusLabel(request.status)}
+                            {getBookingStatusLabel(booking?.status, request.status)}
                           </span>
+
+                          {booking && (
+                            <span
+                              className={`ml-2 rounded-full border px-2 py-1 text-xs font-medium ${getPayoutStatusBadgeClass(
+                                booking.payout_status
+                              )}`}
+                            >
+                              {getPayoutStatusLabel(booking.payout_status)}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -1013,6 +1154,7 @@ export default function DashboardPage() {
             <div className="mt-6 space-y-4">
               {filteredOffers.map((offer) => {
                 const request = requestsById[offer.request_id];
+                const booking = bookingByRequestId[offer.request_id] ?? null;
                 const unreadCount = unreadCountsByRequestId[offer.request_id] ?? 0;
 
                 return (
@@ -1048,7 +1190,17 @@ export default function DashboardPage() {
 
                           {request?.status && (
                             <span className="text-sm text-zinc-500">
-                              Request: {getStatusLabel(request.status)}
+                              Request: {getBookingStatusLabel(booking?.status, request.status)}
+                            </span>
+                          )}
+
+                          {booking && (
+                            <span
+                              className={`rounded-full border px-2 py-1 text-xs font-medium ${getPayoutStatusBadgeClass(
+                                booking.payout_status
+                              )}`}
+                            >
+                              {getPayoutStatusLabel(booking.payout_status)}
                             </span>
                           )}
 
