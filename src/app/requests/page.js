@@ -150,6 +150,7 @@ export default function RequestsPage() {
         .select(
           "id, owner_id, title, postcode, start_date, end_date, price_offered_gbp, status, created_at, visit_frequency, need_watering, need_harvesting, has_greenhouse, has_veg_beds, has_pots, has_seedlings"
         )
+        .eq("status", "open")
         .order("created_at", { ascending: false });
 
       if (error) {

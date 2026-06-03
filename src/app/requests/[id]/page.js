@@ -181,6 +181,26 @@ function getBookingStatusBadgeClass(status) {
   return "bg-stone-100 text-stone-700 border-stone-200";
 }
 
+function getPayoutStatusBadgeClass(status) {
+  if (status === "paid") {
+    return "bg-emerald-50 text-emerald-800 border-emerald-100";
+  }
+  if (status === "pending") {
+    return "bg-amber-50 text-amber-800 border-amber-100";
+  }
+  if (status === "failed") {
+    return "bg-red-50 text-red-700 border-red-100";
+  }
+  return "bg-stone-100 text-stone-700 border-stone-200";
+}
+
+function getPayoutStatusLabel(status) {
+  if (status === "paid") return "Payout paid";
+  if (status === "pending") return "Payout pending";
+  if (status === "failed") return "Payout failed";
+  return "Payout not started";
+}
+
 
 const MAX_PRICE_GBP = 999999.99;
 
@@ -856,6 +876,24 @@ export default function RequestDetailPage() {
     req?.owner_id ? formatRating(reviewStatsByUserId[req.owner_id]) : "No reviews yet";
   const requestStatusLabel = getStatusLabel(req?.status);
   const requestStatusBadgeClass = getStatusBadgeClass(req?.status);
+  const hasBookingStatus =
+    booking?.status === "paid" ||
+    booking?.status === "completed" ||
+    booking?.status === "pending_payment";
+  const topStatusLabel =
+    booking?.status === "paid"
+      ? "Booking paid"
+      : booking?.status === "completed"
+      ? "Completed"
+      : booking?.status === "pending_payment"
+      ? "Payment pending"
+      : requestStatusLabel;
+  const topStatusBadgeClass = hasBookingStatus
+    ? getBookingStatusBadgeClass(booking.status)
+    : requestStatusBadgeClass;
+  const payoutStatus = booking?.payout_status || "not_started";
+  const payoutStatusLabel = getPayoutStatusLabel(payoutStatus);
+  const payoutStatusBadgeClass = getPayoutStatusBadgeClass(payoutStatus);
   const formattedRequestDateRange = formatDateRange(req?.start_date, req?.end_date);
   const formattedRequestPrice = formatPrice(req?.price_offered_gbp);
 
@@ -974,10 +1012,18 @@ export default function RequestDetailPage() {
                     </h1>
 
                     <span
-                      className={`rounded-full border px-2 py-1 text-xs font-medium ${requestStatusBadgeClass}`}
+                      className={`rounded-full border px-2 py-1 text-xs font-medium ${topStatusBadgeClass}`}
                     >
-                      {requestStatusLabel}
+                      {topStatusLabel}
                     </span>
+
+                    {booking && (
+                      <span
+                        className={`rounded-full border px-2 py-1 text-xs font-medium ${payoutStatusBadgeClass}`}
+                      >
+                        {payoutStatusLabel}
+                      </span>
+                    )}
                   </div>
 
                   <p className="mt-3 text-sm text-zinc-700">
