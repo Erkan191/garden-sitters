@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 
@@ -136,6 +137,14 @@ export async function POST(request) {
       );
     }
 
+    const supabaseAdmin = createSupabaseAdminClient();
+    if (!supabaseAdmin) {
+      return Response.json(
+        { error: "Server is missing Supabase admin environment variables" },
+        { status: 500 }
+      );
+    }
+
     let amount = Number(offer.proposed_price_gbp ?? reqRow.price_offered_gbp ?? 0);
 
     if (!isValidMoneyAmount(amount)) {
@@ -167,7 +176,7 @@ export async function POST(request) {
       );
     }
 
-    const { data: existingBooking, error: existingBookingErr } = await supabase
+    const { data: existingBooking, error: existingBookingErr } = await supabaseAdmin
       .from("bookings")
       .select("id, status, amount_gbp, platform_fee_gbp")
       .eq("request_id", reqRow.id)
@@ -217,7 +226,7 @@ export async function POST(request) {
     }
 
     if (!bookingId) {
-      const { data: booking, error: bookErr } = await supabase
+      const { data: booking, error: bookErr } = await supabaseAdmin
         .from("bookings")
         .insert({
           request_id: reqRow.id,
@@ -290,7 +299,7 @@ export async function POST(request) {
       },
     });
 
-    const { error: upErr } = await supabase
+    const { error: upErr } = await supabaseAdmin
       .from("bookings")
       .update({ stripe_checkout_session_id: session.id })
       .eq("id", bookingId);

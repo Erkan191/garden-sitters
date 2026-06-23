@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 
@@ -77,19 +78,32 @@ export async function POST(request) {
       return Response.json({ error: "Payment not completed yet" }, { status: 400 });
     }
 
+    if (booking.status === "completed") {
+      return Response.json({ ok: true, status: "completed" });
+    }
+
     const paymentIntentId =
       typeof session.payment_intent === "string"
         ? session.payment_intent
         : session.payment_intent?.id || null;
 
-    const { error: upErr } = await supabase
+    const supabaseAdmin = createSupabaseAdminClient();
+    if (!supabaseAdmin) {
+      return Response.json(
+        { error: "Server is missing Supabase admin environment variables" },
+        { status: 500 }
+      );
+    }
+
+    const { error: upErr } = await supabaseAdmin
       .from("bookings")
       .update({
         status: "paid",
         stripe_checkout_session_id: session.id,
         stripe_payment_intent_id: paymentIntentId,
       })
-      .eq("id", bookingId);
+      .eq("id", bookingId)
+      .neq("status", "completed");
 
     if (upErr) return Response.json({ error: upErr.message }, { status: 400 });
 

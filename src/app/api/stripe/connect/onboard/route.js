@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 
@@ -47,9 +48,16 @@ export async function POST(request) {
     }
 
     const userId = userData.user.id;
+    const supabaseAdmin = createSupabaseAdminClient();
+    if (!supabaseAdmin) {
+      return Response.json(
+        { error: "Server is missing Supabase admin environment variables" },
+        { status: 500 }
+      );
+    }
 
     // Read existing stripe_account_id
-    const { data: profile, error: profileErr } = await supabase
+    const { data: profile, error: profileErr } = await supabaseAdmin
       .from("profiles")
       .select("stripe_account_id")
       .eq("id", userId)
@@ -72,9 +80,9 @@ export async function POST(request) {
 
       stripeAccountId = account.id;
 
-      const { error: upErr } = await supabase
+      const { error: upErr } = await supabaseAdmin
         .from("profiles")
-          .upsert({ id: userId, stripe_account_id: stripeAccountId }, { onConflict: "id" });
+        .upsert({ id: userId, stripe_account_id: stripeAccountId }, { onConflict: "id" });
 
       if (upErr) return Response.json({ error: upErr.message }, { status: 400 });
     }
@@ -91,26 +99,25 @@ export async function POST(request) {
 
     return Response.json({ url: accountLink.url });
   } catch (err) {
-  try {
-    if (!stripe) throw new Error("Stripe client unavailable");
+    try {
+      if (!stripe) throw new Error("Stripe client unavailable");
 
-    // Ask Stripe which platform account this key belongs to
-    const platform = await stripe.accounts.retrieve();
+      // Ask Stripe which platform account this key belongs to.
+      const platform = await stripe.accounts.retrieve();
 
-    return Response.json(
-      {
-        error: err.message || "Server error",
-        platformAccountId: platform.id,
-        livemode: platform.livemode,
-        keyPrefix: (process.env.STRIPE_SECRET_KEY || "").slice(0, 8), // e.g. "sk_test_"
-      },
-      { status: 500 }
-    );
-  } catch (e2) {
-    return Response.json(
-      { error: err.message || "Server error (and failed to retrieve platform account)" },
-      { status: 500 }
-    );
+      return Response.json(
+        {
+          error: err.message || "Server error",
+          platformAccountId: platform.id,
+          livemode: platform.livemode,
+        },
+        { status: 500 }
+      );
+    } catch {
+      return Response.json(
+        { error: err.message || "Server error (and failed to retrieve platform account)" },
+        { status: 500 }
+      );
+    }
   }
-}
 }

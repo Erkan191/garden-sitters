@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 
@@ -44,8 +45,15 @@ export async function POST(request) {
     }
 
     const userId = userData.user.id;
+    const supabaseAdmin = createSupabaseAdminClient();
+    if (!supabaseAdmin) {
+      return Response.json(
+        { error: "Server is missing Supabase admin environment variables" },
+        { status: 500 }
+      );
+    }
 
-    const { data: profile, error: profileErr } = await supabase
+    const { data: profile, error: profileErr } = await supabaseAdmin
       .from("profiles")
       .select("stripe_account_id")
       .eq("id", userId)
@@ -62,10 +70,14 @@ export async function POST(request) {
       Boolean(acct.details_submitted) &&
       (acct.charges_enabled || acct.payouts_enabled);
 
-    await supabase
+    const { error: updateErr } = await supabaseAdmin
       .from("profiles")
       .update({ stripe_onboarding_complete: onboardingComplete })
       .eq("id", userId);
+
+    if (updateErr) {
+      return Response.json({ error: updateErr.message }, { status: 400 });
+    }
 
     return Response.json({
       stripe_account_id: profile.stripe_account_id,

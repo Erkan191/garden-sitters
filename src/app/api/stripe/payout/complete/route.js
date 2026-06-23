@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 
@@ -64,6 +65,14 @@ export async function POST(request) {
     return Response.json({ error: "Booking must be paid before payout" }, { status: 400 });
   }
 
+  const supabaseAdmin = createSupabaseAdminClient();
+  if (!supabaseAdmin) {
+    return Response.json(
+      { error: "Server is missing Supabase admin environment variables" },
+      { status: 500 }
+    );
+  }
+
   const stripe = getStripe();
   if (!stripe) {
     return Response.json(
@@ -73,7 +82,7 @@ export async function POST(request) {
   }
 
   // Mark payout as pending, but do not mark completed until transfer succeeds
-  const { error: markErr } = await supabase
+  const { error: markErr } = await supabaseAdmin
     .from("bookings")
     .update({
       payout_status: "pending",
@@ -84,14 +93,14 @@ export async function POST(request) {
   if (markErr) return Response.json({ error: markErr.message }, { status: 400 });
 
   // Gardener Stripe account
-  const { data: gardenerProfile, error: profErr } = await supabase
+  const { data: gardenerProfile, error: profErr } = await supabaseAdmin
     .from("profiles")
     .select("stripe_account_id, stripe_onboarding_complete")
     .eq("id", booking.gardener_id)
     .maybeSingle();
 
   if (profErr || !gardenerProfile) {
-    await supabase
+    await supabaseAdmin
       .from("bookings")
       .update({ payout_status: "failed", payout_error: profErr?.message || "Gardener profile not found" })
       .eq("id", booking.id);
@@ -100,7 +109,7 @@ export async function POST(request) {
   }
 
   if (!gardenerProfile.stripe_account_id) {
-    await supabase
+    await supabaseAdmin
       .from("bookings")
       .update({ payout_status: "failed", payout_error: "Gardener has no Stripe account connected" })
       .eq("id", booking.id);
@@ -109,7 +118,7 @@ export async function POST(request) {
   }
 
   if (!gardenerProfile.stripe_onboarding_complete) {
-    await supabase
+    await supabaseAdmin
       .from("bookings")
       .update({ payout_status: "failed", payout_error: "Gardener Stripe onboarding not complete" })
       .eq("id", booking.id);
@@ -122,7 +131,7 @@ export async function POST(request) {
   const payout = amount - fee;
 
   if (!payout || Number.isNaN(payout) || payout <= 0) {
-    await supabase
+    await supabaseAdmin
       .from("bookings")
       .update({ payout_status: "failed", payout_error: "Invalid payout amount" })
       .eq("id", booking.id);
@@ -144,10 +153,10 @@ export async function POST(request) {
       { idempotencyKey: `booking_${booking.id}_transfer` }
     );
 
-    const { error: upErr } = await supabase
+    const { error: upErr } = await supabaseAdmin
       .from("bookings")
       .update({
-                stripe_transfer_id: transfer.id,
+        stripe_transfer_id: transfer.id,
         payout_status: "paid",
         payout_error: null,
         status: "completed",
@@ -165,13 +174,18 @@ export async function POST(request) {
     return Response.json({ ok: true, transferId: transfer.id });
   } catch (err) {
     // Record failure so we can retry later
-    await supabase
+    const failureUpdate = {
+      payout_status: "failed",
+      payout_error: err.message || "Transfer failed",
+    };
+
+    if (booking.status !== "completed") {
+      failureUpdate.status = "paid";
+    }
+
+    await supabaseAdmin
       .from("bookings")
-      .update({
-        payout_status: "failed",
-        payout_error: err.message || "Transfer failed",
-        status: "paid",
-      })
+      .update(failureUpdate)
       .eq("id", booking.id);
 
     return Response.json({ error: err.message || "Transfer failed" }, { status: 400 });
