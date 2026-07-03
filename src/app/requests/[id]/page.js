@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { PaymentSafetyNotice, SafetyNotice } from "../../LaunchNotices";
 
 function buildReviewStats(reviews) {
   const map = {};
@@ -1141,6 +1142,8 @@ export default function RequestDetailPage() {
                         paid after the job is marked complete.
                       </p>
 
+                      <PaymentSafetyNotice className="mt-3" />
+
                       <button
                         type="button"
                         onClick={() => bookAndPay(acceptedOffer.id)}
@@ -1241,12 +1244,16 @@ export default function RequestDetailPage() {
 
             <div className="mt-4 flex flex-wrap gap-3">
               {isOwner && booking.status === "pending_payment" && acceptedOffer && (
-                <button
-                  onClick={() => bookAndPay(acceptedOffer.id)}
-                  className="rounded-xl bg-black px-4 py-2 text-white"
-                >
-                  Confirm booking and pay securely
-                </button>
+                <div className="w-full space-y-3">
+                  <PaymentSafetyNotice />
+
+                  <button
+                    onClick={() => bookAndPay(acceptedOffer.id)}
+                    className="rounded-xl bg-black px-4 py-2 text-white"
+                  >
+                    Confirm booking and pay securely
+                  </button>
+                </div>
               )}
 
               {isOwner && booking.status === "paid" && (
@@ -1390,6 +1397,13 @@ export default function RequestDetailPage() {
               </p>
             </div>
 
+            <SafetyNotice title="Before sending an offer" className="mt-4">
+              Make sure the dates, visits, price, access needs, and care
+              instructions are clear before work starts. Do not accept keys,
+              access details, or exact addresses until you are comfortable with
+              the owner and the arrangement.
+            </SafetyNotice>
+
             <form onSubmit={submitOffer} className="mt-4 space-y-3">
               <div>
                 <label className="text-sm text-zinc-700">Message (optional)</label>
@@ -1492,6 +1506,12 @@ export default function RequestDetailPage() {
                 {offersWithTrust.length === 1 ? "" : "s"}
               </p>
             </div>
+
+            <SafetyNotice title="Before accepting an offer" className="mt-4">
+              Review the gardener profile, offer message, skills, and reviews.
+              Before the job starts, agree the dates, price, exact address,
+              access, keys, and care instructions clearly.
+            </SafetyNotice>
 
             {offersWithTrust.length === 0 ? (
               <div className="mt-4 rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-5">

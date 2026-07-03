@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { BetaNotice, SafetyNotice } from "../../LaunchNotices";
 
 const MAX_PRICE_GBP = 999999.99;
 
@@ -152,6 +153,8 @@ export default function NewRequestPage() {
             </div>
           </div>
         </section>
+
+        <BetaNotice />
 
         <form
           onSubmit={handleCreate}
@@ -305,6 +308,14 @@ export default function NewRequestPage() {
                 placeholder="e.g. 30"
               />
             </div>
+
+            <SafetyNotice title="Before posting">
+              Keep public details broad. Do not share exact addresses, access
+              codes, key locations, alarm information, or other sensitive access
+              details until you are comfortable with the gardener. You are
+              responsible for agreeing dates, price, access, keys, and care
+              instructions clearly.
+            </SafetyNotice>
 
             <button className="w-full rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
               Create request

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { BetaNotice } from "../../../LaunchNotices";
 
 export default function BookingCancelPage() {
   const { id } = useParams();
@@ -27,6 +28,8 @@ export default function BookingCancelPage() {
             booking or request and try again when you’re ready.
           </p>
         </section>
+
+        <BetaNotice />
 
         <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <h2 className="text-2xl font-semibold text-zinc-900">

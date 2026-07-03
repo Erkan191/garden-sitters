@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { BetaNotice } from "../../../LaunchNotices";
 
 export default function BookingSuccessPage() {
   const { id } = useParams();
@@ -122,6 +123,8 @@ export default function BookingSuccessPage() {
             job when the care has been carried out.
           </p>
         </section>
+
+        <BetaNotice />
 
         <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

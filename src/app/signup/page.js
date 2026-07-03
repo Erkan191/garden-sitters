@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { BetaNotice } from "../LaunchNotices";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -55,6 +56,8 @@ export default function SignupPage() {
             action: post a request, send an offer, manage bookings, or build trust
             through reviews.
           </p>
+
+          <BetaNotice className="mt-6" />
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <div className="rounded-[1.25rem] border border-stone-200 bg-white/80 p-4">
@@ -173,6 +176,24 @@ export default function SignupPage() {
             <button className="w-full rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
               Sign up
             </button>
+
+            <p className="text-xs leading-5 text-zinc-500">
+              By signing up for the private beta, you agree to the{" "}
+              <Link
+                href="/terms"
+                className="font-medium text-emerald-900 hover:underline"
+              >
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/privacy"
+                className="font-medium text-emerald-900 hover:underline"
+              >
+                Privacy
+              </Link>
+              .
+            </p>
 
             {msg && (
               <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-zinc-600">

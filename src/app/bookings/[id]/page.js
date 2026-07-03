@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { BetaNotice, PaymentSafetyNotice } from "../../LaunchNotices";
 
 function formatPrice(value) {
   if (value == null) return "Not set";
@@ -341,6 +342,8 @@ export default function BookingDetailPage() {
           </div>
         </section>
 
+        <BetaNotice />
+
         {msg && (
           <div className="rounded-[1.5rem] border border-stone-200 bg-white p-4 text-sm text-zinc-600 shadow-sm">
             {msg}
@@ -539,6 +542,8 @@ export default function BookingDetailPage() {
                 Payment is handled securely through Watch My Plot. The gardener is not
                 paid out until the booking is completed.
               </p>
+
+              <PaymentSafetyNotice className="mt-4" />
             </section>
           </aside>
         </section>

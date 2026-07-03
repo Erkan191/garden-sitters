@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import Header from "./Header";
 import "./globals.css";
 
@@ -30,8 +31,35 @@ export default function RootLayout({ children }) {
           <div>{children}</div>
 
           <footer className="mt-16 border-t border-stone-200 bg-white/90">
-            <div className="mx-auto max-w-6xl px-6 py-6 text-sm text-zinc-500">
-              Watch My Plot — growers helping growers keep plots, veg beds, greenhouses, and gardens thriving while they’re away.
+            <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-6 text-sm text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+              <p>
+                Watch My Plot - growers helping growers keep plots, veg beds,
+                greenhouses, and gardens thriving while they are away.
+              </p>
+
+              <nav className="flex flex-wrap gap-x-4 gap-y-2">
+                <Link href="/" className="hover:text-zinc-900 hover:underline">
+                  Home
+                </Link>
+                <Link
+                  href="/privacy"
+                  className="hover:text-zinc-900 hover:underline"
+                >
+                  Privacy
+                </Link>
+                <Link
+                  href="/terms"
+                  className="hover:text-zinc-900 hover:underline"
+                >
+                  Terms
+                </Link>
+                <Link
+                  href="/contact"
+                  className="hover:text-zinc-900 hover:underline"
+                >
+                  Contact
+                </Link>
+              </nav>
             </div>
           </footer>
         </div>

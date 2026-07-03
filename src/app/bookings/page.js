@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { BetaNotice } from "../LaunchNotices";
 
 function formatPrice(value) {
   if (value == null) return "Not set";
@@ -106,6 +107,8 @@ export default function BookingsPage() {
             </div>
           </div>
         </section>
+
+        <BetaNotice />
 
         <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
