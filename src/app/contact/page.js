@@ -45,15 +45,14 @@ export default function ContactPage() {
 
         <ContactCard title="Support email">
           <p>
-            Placeholder support email:{" "}
+            Email:{" "}
             <span className="font-medium text-zinc-900">
-              support@watchmyplot.example
+              support@watchmyplot.com
             </span>
           </p>
           <p>
-            Replace this placeholder with the final private beta support inbox
-            before inviting testers. If you were invited directly, you can also
-            use the contact details included with your invite.
+            If you were invited directly, you can also use the contact details
+            included with your invite.
           </p>
         </ContactCard>
 
