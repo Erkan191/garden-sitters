@@ -103,6 +103,99 @@ function buildRequestTags(request) {
   return tags;
 }
 
+const primaryButtonClass =
+  "inline-flex justify-center rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800";
+const secondaryButtonClass =
+  "inline-flex justify-center rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50";
+
+function friendlyError(message) {
+  const text = String(message || "");
+  const lower = text.toLowerCase();
+
+  if (
+    lower.includes("failed to fetch") ||
+    lower.includes("typeerror") ||
+    lower.includes("network")
+  ) {
+    return "We couldn't load this just now. Please refresh or try again in a moment.";
+  }
+
+  return text || "We couldn't load this just now. Please refresh or try again in a moment.";
+}
+
+function EmptyState({ title, children, href, actionLabel }) {
+  return (
+    <div className="mt-4 rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-5">
+      <p className="text-sm font-medium text-zinc-900">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-zinc-600">{children}</p>
+      {href && actionLabel && (
+        <Link href={href} className={`mt-4 ${primaryButtonClass}`}>
+          {actionLabel}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function ErrorState({ title = "We couldn't load this just now.", message }) {
+  return (
+    <div className="mt-6 rounded-[1.25rem] border border-red-100 bg-red-50 p-5 text-sm leading-6 text-red-800">
+      <p className="font-medium">{title}</p>
+      <p className="mt-1">{friendlyError(message)}</p>
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        className="mt-4 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-50"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
+function ActionCard({
+  title,
+  children,
+  href,
+  actionLabel,
+  onClick,
+  disabled = false,
+  srActionText = "",
+}) {
+  return (
+    <div className="rounded-[1.25rem] border border-stone-200 bg-white p-5 shadow-sm">
+      <p className="text-sm font-semibold text-zinc-900">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-zinc-600">{children}</p>
+
+      {href && actionLabel && (
+        <Link href={href} className={`mt-4 w-full sm:w-auto ${primaryButtonClass}`}>
+          {actionLabel}
+        </Link>
+      )}
+
+      {onClick && actionLabel && (
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={disabled}
+          className={`mt-4 w-full disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${primaryButtonClass}`}
+        >
+          {actionLabel}
+          {srActionText && <span className="sr-only">{srActionText}</span>}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function filterButtonClass(active) {
+  return `rounded-full border px-3 py-1 text-sm font-medium ${
+    active
+      ? "border-emerald-900 bg-emerald-900 text-white"
+      : "border-stone-300 bg-white text-zinc-700 hover:bg-stone-50"
+  }`;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -438,6 +531,46 @@ export default function DashboardPage() {
 
   const payoutConnected = Boolean(profile?.stripe_onboarding_complete);
   const profileReady = Boolean(profile?.full_name?.trim());
+  const requestsAwaitingOffers = requests.filter(
+    (request) =>
+      request.status === "open" && (offerCountsByRequestId[request.id] ?? 0) === 0
+  );
+  const requestsWithOffers = requests.filter(
+    (request) =>
+      request.status === "open" && (offerCountsByRequestId[request.id] ?? 0) > 0
+  );
+  const bookingsNeedingPayment = liveOwnerRequests.filter((request) => {
+    const acceptedOffer = acceptedOfferByRequestId[request.id] ?? null;
+    const booking = bookingByRequestId[request.id] ?? null;
+
+    return acceptedOffer && (!booking || booking.status === "pending_payment");
+  });
+  const jobsAwaitingCompletion = liveOwnerRequests.filter((request) => {
+    const booking = bookingByRequestId[request.id] ?? null;
+
+    return booking?.status === "paid";
+  });
+  const setupNeeds = [
+    !profileReady && {
+      title: "Complete your public profile",
+      body: "Add your name and basic details so owners and gardeners know who they are dealing with.",
+      href: "/profile",
+      actionLabel: "Complete profile",
+    },
+    !payoutConnected && {
+      title: "Payout setup needed",
+      body: "Connect Stripe payouts before owners can confidently accept you for paid work.",
+      href: "/profile",
+      actionLabel: "Set up payouts",
+    },
+  ].filter(Boolean);
+  const hasActionNeeded =
+    setupNeeds.length > 0 ||
+    requestsWithOffers.length > 0 ||
+    bookingsNeedingPayment.length > 0 ||
+    jobsAwaitingCompletion.length > 0 ||
+    liveGardenerOffers.length > 0 ||
+    totalUnreadCount > 0;
 
   if (loading) {
     return (
@@ -477,7 +610,7 @@ export default function DashboardPage() {
                   href="/requests"
                   className="inline-block rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800"
                 >
-                  Browse requests
+                  Browse jobs
                 </Link>
 
                 <Link
@@ -562,20 +695,186 @@ export default function DashboardPage() {
               </div>
 
               {profileError && (
-                <p className="mt-3 text-sm text-amber-700">
-                  Could not load profile status: {profileError}
+                <p className="mt-3 text-sm leading-6 text-amber-700">
+                  {friendlyError(profileError)}
                 </p>
               )}
             </div>
           </div>
         </section>
 
+        <section className="rounded-[2rem] border border-stone-200 bg-white/95 p-6 text-zinc-900 shadow-[0_12px_35px_rgba(0,0,0,0.06)] sm:p-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                Start here
+              </p>
+              <h2 className="mt-1 text-2xl font-semibold">Needs your attention</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
+                These are the account, owner, and gardener tasks most likely to
+                need a decision before the next booking can move forward.
+              </p>
+            </div>
 
+            <Link
+              href="/requests/new"
+              className={`w-full sm:w-auto ${secondaryButtonClass}`}
+            >
+              Post a request
+            </Link>
+          </div>
 
-                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {hasActionNeeded ? (
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {setupNeeds.map((item) => (
+                <ActionCard
+                  key={item.title}
+                  title={item.title}
+                  href={item.href}
+                  actionLabel={item.actionLabel}
+                >
+                  {item.body}
+                </ActionCard>
+              ))}
+
+              {requestsWithOffers.slice(0, 3).map((request) => {
+                const offerCount = offerCountsByRequestId[request.id] ?? 0;
+
+                return (
+                  <ActionCard
+                    key={`review-${request.id}`}
+                    title="Review offers"
+                    href={`/requests/${request.id}#offers`}
+                    actionLabel="Review offers"
+                  >
+                    {offerCount} {offerCount === 1 ? "offer" : "offers"} received
+                    for {request.title}. Compare the gardeners before accepting one.
+                  </ActionCard>
+                );
+              })}
+
+              {bookingsNeedingPayment.slice(0, 3).map((request) => {
+                const acceptedOffer = acceptedOfferByRequestId[request.id];
+
+                return (
+                  <ActionCard
+                    key={`pay-${request.id}`}
+                    title="Pay to confirm booking"
+                    onClick={() => bookAndPay(acceptedOffer.id, request.id)}
+                    disabled={payingOfferId === acceptedOffer.id}
+                    actionLabel={
+                      payingOfferId === acceptedOffer.id
+                        ? "Creating checkout..."
+                        : "Confirm booking and pay"
+                    }
+                    srActionText=" Book and pay"
+                  >
+                    Owner pays through Stripe. The gardener is not paid until
+                    completion. Private beta issues and refunds are handled case by
+                    case.
+                  </ActionCard>
+                );
+              })}
+
+              {jobsAwaitingCompletion.slice(0, 3).map((request) => {
+                const booking = bookingByRequestId[request.id];
+
+                return (
+                  <ActionCard
+                    key={`complete-${request.id}`}
+                    title="Job awaiting completion"
+                    href={booking?.id ? `/bookings/${booking.id}` : `/requests/${request.id}`}
+                    actionLabel="Open booking"
+                  >
+                    {request.title} is paid and scheduled. Open the booking when
+                    the garden care is finished so completion can be recorded.
+                  </ActionCard>
+                );
+              })}
+
+              {liveGardenerOffers.slice(0, 3).map((offer) => {
+                const request = requestsById[offer.request_id];
+
+                return (
+                  <ActionCard
+                    key={`job-${offer.id}`}
+                    title="Upcoming garden job"
+                    href={`/requests/${offer.request_id}/chat`}
+                    actionLabel="Open chat"
+                  >
+                    You have been accepted for {request?.title || "this request"}.
+                    Agree the final access details and care instructions before the
+                    visit.
+                  </ActionCard>
+                );
+              })}
+
+              {totalUnreadCount > 0 && (
+                <ActionCard
+                  title="Unread messages"
+                  href="#live-work"
+                  actionLabel="Open live work"
+                >
+                  You have {totalUnreadCount} unread{" "}
+                  {totalUnreadCount === 1 ? "message" : "messages"} across active
+                  requests and jobs.
+                </ActionCard>
+              )}
+            </div>
+          ) : (
+            <EmptyState
+              title="Nothing urgent right now."
+              href="/requests/new"
+              actionLabel="Post a request"
+            >
+              Post a request, browse jobs, or keep your profile ready for the next
+              booking.
+            </EmptyState>
+          )}
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
+                Requests awaiting offers
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-900">
+                {requestsAwaitingOffers.length}
+              </p>
+            </div>
+
+            <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
+                Offers received
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-900">
+                {requestsWithOffers.length}
+              </p>
+            </div>
+
+            <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
+                Bookings needing payment
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-900">
+                {bookingsNeedingPayment.length}
+              </p>
+            </div>
+
+            <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
+                Upcoming jobs
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-zinc-900">
+                {liveGardenerOffers.length}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[1.5rem] border border-emerald-100 bg-white p-6 text-zinc-900 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-emerald-800/70">
-              Owner side
+              Your owner dashboard
             </p>
             <p className="mt-3 text-sm text-zinc-500">Your requests</p>
             <p className="mt-2 text-3xl font-semibold">{requests.length}</p>
@@ -587,7 +886,7 @@ export default function DashboardPage() {
 
           <div className="rounded-[1.5rem] border border-sky-100 bg-white p-6 text-zinc-900 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-sky-800/70">
-              Gardener side
+              Your gardener dashboard
             </p>
             <p className="mt-3 text-sm text-zinc-500">Your offers</p>
             <p className="mt-2 text-3xl font-semibold">{offers.length}</p>
@@ -621,11 +920,14 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-stone-200 bg-white/95 p-8 text-zinc-900 shadow-[0_12px_35px_rgba(0,0,0,0.06)]">
+        <section
+          id="live-work"
+          className="rounded-[2rem] border border-stone-200 bg-white/95 p-8 text-zinc-900 shadow-[0_12px_35px_rgba(0,0,0,0.06)]"
+        >
           <div className="flex flex-col gap-2">
-            <h2 className="text-xl font-semibold">Live work</h2>
+            <h2 className="text-xl font-semibold">What happens next</h2>
             <p className="text-sm text-zinc-600">
-              Jobs and active chats that still need attention.
+              Active owner requests and gardener jobs, with the next practical step.
             </p>
           </div>
 
@@ -653,11 +955,13 @@ export default function DashboardPage() {
                     No live requests need action.
                   </p>
                   <p className="mt-2 text-sm text-zinc-500">
-                    When someone accepts one of your offers, it will appear here for quick access.
+                    Accepted owner requests will appear here after you choose a
+                    gardener. If payment is still needed, this section will show
+                    the next step.
                   </p>
                   <Link
                     href="/requests/new"
-                    className="mt-3 inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-100"
+                    className={`mt-3 w-full sm:w-auto ${primaryButtonClass}`}
                   >
                     Post a request
                   </Link>
@@ -718,21 +1022,30 @@ export default function DashboardPage() {
                         <div className="mt-4 flex flex-wrap gap-3">
                           <Link
                             href={`/requests/${request.id}/chat`}
-                            className="inline-block rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
+                            className={`w-full sm:w-auto ${primaryButtonClass}`}
                           >
                             Open chat
                           </Link>
 
                           {canBookAndPay && (
-                            <button
-                              onClick={() => bookAndPay(acceptedOffer.id, request.id)}
-                              disabled={payingOfferId === acceptedOffer.id}
-                              className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              {payingOfferId === acceptedOffer.id
-                                ? "Creating checkout..."
-                                : "Book and pay"}
-                            </button>
+                            <div className="w-full rounded-[1rem] border border-emerald-100 bg-emerald-50/70 p-3 sm:max-w-md">
+                              <p className="text-sm leading-6 text-emerald-950">
+                                Owner pays through Stripe. The gardener is not paid
+                                until completion. Private beta issues and refunds
+                                are handled case by case.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => bookAndPay(acceptedOffer.id, request.id)}
+                                disabled={payingOfferId === acceptedOffer.id}
+                                className={`mt-3 w-full disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${primaryButtonClass}`}
+                              >
+                                {payingOfferId === acceptedOffer.id
+                                  ? "Creating checkout..."
+                                  : "Confirm booking and pay"}
+                                <span className="sr-only"> Book and pay</span>
+                              </button>
+                            </div>
                           )}
 
                           {paymentError && (
@@ -743,7 +1056,7 @@ export default function DashboardPage() {
 
                           <Link
                             href={`/requests/${request.id}`}
-                            className="inline-block rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
+                            className={`w-full sm:w-auto ${secondaryButtonClass}`}
                           >
                             View request
                           </Link>
@@ -778,13 +1091,14 @@ export default function DashboardPage() {
                     No live jobs yet.
                   </p>
                   <p className="mt-2 text-sm text-zinc-500">
-                    Accepted gardening jobs will show here so you can jump straight into live work.
+                    Jobs you win as a gardener will appear here once an owner
+                    accepts your offer.
                   </p>
                   <Link
                     href="/requests"
-                    className="mt-3 inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-100"
+                    className={`mt-3 w-full sm:w-auto ${primaryButtonClass}`}
                   >
-                    Browse requests
+                    Browse jobs
                   </Link>
                 </div>
               ) : (
@@ -844,14 +1158,14 @@ export default function DashboardPage() {
                         <div className="mt-4 flex flex-wrap gap-3">
                           <Link
                             href={`/requests/${offer.request_id}/chat`}
-                            className="inline-block rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
+                            className={`w-full sm:w-auto ${primaryButtonClass}`}
                           >
                             Open chat
                           </Link>
 
                           <Link
                             href={`/requests/${offer.request_id}`}
-                            className="inline-block rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
+                            className={`w-full sm:w-auto ${secondaryButtonClass}`}
                           >
                             View request
                           </Link>
@@ -885,50 +1199,35 @@ export default function DashboardPage() {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setRequestFilter("all")}
-                className={`rounded-full border px-3 py-1 text-sm ${requestFilter === "all"
-                    ? "border-black bg-black text-white"
-                    : "border-zinc-300 text-zinc-700"
-                  }`}
+                className={filterButtonClass(requestFilter === "all")}
               >
                 All
               </button>
 
               <button
                 onClick={() => setRequestFilter("open")}
-                className={`rounded-full border px-3 py-1 text-sm ${requestFilter === "open"
-                    ? "border-black bg-black text-white"
-                    : "border-zinc-300 text-zinc-700"
-                  }`}
+                className={filterButtonClass(requestFilter === "open")}
               >
                 Open
               </button>
 
               <button
                 onClick={() => setRequestFilter("accepted")}
-                className={`rounded-full border px-3 py-1 text-sm ${requestFilter === "accepted"
-                    ? "border-black bg-black text-white"
-                    : "border-zinc-300 text-zinc-700"
-                  }`}
+                className={filterButtonClass(requestFilter === "accepted")}
               >
                 Accepted
               </button>
 
               <button
                 onClick={() => setRequestFilter("completed")}
-                className={`rounded-full border px-3 py-1 text-sm ${requestFilter === "completed"
-                    ? "border-black bg-black text-white"
-                    : "border-zinc-300 text-zinc-700"
-                  }`}
+                className={filterButtonClass(requestFilter === "completed")}
               >
                 Completed
               </button>
 
               <button
                 onClick={() => setRequestFilter("closed")}
-                className={`rounded-full border px-3 py-1 text-sm ${requestFilter === "closed"
-                    ? "border-black bg-black text-white"
-                    : "border-zinc-300 text-zinc-700"
-                  }`}
+                className={filterButtonClass(requestFilter === "closed")}
               >
                 Closed
               </button>
@@ -936,24 +1235,21 @@ export default function DashboardPage() {
           </div>
 
           {requestsError ? (
-            <p className="mt-6 text-sm text-red-600">
-              Could not load your requests: {requestsError}
-            </p>
+            <ErrorState title="Could not load your requests." message={requestsError} />
           ) : filteredRequests.length === 0 ? (
-            <div className="mt-6 rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-6">
-              <p className="text-sm font-medium text-zinc-700">
-                No requests match this filter.
-              </p>
-              <p className="mt-2 text-sm text-zinc-500">
-                Try another status or post a new request to get work started.
-              </p>
-              <Link
-                href="/requests/new"
-                className="mt-4 inline-block rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
-              >
-                Post a request
-              </Link>
-            </div>
+            <EmptyState
+              title={
+                requests.length === 0
+                  ? "No requests yet"
+                  : "No requests match this filter."
+              }
+              href="/requests/new"
+              actionLabel="Post a request"
+            >
+              {requests.length === 0
+                ? "Post your first garden care request."
+                : "Try another status or post a new request to get work started."}
+            </EmptyState>
           ) : (
             <div className="mt-6 space-y-4">
               {filteredRequests.map((request) => {
@@ -1033,7 +1329,7 @@ export default function DashboardPage() {
                     <div className="mt-4 flex flex-wrap gap-3">
                       <Link
                         href={`/requests/${request.id}`}
-                        className="inline-block rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
+                        className={`w-full sm:w-auto ${secondaryButtonClass}`}
                       >
                         View request
                       </Link>
@@ -1041,7 +1337,7 @@ export default function DashboardPage() {
                       {request.status === "open" && (
                         <Link
                           href={`/requests/${request.id}/edit`}
-                          className="inline-block rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
+                          className={`w-full sm:w-auto ${secondaryButtonClass}`}
                         >
                           Edit request
                         </Link>
@@ -1050,7 +1346,7 @@ export default function DashboardPage() {
                       {request.status === "closed" && (
                         <Link
                           href={`/requests/${request.id}`}
-                          className="inline-block rounded-xl border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700"
+                          className={`w-full sm:w-auto ${secondaryButtonClass}`}
                         >
                           Reopen request
                         </Link>
@@ -1059,7 +1355,7 @@ export default function DashboardPage() {
                       {request.status === "accepted" && (
                         <Link
                           href={`/requests/${request.id}/chat`}
-                          className="inline-block rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
+                          className={`w-full sm:w-auto ${primaryButtonClass}`}
                         >
                           Open chat
                         </Link>
@@ -1091,40 +1387,28 @@ export default function DashboardPage() {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setOfferFilter("all")}
-                className={`rounded-full border px-3 py-1 text-sm ${offerFilter === "all"
-                    ? "border-black bg-black text-white"
-                    : "border-zinc-300 text-zinc-700"
-                  }`}
+                className={filterButtonClass(offerFilter === "all")}
               >
                 All
               </button>
 
               <button
                 onClick={() => setOfferFilter("pending")}
-                className={`rounded-full border px-3 py-1 text-sm ${offerFilter === "pending"
-                    ? "border-black bg-black text-white"
-                    : "border-zinc-300 text-zinc-700"
-                  }`}
+                className={filterButtonClass(offerFilter === "pending")}
               >
                 Pending
               </button>
 
               <button
                 onClick={() => setOfferFilter("accepted")}
-                className={`rounded-full border px-3 py-1 text-sm ${offerFilter === "accepted"
-                    ? "border-black bg-black text-white"
-                    : "border-zinc-300 text-zinc-700"
-                  }`}
+                className={filterButtonClass(offerFilter === "accepted")}
               >
                 Accepted
               </button>
 
               <button
                 onClick={() => setOfferFilter("rejected")}
-                className={`rounded-full border px-3 py-1 text-sm ${offerFilter === "rejected"
-                    ? "border-black bg-black text-white"
-                    : "border-zinc-300 text-zinc-700"
-                  }`}
+                className={filterButtonClass(offerFilter === "rejected")}
               >
                 Rejected
               </button>
@@ -1132,24 +1416,19 @@ export default function DashboardPage() {
           </div>
 
           {offersError ? (
-            <p className="mt-6 text-sm text-red-600">
-              Could not load your offers: {offersError}
-            </p>
+            <ErrorState title="Could not load your offers." message={offersError} />
           ) : filteredOffers.length === 0 ? (
-            <div className="mt-6 rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-6">
-              <p className="text-sm font-medium text-zinc-700">
-                No offers match this filter.
-              </p>
-              <p className="mt-2 text-sm text-zinc-500">
-                Try another status or browse requests and send a new offer.
-              </p>
-              <Link
-                href="/requests"
-                className="mt-4 inline-block rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
-              >
-                Browse requests
-              </Link>
-            </div>
+            <EmptyState
+              title={
+                offers.length === 0 ? "No offers yet" : "No offers match this filter."
+              }
+              href="/requests"
+              actionLabel="Browse jobs"
+            >
+              {offers.length === 0
+                ? "Browse garden jobs and send a practical offer when you find a good fit."
+                : "Try another status or browse jobs and send a new offer."}
+            </EmptyState>
           ) : (
             <div className="mt-6 space-y-4">
               {filteredOffers.map((offer) => {
@@ -1221,7 +1500,7 @@ export default function DashboardPage() {
                       <div className="flex flex-wrap gap-3">
                         <Link
                           href={`/requests/${offer.request_id}`}
-                          className="inline-block rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
+                          className={`w-full sm:w-auto ${secondaryButtonClass}`}
                         >
                           View request
                         </Link>
@@ -1229,7 +1508,7 @@ export default function DashboardPage() {
                         {request?.status === "accepted" && offer.status === "accepted" && (
                           <Link
                             href={`/requests/${offer.request_id}/chat`}
-                            className="inline-block rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
+                            className={`w-full sm:w-auto ${primaryButtonClass}`}
                           >
                             Open chat
                           </Link>

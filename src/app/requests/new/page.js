@@ -8,6 +8,21 @@ import { BetaNotice, SafetyNotice } from "../../LaunchNotices";
 
 const MAX_PRICE_GBP = 999999.99;
 
+function friendlyError(message) {
+  const text = String(message || "");
+  const lower = text.toLowerCase();
+
+  if (
+    lower.includes("failed to fetch") ||
+    lower.includes("typeerror") ||
+    lower.includes("network")
+  ) {
+    return "We couldn't load this just now. Please refresh or try again in a moment.";
+  }
+
+  return text;
+}
+
 function CareCheckbox({ checked, onChange, label, helper }) {
   return (
     <label className="rounded-[1.25rem] border border-stone-200 bg-stone-50/70 p-4 text-sm text-zinc-700">
@@ -132,7 +147,7 @@ export default function NewRequestPage() {
               </p>
 
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
-                Post a plot care request.
+                Post a garden care request.
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
@@ -295,7 +310,7 @@ export default function NewRequestPage() {
             </div>
 
             <div>
-              <label className={labelClass}>Price offered (£) optional</label>
+              <label className={labelClass}>Budget / price offered (GBP) optional</label>
               <input
                 className={inputClass}
                 type="number"
@@ -307,6 +322,10 @@ export default function NewRequestPage() {
                 inputMode="decimal"
                 placeholder="e.g. 30"
               />
+              <p className="mt-1 text-xs leading-5 text-zinc-500">
+                Gardeners can send their own total offer. If you accept one, you
+                confirm the booking and pay through Stripe.
+              </p>
             </div>
 
             <SafetyNotice title="Before posting">
@@ -318,12 +337,12 @@ export default function NewRequestPage() {
             </SafetyNotice>
 
             <button className="w-full rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
-              Create request
+              Post request
             </button>
 
             {msg && (
               <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-zinc-600">
-                {msg}
+                {friendlyError(msg)}
               </div>
             )}
           </section>
@@ -366,6 +385,16 @@ export default function NewRequestPage() {
               </p>
               <p className="mt-1 text-sm leading-6 text-emerald-900/80">
                 Water greenhouse tomatoes, check seedlings, and harvest courgettes.
+              </p>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-4">
+              <p className="text-sm font-medium text-zinc-900">
+                What happens next
+              </p>
+              <p className="mt-1 text-sm leading-6 text-zinc-600">
+                Your request goes live, gardeners send offers, you choose who to
+                accept, then you pay through Stripe to confirm the booking.
               </p>
             </div>
           </aside>

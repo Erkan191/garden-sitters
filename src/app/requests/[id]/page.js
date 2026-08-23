@@ -202,6 +202,56 @@ function getPayoutStatusLabel(status) {
   return "Payout not started";
 }
 
+const primaryButtonClass =
+  "inline-flex justify-center rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800";
+const secondaryButtonClass =
+  "inline-flex justify-center rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50";
+
+function friendlyError(message) {
+  const text = String(message || "");
+  const lower = text.toLowerCase();
+
+  if (
+    lower.includes("failed to fetch") ||
+    lower.includes("typeerror") ||
+    lower.includes("network")
+  ) {
+    return "We couldn't load this just now. Please refresh or try again in a moment.";
+  }
+
+  return text || "We couldn't load this just now. Please refresh or try again in a moment.";
+}
+
+function NextStepPanel({ step }) {
+  if (!step) return null;
+
+  return (
+    <div className="rounded-[1.5rem] border border-emerald-100 bg-emerald-50/70 p-5 shadow-sm">
+      <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+        Next step
+      </p>
+      <h2 className="mt-2 text-xl font-semibold text-zinc-900">{step.title}</h2>
+      <p className="mt-2 text-sm leading-6 text-zinc-700">{step.body}</p>
+
+      {step.href && (
+        <Link href={step.href} className={`mt-4 w-full ${primaryButtonClass}`}>
+          {step.actionLabel}
+        </Link>
+      )}
+
+      {step.onClick && (
+        <button
+          type="button"
+          onClick={step.onClick}
+          className={`mt-4 w-full ${primaryButtonClass}`}
+        >
+          {step.actionLabel}
+          {step.srActionText && <span className="sr-only">{step.srActionText}</span>}
+        </button>
+      )}
+    </div>
+  );
+}
 
 const MAX_PRICE_GBP = 999999.99;
 
@@ -319,6 +369,7 @@ export default function RequestDetailPage() {
 
     const profileIds = [
       requestData?.owner_id,
+      user?.id,
       ...(bookingRow?.gardener_id ? [bookingRow.gardener_id] : []),
       ...safeOffers.map((o) => o.gardener_id),
     ].filter(Boolean);
@@ -962,6 +1013,106 @@ export default function RequestDetailPage() {
     });
   }, [offers, profilesById, reviewStatsByUserId, req]);
 
+  const currentUserProfile = userId ? profilesById[userId] : null;
+  const currentUserProfileReady = Boolean(currentUserProfile?.full_name?.trim());
+  const currentUserPayoutReady = Boolean(
+    currentUserProfile?.stripe_onboarding_complete
+  );
+  const pendingOffers = offersWithTrust.filter((offer) => offer.status === "pending");
+
+  let nextStep = null;
+
+  if (booking?.status === "completed" && canReview && !myBookingReview) {
+    nextStep = {
+      title: "Leave a review",
+      body: `The booking is complete. Leave a short, honest review for ${reviewTargetName}.`,
+      href: "#reviews",
+      actionLabel: "Leave a review",
+    };
+  } else if (!userId) {
+    nextStep = {
+      title: "Log in to send an offer",
+      body: "Create or access your account before sending an offer or chatting about a booking.",
+      href: "/login",
+      actionLabel: "Log in to send an offer",
+    };
+  } else if (isOwner) {
+    if (String(req?.status) === "open" && offersWithTrust.length === 0) {
+      nextStep = {
+        title: "Waiting for offers",
+        body: "Your request is live. You can wait for gardeners to offer or edit the request if the dates, budget, or care instructions need more detail.",
+        href: `/requests/${req.id}/edit`,
+        actionLabel: "Edit request",
+      };
+    } else if (String(req?.status) === "open" && pendingOffers.length > 0) {
+      nextStep = {
+        title: "Review offers",
+        body: "Compare each gardener's profile, message, price, skills, and reviews before choosing who to accept.",
+        href: "#offers",
+        actionLabel: "Review offers",
+      };
+    } else if (
+      acceptedOffer &&
+      String(req?.status) === "accepted" &&
+      (!booking || booking.status === "pending_payment")
+    ) {
+      nextStep = {
+        title: "Pay to confirm booking",
+        body: "Owner pays through Stripe. The gardener is not paid until completion. During private beta, issues and refunds are handled case by case.",
+        onClick: () => bookAndPay(acceptedOffer.id),
+        actionLabel: "Confirm booking and pay",
+        srActionText: " securely",
+      };
+    } else if (booking?.status === "paid") {
+      nextStep = {
+        title: "Care scheduled",
+        body: "The booking is paid. Use chat to confirm access, keys, care instructions, and any final timing details before the visit.",
+        href: `/bookings/${booking.id}`,
+        actionLabel: "Open booking",
+      };
+    }
+  } else if (!currentUserProfileReady || !currentUserPayoutReady) {
+    nextStep = {
+      title: "Profile or payout setup needed",
+      body: "Add your public profile details and connect Stripe payouts so owners can confidently accept you for paid garden work.",
+      href: "/profile",
+      actionLabel: "Complete profile",
+    };
+  } else if (canSubmitOffer) {
+    nextStep = {
+      title: "Send an offer",
+      body: "Tell the owner what you can do, the dates you can cover, and your total price for the garden care.",
+      href: "#send-offer",
+      actionLabel: "Send an offer",
+    };
+  } else if (myExistingOffer?.status === "pending") {
+    nextStep = {
+      title: "Offer sent",
+      body: "Your offer is with the owner. If they accept, they pay through Stripe and your payout is released after completion.",
+      href: "#your-offer",
+      actionLabel: "View your offer",
+    };
+  } else if (myExistingOffer?.status === "accepted" || isAcceptedGardener) {
+    nextStep = {
+      title: "Booking confirmed",
+      body: "The owner has accepted you. Open the booking or chat to confirm access details, dates, and care instructions.",
+      href: booking?.id ? `/bookings/${booking.id}` : `/requests/${id}/chat`,
+      actionLabel: booking?.id ? "Open booking" : "Open chat",
+    };
+  } else if (myExistingOffer?.status === "rejected") {
+    nextStep = {
+      title: "Offer not selected",
+      body: "The owner chose another offer for this request. You can keep browsing for other local garden jobs.",
+      href: "/requests",
+      actionLabel: "Browse jobs",
+    };
+  }
+
+  const msgCanRetry =
+    msg.toLowerCase().includes("failed to fetch") ||
+    msg.toLowerCase().includes("typeerror") ||
+    msg.toLowerCase().includes("network");
+
     if (loading) {
     return (
       <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
@@ -977,13 +1128,15 @@ export default function RequestDetailPage() {
       <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
         <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 shadow-sm">
           <p className="font-medium text-zinc-900">Request not found.</p>
-          {msg && <p className="mt-2 text-sm text-zinc-600">{msg}</p>}
+          {msg && (
+            <p className="mt-2 text-sm text-zinc-600">{friendlyError(msg)}</p>
+          )}
 
           <Link
             href="/requests"
             className="mt-4 inline-flex rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
           >
-            Back to requests
+            Back to jobs
           </Link>
         </div>
       </main>
@@ -997,7 +1150,7 @@ export default function RequestDetailPage() {
           className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"
           href="/requests"
         >
-          ← Back to requests
+          ← Back to jobs
         </Link>
 
                 <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
@@ -1059,7 +1212,7 @@ export default function RequestDetailPage() {
 
                   {canOpenChat && (
                     <Link
-                      className="mt-4 inline-flex rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-900 hover:bg-emerald-50"
+                      className={`mt-4 w-full sm:w-auto ${secondaryButtonClass}`}
                       href={`/requests/${id}/chat`}
                     >
                       Open chat{unreadCount > 0 ? ` (${unreadCount} unread)` : ""}
@@ -1092,7 +1245,7 @@ export default function RequestDetailPage() {
                   <>
                     <Link
                       href={`/requests/${req.id}/edit`}
-                      className="inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-center text-sm font-medium text-zinc-900 hover:bg-stone-50 sm:w-auto"
+                      className={`w-full sm:w-auto ${secondaryButtonClass}`}
                     >
                       Edit request
                     </Link>
@@ -1101,7 +1254,7 @@ export default function RequestDetailPage() {
                       type="button"
                       onClick={closeRequest}
                       disabled={closingRequest}
-                      className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                      className={`w-full disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${secondaryButtonClass}`}
                     >
                       {closingRequest ? "Closing..." : "Close request"}
                     </button>
@@ -1122,7 +1275,7 @@ export default function RequestDetailPage() {
                     type="button"
                     onClick={reopenRequest}
                     disabled={reopeningRequest}
-                    className="rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    className={`w-full disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${primaryButtonClass}`}
                   >
                     {reopeningRequest ? "Reopening..." : "Reopen request"}
                   </button>
@@ -1138,8 +1291,9 @@ export default function RequestDetailPage() {
                       </p>
 
                       <p className="mt-1 text-sm leading-6 text-zinc-600">
-                        You’ll pay securely through Watch My Plot. The gardener is only
-                        paid after the job is marked complete.
+                        Owner pays through Stripe. The gardener is not paid until
+                        completion. During private beta, issues and refunds are
+                        handled case by case.
                       </p>
 
                       <PaymentSafetyNotice className="mt-3" />
@@ -1147,53 +1301,49 @@ export default function RequestDetailPage() {
                       <button
                         type="button"
                         onClick={() => bookAndPay(acceptedOffer.id)}
-                        className="mt-4 rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800"
+                        className={`mt-4 w-full sm:w-auto ${primaryButtonClass}`}
                       >
-                        Confirm booking and pay securely
+                        Confirm booking and pay
+                        <span className="sr-only"> securely</span>
                       </button>
                     </div>
                   )}
               </div>
             </div>
 
-            <aside className="rounded-[1.5rem] border border-emerald-100 bg-white/80 p-5 shadow-sm">
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
-                Request summary
-              </p>
+            <aside className="space-y-4">
+              <NextStepPanel step={nextStep} />
 
-              <div className="mt-4 space-y-3 text-sm text-zinc-600">
-                <p>
-                  <span className="font-medium text-zinc-900">Area:</span>{" "}
-                  {req.postcode || "No postcode"}
+              <div className="rounded-[1.5rem] border border-emerald-100 bg-white/80 p-5 shadow-sm">
+                <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                  Request summary
                 </p>
-                <p>
-                  <span className="font-medium text-zinc-900">Dates:</span>{" "}
-                  {formattedRequestDateRange}
-                </p>
-                <p>
-                  <span className="font-medium text-zinc-900">Budget:</span>{" "}
-                  {formattedRequestPrice || "Not set"}
-                </p>
-                <p>
-                  <span className="font-medium text-zinc-900">Status:</span>{" "}
-                  {topStatusLabel}
-                </p>
-                {booking && (
+
+                <div className="mt-4 space-y-3 text-sm text-zinc-600">
                   <p>
-                    <span className="font-medium text-zinc-900">Payout:</span>{" "}
-                    {payoutStatusLabel}
+                    <span className="font-medium text-zinc-900">Area:</span>{" "}
+                    {req.postcode || "No postcode"}
                   </p>
-                )}
+                  <p>
+                    <span className="font-medium text-zinc-900">Dates:</span>{" "}
+                    {formattedRequestDateRange}
+                  </p>
+                  <p>
+                    <span className="font-medium text-zinc-900">Budget:</span>{" "}
+                    {formattedRequestPrice || "Not set"}
+                  </p>
+                  <p>
+                    <span className="font-medium text-zinc-900">Status:</span>{" "}
+                    {topStatusLabel}
+                  </p>
+                  {booking && (
+                    <p>
+                      <span className="font-medium text-zinc-900">Payout:</span>{" "}
+                      {payoutStatusLabel}
+                    </p>
+                  )}
+                </div>
               </div>
-
-              {!userId && (
-                <Link
-                  href="/login"
-                  className="mt-5 inline-flex w-full justify-center rounded-xl bg-emerald-900 px-4 py-3 text-sm font-medium text-white hover:bg-emerald-800"
-                >
-                  Log in to send an offer
-                </Link>
-              )}
             </aside>
           </div>
         </section>
@@ -1245,13 +1395,20 @@ export default function RequestDetailPage() {
             <div className="mt-4 flex flex-wrap gap-3">
               {isOwner && booking.status === "pending_payment" && acceptedOffer && (
                 <div className="w-full space-y-3">
+                  <p className="rounded-[1rem] border border-emerald-100 bg-emerald-50/70 p-3 text-sm leading-6 text-emerald-950">
+                    Owner pays through Stripe. The gardener is not paid until
+                    completion. During private beta, issues and refunds are handled
+                    case by case.
+                  </p>
+
                   <PaymentSafetyNotice />
 
                   <button
                     onClick={() => bookAndPay(acceptedOffer.id)}
-                    className="rounded-xl bg-black px-4 py-2 text-white"
+                    className={`w-full sm:w-auto ${primaryButtonClass}`}
                   >
-                    Confirm booking and pay securely
+                    Confirm booking and pay
+                    <span className="sr-only"> securely</span>
                   </button>
                 </div>
               )}
@@ -1260,7 +1417,7 @@ export default function RequestDetailPage() {
                 <button
                   onClick={completeAndPayGardener}
                   disabled={completingBooking}
-                  className="rounded-xl bg-black px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className={`w-full disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${primaryButtonClass}`}
                 >
                   {completingBooking
                     ? "Completing booking..."
@@ -1271,7 +1428,7 @@ export default function RequestDetailPage() {
               {canOpenChat && (
                 <a
                   href={`/requests/${id}/chat`}
-                  className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900"
+                  className={`w-full sm:w-auto ${secondaryButtonClass}`}
                 >
                   Open chat
                 </a>
@@ -1287,14 +1444,23 @@ export default function RequestDetailPage() {
         )}
 
         {booking && booking.status === "completed" && (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
+          <div
+            id="reviews"
+            className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900"
+          >
             <h2 className="text-xl font-semibold">Reviews</h2>
 
             <div className="mt-4 space-y-4">
               {bookingReviews.length === 0 ? (
-                <p className="text-sm text-zinc-600">
-                  No reviews have been left for this booking yet.
-                </p>
+                <div className="rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-4">
+                  <p className="text-sm font-medium text-zinc-900">
+                    No reviews yet
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-zinc-600">
+                    Reviews appear here after the owner or gardener shares how the
+                    completed booking went.
+                  </p>
+                </div>
               ) : (
                 bookingReviews.map((review) => {
                   const reviewerProfile = profilesById[review.reviewer_id];
@@ -1367,7 +1533,7 @@ export default function RequestDetailPage() {
 
                 <button
                   disabled={reviewSubmitting}
-                  className="rounded-xl bg-black px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className={`w-full disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${primaryButtonClass}`}
                 >
                   {reviewSubmitting ? "Submitting review..." : "Submit review"}
                 </button>
@@ -1383,17 +1549,18 @@ export default function RequestDetailPage() {
         )}
 
         {canSubmitOffer && (
-          <section className="rounded-[2rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-sm">
+          <section
+            id="send-offer"
+            className="rounded-[2rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-sm"
+          >
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
-                Send an offer
-              </p>
               <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
-                Offer to help with this plot
+                Offer to help with this garden
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-                Tell the owner why you’re a good fit and suggest a price if you want to.
-                A useful message is better than a vague one.
+                Tell the owner what you can do and your total price. If the owner
+                accepts, they pay through Stripe. The payout is released after the
+                booking is completed.
               </p>
             </div>
 
@@ -1406,18 +1573,21 @@ export default function RequestDetailPage() {
 
             <form onSubmit={submitOffer} className="mt-4 space-y-3">
               <div>
-                <label className="text-sm text-zinc-700">Message (optional)</label>
+                <label className="text-sm text-zinc-700">
+                  Your message to the owner (optional)
+                </label>
                 <textarea
                   className="mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:bg-white"
                   value={offerMessage}
                   onChange={(e) => setOfferMessage(e.target.value)}
                   rows={4}
+                  placeholder="Briefly explain the visits you can cover, relevant experience, and anything you need clarified."
                 />
               </div>
 
               <div>
                 <label className="text-sm text-zinc-700">
-                  Proposed price (£) (optional)
+                  Total price (GBP) (optional)
                 </label>
                 <input
                   className="mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:bg-white"
@@ -1430,11 +1600,11 @@ export default function RequestDetailPage() {
                   inputMode="decimal"
                 />
                 <p className="mt-1 text-xs text-zinc-500">
-                  Maximum £999,999.99
+                  Maximum GBP 999,999.99. Use the total price for the whole job.
                 </p>
               </div>
 
-              <button className="rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
+              <button className={`w-full sm:w-auto ${primaryButtonClass}`}>
                 Send offer
               </button>
             </form>
@@ -1442,7 +1612,10 @@ export default function RequestDetailPage() {
         )}
 
         {!isOwner && String(req.status) === "open" && myExistingOffer && (
-          <section className="rounded-[2rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-sm">
+          <section
+            id="your-offer"
+            className="rounded-[2rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-sm"
+          >
             <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
               Your offer
             </p>
@@ -1490,7 +1663,10 @@ export default function RequestDetailPage() {
         )}
 
         {isOwner && (
-          <section className="rounded-[2rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-sm">
+          <section
+            id="offers"
+            className="rounded-[2rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-sm"
+          >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
@@ -1517,8 +1693,17 @@ export default function RequestDetailPage() {
               <div className="mt-4 rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-5">
                 <p className="text-sm font-medium text-zinc-900">No offers yet.</p>
                 <p className="mt-1 text-sm leading-6 text-zinc-600">
-                  When gardeners offer to help with this request, they’ll appear here.
+                  Gardener offers will appear here. If none arrive, check that
+                  the dates, rough area, budget, and care instructions are clear.
                 </p>
+                {String(req.status) === "open" && (
+                  <Link
+                    href={`/requests/${req.id}/edit`}
+                    className={`mt-4 w-full sm:w-auto ${secondaryButtonClass}`}
+                  >
+                    Edit request
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="mt-4 space-y-3">
@@ -1610,12 +1795,20 @@ export default function RequestDetailPage() {
                           </p>
                         )}
 
-                                                  {String(req.status) === "open" && o.status === "pending" && (
+                        {String(req.status) === "open" && o.status === "pending" && (
+                          <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 text-sm leading-6 text-emerald-950">
+                            If you accept this offer, you will confirm the booking
+                            and pay through Stripe before the gardener is paid out
+                            after completion.
+                          </div>
+                        )}
+
+                        {String(req.status) === "open" && o.status === "pending" && (
                             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                               {o.payoutReady ? (
                                 <button
                                   onClick={() => acceptOffer(o.id)}
-                                  className="w-full rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 sm:w-auto"
+                                  className={`w-full sm:w-auto ${primaryButtonClass}`}
                                 >
                                   Accept offer
                                 </button>
@@ -1648,7 +1841,20 @@ export default function RequestDetailPage() {
           </section>
         )}
 
-        {msg && <p className="text-sm text-zinc-600">{msg}</p>}
+        {msg && (
+          <div className="rounded-[1.25rem] border border-stone-200 bg-white p-4 text-sm leading-6 text-zinc-600 shadow-sm">
+            <p>{friendlyError(msg)}</p>
+            {msgCanRetry && (
+              <button
+                type="button"
+                onClick={loadAll}
+                className={`mt-3 w-full sm:w-auto ${secondaryButtonClass}`}
+              >
+                Retry
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </main>
   );

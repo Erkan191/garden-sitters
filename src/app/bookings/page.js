@@ -41,6 +41,26 @@ function getStatusBadgeClass(status) {
   return "bg-stone-100 text-stone-700 border-stone-200";
 }
 
+const primaryButtonClass =
+  "inline-flex justify-center rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800";
+const secondaryButtonClass =
+  "inline-flex justify-center rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50";
+
+function friendlyError(message) {
+  const text = String(message || "");
+  const lower = text.toLowerCase();
+
+  if (
+    lower.includes("failed to fetch") ||
+    lower.includes("typeerror") ||
+    lower.includes("network")
+  ) {
+    return "We couldn't load this just now. Please refresh or try again in a moment.";
+  }
+
+  return text || "We couldn't load this just now. Please refresh or try again in a moment.";
+}
+
 export default function BookingsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -124,14 +144,14 @@ export default function BookingsPage() {
             <div className="flex flex-wrap gap-2">
               <Link
                 href="/requests"
-                className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                className={`w-full sm:w-auto ${secondaryButtonClass}`}
               >
-                Browse requests
+                Browse jobs
               </Link>
 
               <Link
                 href="/dashboard"
-                className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                className={`w-full sm:w-auto ${secondaryButtonClass}`}
               >
                 Dashboard
               </Link>
@@ -145,8 +165,16 @@ export default function BookingsPage() {
           )}
 
           {msg && (
-            <div className="mt-5 rounded-[1.5rem] border border-red-100 bg-red-50 p-5 text-sm text-red-700">
-              {msg}
+            <div className="mt-5 rounded-[1.5rem] border border-red-100 bg-red-50 p-5 text-sm leading-6 text-red-800">
+              <p className="font-medium">We could not load bookings.</p>
+              <p className="mt-1">{friendlyError(msg)}</p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="mt-4 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-50"
+              >
+                Retry
+              </button>
             </div>
           )}
 
@@ -155,11 +183,22 @@ export default function BookingsPage() {
               {bookings.length === 0 ? (
                 <div className="rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-5">
                   <p className="text-sm font-medium text-zinc-900">
-                    No bookings yet.
+                    No bookings yet
                   </p>
                   <p className="mt-1 text-sm leading-6 text-zinc-600">
-                    Once an accepted offer is paid for, the booking will appear here.
+                    Bookings appear here once an offer is accepted and paid.
                   </p>
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                    <Link href="/requests" className={`w-full sm:w-auto ${primaryButtonClass}`}>
+                      Browse jobs
+                    </Link>
+                    <Link
+                      href="/requests/new"
+                      className={`w-full sm:w-auto ${secondaryButtonClass}`}
+                    >
+                      Post a request
+                    </Link>
+                  </div>
                 </div>
               ) : (
                 bookings.map((b) => (

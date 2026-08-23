@@ -6,6 +6,11 @@ import { useParams, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { BetaNotice } from "../../../LaunchNotices";
 
+const primaryButtonClass =
+  "inline-flex justify-center rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800";
+const secondaryButtonClass =
+  "inline-flex justify-center rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50";
+
 export default function BookingSuccessPage() {
   const { id } = useParams();
   const search = useSearchParams();
@@ -165,23 +170,23 @@ export default function BookingSuccessPage() {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href={`/bookings/${id}`}
-              className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+              className={`w-full sm:w-auto ${primaryButtonClass}`}
             >
               View booking
             </Link>
 
             <Link
               href="/dashboard"
-              className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+              className={`w-full sm:w-auto ${secondaryButtonClass}`}
             >
               Go to dashboard
             </Link>
 
             <Link
               href="/requests"
-              className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+              className={`w-full sm:w-auto ${secondaryButtonClass}`}
             >
-              Browse requests
+              Browse jobs
             </Link>
           </div>
         </section>

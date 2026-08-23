@@ -56,6 +56,26 @@ function getPayoutStatusBadgeClass(status) {
   return "bg-stone-100 text-stone-700 border-stone-200";
 }
 
+const primaryButtonClass =
+  "inline-flex justify-center rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800";
+const secondaryButtonClass =
+  "inline-flex justify-center rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50";
+
+function friendlyError(message) {
+  const text = String(message || "");
+  const lower = text.toLowerCase();
+
+  if (
+    lower.includes("failed to fetch") ||
+    lower.includes("typeerror") ||
+    lower.includes("network")
+  ) {
+    return "We couldn't load this just now. Please refresh or try again in a moment.";
+  }
+
+  return text || "We couldn't load this just now. Please refresh or try again in a moment.";
+}
+
 export default function BookingDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -257,7 +277,7 @@ export default function BookingDetailPage() {
 
           <Link
             href="/bookings"
-            className="mt-4 inline-flex rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+            className={`mt-4 w-full sm:w-auto ${secondaryButtonClass}`}
           >
             Back to bookings
           </Link>
@@ -345,8 +365,19 @@ export default function BookingDetailPage() {
         <BetaNotice />
 
         {msg && (
-          <div className="rounded-[1.5rem] border border-stone-200 bg-white p-4 text-sm text-zinc-600 shadow-sm">
-            {msg}
+          <div className="rounded-[1.5rem] border border-stone-200 bg-white p-4 text-sm leading-6 text-zinc-600 shadow-sm">
+            <p>{friendlyError(msg)}</p>
+            {(msg.toLowerCase().includes("failed to fetch") ||
+              msg.toLowerCase().includes("typeerror") ||
+              msg.toLowerCase().includes("network")) && (
+              <button
+                type="button"
+                onClick={load}
+                className={`mt-3 w-full sm:w-auto ${secondaryButtonClass}`}
+              >
+                Retry
+              </button>
+            )}
           </div>
         )}
 
@@ -386,14 +417,14 @@ export default function BookingDetailPage() {
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
                   href={`/requests/${booking.request_id}`}
-                  className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                  className={`w-full sm:w-auto ${secondaryButtonClass}`}
                 >
                   View request
                 </Link>
 
                 <Link
                   href={`/requests/${booking.request_id}/chat`}
-                  className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                  className={`w-full sm:w-auto ${primaryButtonClass}`}
                 >
                   Open chat
                 </Link>
@@ -469,7 +500,7 @@ export default function BookingDetailPage() {
               {canLeaveReview ? (
                 <Link
                   href={`/reviews/new?bookingId=${booking.id}`}
-                  className="mt-5 inline-flex rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800"
+                  className={`mt-5 w-full sm:w-auto ${primaryButtonClass}`}
                 >
                   Leave a review
                 </Link>
