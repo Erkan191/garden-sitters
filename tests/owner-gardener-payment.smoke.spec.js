@@ -103,25 +103,33 @@ async function saveProfileIfPossible(page) {
 async function createCareRequest(page, requestTitle) {
   await page.goto("/requests/new");
 
+  const requestForm = page.locator("form").filter({
+    has: page.getByRole("button", { name: /^(post|create) request$/i }),
+  });
+
   await expect(
-    page.getByRole("heading", { name: /post a plot care request/i }),
-    "New request form should load"
+    page.getByRole("heading", { name: /(post.*request|garden care request)/i }),
+    "New request page should load"
   ).toBeVisible();
 
-  await page
+  await expect(requestForm, "New request form should load").toBeVisible();
+
+  await requestForm
     .getByPlaceholder(/Water veg beds and check greenhouse tomatoes/i)
     .fill(requestTitle);
-  await page
+  await requestForm
     .getByPlaceholder(/What needs doing/i)
     .fill("Automated smoke test request. Safe to close after verification.");
-  await page.getByPlaceholder(/e\.g\. N13/i).fill("N13");
+  await requestForm.getByPlaceholder(/e\.g\. N13/i).fill("N13");
 
-  const dateInputs = page.locator('input[type="date"]');
+  const dateInputs = requestForm.locator('input[type="date"]');
   await dateInputs.nth(0).fill(futureDate(7));
   await dateInputs.nth(1).fill(futureDate(10));
 
-  await page.getByPlaceholder(/e\.g\. 30/i).fill("1.00");
-  await page.getByRole("button", { name: /create request/i }).click();
+  await requestForm.getByPlaceholder(/e\.g\. 30/i).fill("1.00");
+  await requestForm
+    .getByRole("button", { name: /^(post|create) request$/i })
+    .click();
 
   await page.waitForURL(/\/requests\/[^/]+$/, {
     timeout: 30000,
@@ -154,17 +162,25 @@ async function openRequestFromBrowse(page, requestTitle) {
 }
 
 async function submitOffer(page, requestTitle) {
+  const offerPanel = page.locator("section#send-offer").filter({
+    has: page.getByRole("heading", { name: /offer to help/i }),
+  });
+  const offerForm = offerPanel.locator("form").filter({
+    has: page.getByRole("button", { name: /^send offer$/i }),
+  });
+
   await expect(
-    page.getByRole("heading", { name: /offer to help with this plot/i }),
+    offerPanel.getByRole("heading", { name: /offer to help/i }),
     "Offer form should be available to the gardener"
   ).toBeVisible({ timeout: 20000 });
 
-  await page
-    .locator("textarea")
-    .last()
+  await expect(offerForm, "Offer form should have a send action").toBeVisible();
+
+  await offerForm
+    .getByPlaceholder(/briefly explain the visits/i)
     .fill(`Automated smoke offer for ${requestTitle}`);
-  await page.locator('input[type="number"]').last().fill("1.00");
-  await page.getByRole("button", { name: /send offer/i }).click();
+  await offerForm.locator('input[type="number"]').fill("1.00");
+  await offerForm.getByRole("button", { name: /^send offer$/i }).click();
 
   await expect(
     page.locator("body"),
@@ -199,9 +215,10 @@ async function acceptGardenerOffer(page) {
 }
 
 async function startCheckout(page, requestTitle) {
-  const detailPayButton = page.getByRole("button", {
-    name: /confirm booking and pay securely/i,
-  });
+  const checkoutButtonName = /confirm booking and pay/i;
+  const detailPayButton = page
+    .getByRole("button", { name: checkoutButtonName })
+    .first();
 
   if (await isVisible(detailPayButton, 10000)) {
     await detailPayButton.click();
@@ -216,15 +233,19 @@ async function startCheckout(page, requestTitle) {
     const requestCard = page
       .locator("div")
       .filter({ hasText: requestTitle })
-      .filter({ has: page.getByRole("button", { name: /book and pay/i }) })
+      .filter({ has: page.getByRole("button", { name: checkoutButtonName }) })
+      .first();
+
+    const dashboardPayButton = requestCard
+      .getByRole("button", { name: checkoutButtonName })
       .first();
 
     await expect(
-      requestCard.getByRole("button", { name: /book and pay/i }),
+      dashboardPayButton,
       "Owner should be able to start checkout from the accepted request"
     ).toBeVisible({ timeout: 20000 });
 
-    await requestCard.getByRole("button", { name: /book and pay/i }).click();
+    await dashboardPayButton.click();
   }
 
   await expect

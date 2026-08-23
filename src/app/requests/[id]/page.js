@@ -1172,6 +1172,7 @@ export default function RequestDetailPage() {
                     </span>
 
                     {booking && (
+                      
                       <span
                         className={`rounded-full border px-2 py-1 text-xs font-medium ${payoutStatusBadgeClass}`}
                       >
