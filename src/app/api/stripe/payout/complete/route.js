@@ -170,7 +170,7 @@ export async function POST(request) {
           payment_intent_id: booking.stripe_payment_intent_id,
         },
       },
-      { idempotencyKey: `booking_${booking.id}_transfer` }
+      { idempotencyKey: `booking_${booking.id}_${sourceChargeId}_transfer` }
     );
 
     const { error: upErr } = await supabaseAdmin
