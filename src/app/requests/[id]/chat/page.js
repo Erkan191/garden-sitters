@@ -178,8 +178,8 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
-        <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+      <main className="wmp-page">
+        <div className="wmp-shell wmp-card rounded-lg text-sm text-zinc-600">
           Loading chat...
         </div>
       </main>
@@ -187,23 +187,23 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <main className="wmp-page">
+      <div className="wmp-shell wmp-stack">
         <Link
-          className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"
+          className="wmp-back-link"
           href={`/requests/${id}`}
         >
           ← Back to request
         </Link>
 
-        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+        <section className="wmp-hero rounded-lg bg-[#fffdf8]">
           <div className="grid gap-6 lg:grid-cols-[1fr_0.35fr] lg:items-start">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              <p className="wmp-eyebrow">
                 Job chat
               </p>
 
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                 Chat about the practical details.
               </h1>
 
@@ -214,12 +214,12 @@ export default function ChatPage() {
               </p>
             </div>
 
-            <aside className="rounded-[1.5rem] border border-emerald-100 bg-white/80 p-5 shadow-sm">
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+            <aside className="rounded-lg border border-emerald-100 bg-[#f4f8ef] p-5 shadow-sm">
+              <p className="wmp-eyebrow">
                 Request
               </p>
 
-              <p className="mt-3 text-sm font-medium text-zinc-900">
+              <p className="mt-3 text-sm font-bold text-zinc-900">
                 {req?.title || "Request"}
               </p>
 
@@ -232,14 +232,14 @@ export default function ChatPage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
           <div className="border-b border-stone-200 p-5 sm:p-6">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                <p className="wmp-eyebrow">
                   Messages
                 </p>
-                <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+                <h2 className="mt-1 text-2xl font-bold text-zinc-900">
                   Conversation
                 </h2>
               </div>
@@ -252,8 +252,8 @@ export default function ChatPage() {
 
           <div className="max-h-[55vh] min-h-80 overflow-y-auto bg-stone-50/60 p-5 sm:p-6">
             {messages.length === 0 ? (
-              <div className="rounded-[1.5rem] border border-stone-200 bg-white p-5">
-                <p className="text-sm font-medium text-zinc-900">
+              <div className="rounded-lg border border-stone-200 bg-white p-5">
+                <p className="text-sm font-bold text-zinc-900">
                   No messages yet.
                 </p>
                 <p className="mt-1 text-sm leading-6 text-zinc-600">
@@ -272,7 +272,7 @@ export default function ChatPage() {
                       className={`flex ${mine ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-[1.25rem] border p-4 shadow-sm sm:max-w-[70%] ${
+                        className={`max-w-[85%] rounded-lg border p-4 shadow-sm sm:max-w-[70%] ${
                           mine
                             ? "border-emerald-100 bg-emerald-900 text-white"
                             : "border-stone-200 bg-white text-zinc-900"
@@ -311,12 +311,12 @@ export default function ChatPage() {
             onSubmit={sendMessage}
             className="border-t border-stone-200 bg-white p-5 sm:p-6"
           >
-            <label className="text-sm font-medium text-zinc-700">
+            <label className="wmp-label">
               Message
             </label>
 
             <textarea
-              className="mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm leading-6 text-zinc-900 outline-none focus:border-emerald-500 focus:bg-white"
+              className="mt-1 wmp-field rounded-lg leading-6"
               rows={3}
               value={body}
               onChange={(e) => setBody(e.target.value)}
@@ -329,13 +329,13 @@ export default function ChatPage() {
                 needs for the job.
               </p>
 
-              <button className="rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
+              <button className="wmp-button wmp-button-primary">
                 Send message
               </button>
             </div>
 
             {msg && (
-              <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-zinc-600">
+              <div className="mt-4 rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-zinc-600">
                 {msg}
               </div>
             )}

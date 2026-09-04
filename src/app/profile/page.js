@@ -22,7 +22,7 @@ function buildSkillTags(profile) {
 
 function SkillCheckbox({ checked, onChange, label, helper }) {
   return (
-    <label className="rounded-[1.25rem] border border-stone-200 bg-stone-50/70 p-4 text-sm text-zinc-700">
+    <label className="rounded-lg border border-stone-200 bg-[#fbfbf7] p-4 text-sm text-zinc-700">
       <div className="flex items-start gap-3">
         <input
           type="checkbox"
@@ -32,7 +32,7 @@ function SkillCheckbox({ checked, onChange, label, helper }) {
         />
 
         <div>
-          <p className="font-medium text-zinc-900">{label}</p>
+          <p className="font-bold text-zinc-900">{label}</p>
           {helper && <p className="mt-1 text-xs leading-5 text-zinc-500">{helper}</p>}
         </div>
       </div>
@@ -301,28 +301,28 @@ function MyProfilePageContent() {
     "Tell owners and gardeners a bit about your growing experience, what you’re comfortable helping with, and why people can trust you.";
 
   const inputClass =
-    "mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:bg-white";
+    "mt-1 wmp-field rounded-lg";
 
-  const labelClass = "text-sm font-medium text-zinc-700";
+  const labelClass = "wmp-label";
 
   return (
-    <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <main className="wmp-page">
+      <div className="wmp-shell wmp-stack">
         <Link
           href="/dashboard"
-          className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"
+          className="wmp-back-link"
         >
           ← Back to dashboard
         </Link>
 
-        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+        <section className="wmp-hero rounded-lg bg-[#fffdf8]">
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              <p className="wmp-eyebrow">
                 Your profile
               </p>
 
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                 Build trust before people book you.
               </h1>
 
@@ -333,8 +333,8 @@ function MyProfilePageContent() {
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-emerald-100 bg-white/75 p-4 shadow-sm">
-              <p className="text-sm font-medium text-zinc-900">
+            <div className="rounded-lg border border-emerald-100 bg-[#f4f8ef] p-4 shadow-sm">
+              <p className="text-sm font-bold text-zinc-900">
                 Signed in as
               </p>
               <p className="mt-1 break-all text-sm leading-6 text-zinc-600">
@@ -345,7 +345,7 @@ function MyProfilePageContent() {
         </section>
 
         {loading ? (
-          <div className="rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+          <div className="wmp-card rounded-lg text-sm text-zinc-600">
             Loading profile...
           </div>
         ) : (
@@ -353,18 +353,18 @@ function MyProfilePageContent() {
             onSubmit={saveProfile}
             className="grid gap-6 lg:grid-cols-[1fr_0.42fr] lg:items-start"
           >
-            <section className="space-y-6 rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+            <section className="wmp-panel space-y-6 rounded-lg">
               <div>
-                <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                <p className="wmp-eyebrow">
                   Profile details
                 </p>
-                <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+                <h2 className="mt-1 text-2xl font-bold text-zinc-900">
                   Tell people who you are
                 </h2>
               </div>
 
               {msg && (
-                <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-zinc-600">
+                <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-zinc-600">
                   {msg}
                 </div>
               )}
@@ -419,8 +419,8 @@ function MyProfilePageContent() {
                 />
               </div>
 
-              <div className="rounded-[1.5rem] border border-stone-200 bg-white p-4">
-                <p className="text-sm font-medium text-zinc-900">
+              <div className="rounded-lg border border-stone-200 bg-white p-4">
+                <p className="text-sm font-bold text-zinc-900">
                   Gardening skills
                 </p>
                 <p className="mt-1 text-sm leading-6 text-zinc-600">
@@ -477,7 +477,7 @@ function MyProfilePageContent() {
                     {previewTags.map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-full border border-stone-200 bg-stone-50 px-2 py-1 text-xs text-zinc-700"
+                  className="wmp-chip"
                       >
                         {tag}
                       </span>
@@ -489,15 +489,15 @@ function MyProfilePageContent() {
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="wmp-button wmp-button-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? "Saving..." : "Save profile"}
               </button>
             </section>
 
             <aside className="space-y-4 lg:sticky lg:top-6">
-              <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-                <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              <section className="wmp-panel rounded-lg">
+                <p className="wmp-eyebrow">
                   Public preview
                 </p>
 
@@ -515,7 +515,7 @@ function MyProfilePageContent() {
                   )}
 
                   <div className="min-w-0">
-                    <h2 className="text-xl font-semibold text-zinc-900">
+                    <h2 className="text-xl font-bold text-zinc-900">
                       {displayName}
                     </h2>
                     <p className="mt-1 text-sm text-zinc-600">
@@ -524,7 +524,7 @@ function MyProfilePageContent() {
                   </div>
                 </div>
 
-                <p className="mt-4 whitespace-pre-wrap rounded-[1.25rem] border border-stone-200 bg-stone-50/70 p-4 text-sm leading-6 text-zinc-700">
+                <p className="mt-4 whitespace-pre-wrap rounded-lg border border-stone-200 bg-stone-50/70 p-4 text-sm leading-6 text-zinc-700">
                   {displayBio}
                 </p>
 
@@ -546,12 +546,12 @@ function MyProfilePageContent() {
                 )}
               </section>
 
-              <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-                <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              <section className="wmp-panel rounded-lg">
+                <p className="wmp-eyebrow">
                   Stripe payouts
                 </p>
 
-                <h2 className="mt-1 text-xl font-semibold text-zinc-900">
+                <h2 className="mt-1 text-xl font-bold text-zinc-900">
                   Get paid for completed jobs
                 </h2>
 
@@ -564,7 +564,7 @@ function MyProfilePageContent() {
                 </p>
 
                 {stripeOnboardingComplete && (
-                  <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm font-medium text-emerald-900">
+                  <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-sm font-bold text-emerald-900">
                     Payouts connected ✅
                   </div>
                 )}
@@ -576,7 +576,7 @@ function MyProfilePageContent() {
                 )}
 
                 {stripeMsg && (
-                  <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm leading-6 text-zinc-600">
+                  <div className="mt-4 rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm leading-6 text-zinc-600">
                     {stripeMsg}
                   </div>
                 )}
@@ -587,7 +587,7 @@ function MyProfilePageContent() {
                       type="button"
                       onClick={startStripeOnboarding}
                       disabled={stripeLoading}
-                      className="rounded-xl bg-emerald-900 px-4 py-3 text-sm font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="wmp-button wmp-button-primary disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {stripeLoading
                         ? "Please wait..."
@@ -602,7 +602,7 @@ function MyProfilePageContent() {
                       type="button"
                       onClick={refreshStripeStatus}
                       disabled={stripeLoading}
-                      className="rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-zinc-900 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="wmp-button wmp-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Refresh Stripe status
                     </button>
@@ -621,8 +621,8 @@ export default function MyProfilePage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
-          <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+        <main className="wmp-page">
+          <div className="wmp-shell wmp-card rounded-lg text-sm text-zinc-600">
             Loading profile...
           </div>
         </main>

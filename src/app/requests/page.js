@@ -48,7 +48,7 @@ function Avatar({ profile, fallback, size = "h-12 w-12" }) {
 
   return (
     <div
-      className={`${size} flex items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 text-sm font-semibold text-emerald-900`}
+      className={`${size} flex items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 text-sm font-bold text-emerald-900`}
     >
       {safeFallback.slice(0, 1).toUpperCase()}
     </div>
@@ -91,7 +91,16 @@ function formatDateRange(start, end) {
 
 function formatPrice(value) {
   if (value == null) return null;
-  return `£${Number(value).toFixed(0)}`;
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) return null;
+
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(number);
 }
 
 function getStatusBadgeClass(status) {
@@ -120,9 +129,9 @@ function getStatusLabel(status) {
 }
 
 const primaryButtonClass =
-  "inline-flex justify-center rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800";
+  "wmp-button wmp-button-primary inline-flex justify-center";
 const secondaryButtonClass =
-  "inline-flex justify-center rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50";
+  "wmp-button wmp-button-secondary inline-flex justify-center";
 
 function friendlyError(message) {
   const text = String(message || "");
@@ -156,6 +165,15 @@ export default function RequestsPage() {
   const [onlyPots, setOnlyPots] = useState(false);
   const [onlySeedlings, setOnlySeedlings] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const postcode = params.get("postcode");
+
+    if (postcode) {
+      setPostcodeQuery(postcode);
+    }
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -365,17 +383,19 @@ export default function RequestsPage() {
     setSortBy("newest");
   }
 
+  const fieldClass = "mt-1 wmp-field rounded-lg";
+
   return (
-    <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
-      <div className="mx-auto max-w-6xl space-y-8">
-        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+    <main className="wmp-page">
+      <div className="wmp-shell wmp-stack">
+        <section className="wmp-hero rounded-lg bg-[#fffdf8]">
           <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr] lg:items-end">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              <p className="wmp-eyebrow">
                 Browse jobs
               </p>
 
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                 Find local plot care jobs from growers who need help.
               </h1>
 
@@ -386,8 +406,8 @@ export default function RequestsPage() {
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-emerald-100 bg-white/75 p-4 shadow-sm">
-              <p className="text-sm font-medium text-zinc-900">
+            <div className="rounded-lg border border-emerald-100 bg-[#f4f8ef] p-4 shadow-sm">
+              <p className="text-sm font-bold text-zinc-900">
                 Need someone to watch your plot?
               </p>
 
@@ -398,7 +418,7 @@ export default function RequestsPage() {
 
               <Link
                 href="/requests/new"
-                className="mt-4 inline-flex w-full justify-center rounded-xl bg-emerald-900 px-4 py-3 text-sm font-medium text-white hover:bg-emerald-800"
+                className="mt-4 wmp-button wmp-button-clay w-full"
               >
                 Post a request
               </Link>
@@ -406,7 +426,7 @@ export default function RequestsPage() {
           </div>
         </section>
 
-        <section className="space-y-4 rounded-[2rem] border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+        <section className="wmp-panel space-y-4 rounded-lg">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="text-sm font-medium text-zinc-700">
@@ -414,7 +434,7 @@ export default function RequestsPage() {
               </label>
 
               <input
-                className="mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:bg-white"
+                className={fieldClass}
                 value={postcodeQuery}
                 onChange={(e) => setPostcodeQuery(e.target.value)}
                 placeholder="e.g. N13"
@@ -427,7 +447,7 @@ export default function RequestsPage() {
               </label>
 
               <select
-                className="mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:bg-white"
+                className={fieldClass}
                 value={visitFrequencyFilter}
                 onChange={(e) => setVisitFrequencyFilter(e.target.value)}
               >
@@ -444,7 +464,7 @@ export default function RequestsPage() {
               </label>
 
               <select
-                className="mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:bg-white"
+                className={fieldClass}
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
               >
@@ -539,19 +559,19 @@ export default function RequestsPage() {
         </section>
 
         {loading && (
-          <div className="rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+          <div className="wmp-card rounded-lg text-sm text-zinc-600">
             Loading requests...
           </div>
         )}
 
         {errorMsg && (
-          <div className="rounded-[1.5rem] border border-red-100 bg-red-50 p-6 text-sm leading-6 text-red-800">
+          <div className="rounded-lg border border-red-100 bg-red-50 p-6 text-sm leading-6 text-red-800 shadow-sm">
             <p className="font-medium">We could not load garden jobs.</p>
             <p className="mt-1">{friendlyError(errorMsg)}</p>
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="mt-4 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-50"
+              className="mt-4 wmp-button border border-red-200 bg-white text-red-800 hover:bg-red-50"
             >
               Retry
             </button>
@@ -562,11 +582,11 @@ export default function RequestsPage() {
           <section className="space-y-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                <p className="wmp-eyebrow">
                   Live requests
                 </p>
 
-                <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+                <h2 className="mt-1 text-2xl font-bold text-zinc-900">
                   Plot care opportunities
                 </h2>
               </div>
@@ -578,7 +598,7 @@ export default function RequestsPage() {
             </div>
 
             {filteredRequestCards.length === 0 ? (
-              <div className="rounded-[1.5rem] border border-stone-200 bg-white p-6 shadow-sm">
+              <div className="wmp-card rounded-lg">
                 <p className="font-medium text-zinc-900">
                   {hasActiveFilters
                     ? "No requests match your current filters."
@@ -618,7 +638,7 @@ export default function RequestsPage() {
                 <Link
                   key={r.id}
                   href={`/requests/${r.id}`}
-                  className="block rounded-[1.5rem] border border-stone-200 bg-white p-5 text-zinc-900 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
+                  className="wmp-card-link rounded-lg"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-start gap-3">
@@ -626,7 +646,7 @@ export default function RequestsPage() {
 
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="text-lg font-semibold">{r.title}</h2>
+                          <h2 className="text-lg font-bold">{r.title}</h2>
 
                           <span
                             className={`rounded-full border px-2 py-1 text-xs font-medium ${r.statusBadgeClass}`}
@@ -656,7 +676,7 @@ export default function RequestsPage() {
                             {r.careTags.map((tag) => (
                               <span
                                 key={tag}
-                                className="rounded-full border border-stone-200 bg-stone-50 px-2 py-1 text-xs text-zinc-700"
+                                className="wmp-chip"
                               >
                                 {tag}
                               </span>

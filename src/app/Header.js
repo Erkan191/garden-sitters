@@ -41,40 +41,40 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-emerald-950/10 bg-[#fbf8f1]/95 text-zinc-950 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+    <header className="sticky top-0 z-40 border-b border-emerald-950/10 bg-[#fffdf8]/95 text-zinc-950 shadow-[0_8px_24px_rgba(26,37,30,0.04)] backdrop-blur">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
         <Link
           href="/"
-          className="inline-flex items-center gap-3 text-lg font-semibold tracking-tight text-zinc-950"
+          className="inline-flex items-center gap-3 text-lg font-bold tracking-tight text-zinc-950"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-950 text-sm font-bold text-white shadow-sm">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-950 text-sm font-bold text-white shadow-sm ring-2 ring-clay-200/70">
             W
           </span>
           <span>Watch My Plot</span>
         </Link>
 
-        <nav className="flex flex-wrap items-center gap-2 text-sm font-medium text-zinc-700">
+        <nav className="flex flex-wrap items-center gap-1.5 text-sm font-semibold text-zinc-700">
           <Link
             href="/"
-            className="rounded-full px-3 py-2 hover:bg-white hover:text-emerald-950"
+            className="rounded-lg px-3 py-2 hover:bg-emerald-50 hover:text-emerald-950"
           >
             Home
           </Link>
           <Link
             href="/#how-it-works"
-            className="rounded-full px-3 py-2 hover:bg-white hover:text-emerald-950"
+            className="rounded-lg px-3 py-2 hover:bg-emerald-50 hover:text-emerald-950"
           >
             How it works
           </Link>
           <Link
             href="/requests"
-            className="rounded-full px-3 py-2 hover:bg-white hover:text-emerald-950"
+            className="rounded-lg px-3 py-2 hover:bg-emerald-50 hover:text-emerald-950"
           >
             Browse jobs
           </Link>
           <Link
             href="/requests/new"
-            className="rounded-full bg-emerald-950 px-4 py-2 text-white shadow-sm hover:bg-emerald-900"
+            className="rounded-lg bg-clay-500 px-4 py-2 text-white shadow-sm hover:bg-clay-700"
           >
             Post a request
           </Link>
@@ -83,14 +83,14 @@ export default function Header() {
             <>
               <Link
                 href="/dashboard"
-                className="rounded-full border border-emerald-900/15 bg-white px-4 py-2 text-emerald-950 shadow-sm hover:border-emerald-900/30 hover:bg-emerald-50"
+                className="rounded-lg border border-emerald-900/15 bg-white px-4 py-2 text-emerald-950 shadow-sm hover:border-emerald-900/30 hover:bg-emerald-50"
               >
                 Dashboard
               </Link>
               <button
                 type="button"
                 onClick={logout}
-                className="rounded-full px-3 py-2 text-zinc-600 hover:bg-white hover:text-emerald-950"
+                className="rounded-lg px-3 py-2 text-zinc-600 hover:bg-emerald-50 hover:text-emerald-950"
               >
                 Log out
               </button>
@@ -98,7 +98,7 @@ export default function Header() {
           ) : (
             <Link
               href="/login"
-              className="rounded-full border border-emerald-900/15 bg-white px-4 py-2 text-emerald-950 shadow-sm hover:border-emerald-900/30 hover:bg-emerald-50"
+              className="rounded-lg border border-emerald-900/15 bg-white px-4 py-2 text-emerald-950 shadow-sm hover:border-emerald-900/30 hover:bg-emerald-50"
             >
               Log in
             </Link>

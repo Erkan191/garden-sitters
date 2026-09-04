@@ -7,9 +7,9 @@ import { supabase } from "@/lib/supabaseClient";
 import { BetaNotice } from "../../../LaunchNotices";
 
 const primaryButtonClass =
-  "inline-flex justify-center rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800";
+  "wmp-button wmp-button-primary inline-flex justify-center";
 const secondaryButtonClass =
-  "inline-flex justify-center rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50";
+  "wmp-button wmp-button-secondary inline-flex justify-center";
 
 export default function BookingSuccessPage() {
   const { id } = useParams();
@@ -107,18 +107,18 @@ export default function BookingSuccessPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
-      <div className="mx-auto max-w-4xl space-y-6">
-        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 text-center shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+    <main className="wmp-page">
+      <div className="wmp-narrow wmp-stack">
+        <section className="wmp-hero rounded-lg bg-[#fffdf8] text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 text-2xl">
             ✓
           </div>
 
-          <p className="mt-6 text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+          <p className="mt-6 wmp-eyebrow">
             Payment
           </p>
 
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
             Booking payment received.
           </h1>
 
@@ -131,14 +131,14 @@ export default function BookingSuccessPage() {
 
         <BetaNotice />
 
-        <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+        <section className="wmp-panel rounded-lg">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              <p className="wmp-eyebrow">
                 Status
               </p>
 
-              <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+              <h2 className="mt-1 text-2xl font-bold text-zinc-900">
                 {completed ? "Booking completed" : paid ? "Booking paid" : "Confirming payment"}
               </h2>
 
@@ -147,7 +147,7 @@ export default function BookingSuccessPage() {
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-emerald-100 bg-emerald-50/70 p-4 text-sm leading-6 text-emerald-950 sm:max-w-xs">
+            <div className="rounded-lg border border-emerald-100 bg-emerald-50/70 p-4 text-sm leading-6 text-emerald-950 sm:max-w-xs">
               {completed
                 ? "The booking is complete. Reviews can now be left where available."
                 : paid
@@ -157,7 +157,7 @@ export default function BookingSuccessPage() {
           </div>
 
           {paid && !completed && (
-            <div className="mt-6 rounded-[1.5rem] border border-emerald-100 bg-emerald-50/70 p-4 text-sm leading-6 text-emerald-950">
+            <div className="mt-6 rounded-lg border border-emerald-100 bg-emerald-50/70 p-4 text-sm leading-6 text-emerald-950">
               <p className="font-medium">Booking confirmed and paid securely.</p>
               <p className="mt-1">
                 The gardener is not paid out yet. Come back after the plot care has

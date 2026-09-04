@@ -5,7 +5,7 @@ import Link from "next/link";
 export function BetaNotice({ className = "" }) {
   return (
     <section
-      className={`rounded-[1.5rem] border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950 ${className}`}
+      className={`rounded-lg border border-clay-200 bg-[#fff7ed] p-4 text-sm leading-6 text-clay-900 shadow-sm ${className}`}
     >
       <p className="font-semibold">Private beta</p>
       <p className="mt-1">
@@ -35,7 +35,7 @@ export function SafetyNotice({
 }) {
   return (
     <section
-      className={`rounded-[1.5rem] border border-stone-200 bg-stone-50/80 p-4 text-sm leading-6 text-zinc-600 ${className}`}
+      className={`rounded-lg border border-emerald-900/10 bg-emerald-50/70 p-4 text-sm leading-6 text-zinc-700 ${className}`}
     >
       <p className="font-semibold text-zinc-900">{title}</p>
       <p className="mt-1">

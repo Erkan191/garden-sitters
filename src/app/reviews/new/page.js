@@ -134,28 +134,28 @@ function NewReviewPageContent() {
   }
 
   const inputClass =
-    "mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:bg-white";
+    "mt-1 wmp-field rounded-lg";
 
-  const labelClass = "text-sm font-medium text-zinc-700";
+  const labelClass = "wmp-label";
 
   return (
-    <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <main className="wmp-page">
+      <div className="wmp-shell wmp-stack">
         <Link
           href="/bookings"
-          className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"
+          className="wmp-back-link"
         >
           Back to bookings
         </Link>
 
-        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+        <section className="wmp-hero rounded-lg bg-[#fffdf8]">
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              <p className="wmp-eyebrow">
                 Review
               </p>
 
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                 Leave a review.
               </h1>
 
@@ -165,8 +165,8 @@ function NewReviewPageContent() {
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-emerald-100 bg-white/75 p-4 shadow-sm">
-              <p className="text-sm font-medium text-zinc-900">
+            <div className="rounded-lg border border-emerald-100 bg-[#f4f8ef] p-4 shadow-sm">
+              <p className="text-sm font-bold text-zinc-900">
                 Keep it useful
               </p>
               <p className="mt-1 text-sm leading-6 text-zinc-600">
@@ -177,12 +177,12 @@ function NewReviewPageContent() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+        <section className="wmp-panel rounded-lg">
           <div>
-            <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+            <p className="wmp-eyebrow">
               Booking feedback
             </p>
-            <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+            <h2 className="mt-1 text-2xl font-bold text-zinc-900">
               How did it go?
             </h2>
             <p className="mt-2 text-sm leading-6 text-zinc-600">
@@ -192,13 +192,13 @@ function NewReviewPageContent() {
           </div>
 
           {loading && (
-            <div className="mt-5 rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-5 text-sm text-zinc-600">
+            <div className="mt-5 rounded-lg border border-stone-200 bg-stone-50/70 p-5 text-sm text-zinc-600">
               {msg || "Checking whether this booking can be reviewed..."}
             </div>
           )}
 
           {!loading && msg && (
-            <div className="mt-5 rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-5 text-sm leading-6 text-zinc-600">
+            <div className="mt-5 rounded-lg border border-stone-200 bg-stone-50/70 p-5 text-sm leading-6 text-zinc-600">
               {msg}
             </div>
           )}
@@ -236,7 +236,7 @@ function NewReviewPageContent() {
 
               <button
                 type="submit"
-                className="rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800"
+                className="wmp-button wmp-button-primary"
               >
                 Submit review
               </button>
@@ -252,8 +252,8 @@ export default function NewReviewPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
-          <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+        <main className="wmp-page">
+          <div className="wmp-shell wmp-card rounded-lg text-sm text-zinc-600">
             Loading review form...
           </div>
         </main>

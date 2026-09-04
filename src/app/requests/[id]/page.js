@@ -147,7 +147,16 @@ function formatDateTime(value) {
 
 function formatPrice(value) {
   if (value == null) return null;
-  return `£${Number(value).toFixed(0)}`;
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) return null;
+
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(number);
 }
 
 function getStatusBadgeClass(status) {
@@ -203,9 +212,9 @@ function getPayoutStatusLabel(status) {
 }
 
 const primaryButtonClass =
-  "inline-flex justify-center rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800";
+  "wmp-button wmp-button-primary inline-flex justify-center";
 const secondaryButtonClass =
-  "inline-flex justify-center rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50";
+  "wmp-button wmp-button-secondary inline-flex justify-center";
 
 function friendlyError(message) {
   const text = String(message || "");
@@ -226,11 +235,11 @@ function NextStepPanel({ step }) {
   if (!step) return null;
 
   return (
-    <div className="rounded-[1.5rem] border border-emerald-100 bg-emerald-50/70 p-5 shadow-sm">
-      <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+    <div className="rounded-lg border border-emerald-100 bg-emerald-50/70 p-5 shadow-sm">
+      <p className="wmp-eyebrow">
         Next step
       </p>
-      <h2 className="mt-2 text-xl font-semibold text-zinc-900">{step.title}</h2>
+      <h2 className="mt-2 text-xl font-bold text-zinc-900">{step.title}</h2>
       <p className="mt-2 text-sm leading-6 text-zinc-700">{step.body}</p>
 
       {step.href && (
@@ -1115,8 +1124,8 @@ export default function RequestDetailPage() {
 
     if (loading) {
     return (
-      <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
-        <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+      <main className="wmp-page">
+        <div className="wmp-shell wmp-card rounded-lg text-sm text-zinc-600">
           Loading request...
         </div>
       </main>
@@ -1125,16 +1134,16 @@ export default function RequestDetailPage() {
 
   if (!req) {
     return (
-      <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
-        <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 shadow-sm">
-          <p className="font-medium text-zinc-900">Request not found.</p>
+      <main className="wmp-page">
+        <div className="wmp-shell wmp-card rounded-lg">
+          <p className="font-bold text-zinc-900">Request not found.</p>
           {msg && (
             <p className="mt-2 text-sm text-zinc-600">{friendlyError(msg)}</p>
           )}
 
           <Link
             href="/requests"
-            className="mt-4 inline-flex rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+            className="mt-4 wmp-button wmp-button-secondary"
           >
             Back to jobs
           </Link>
@@ -1144,16 +1153,16 @@ export default function RequestDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <main className="wmp-page">
+      <div className="wmp-shell wmp-stack">
         <Link
-          className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"
+          className="wmp-back-link"
           href="/requests"
         >
           ← Back to jobs
         </Link>
 
-                <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+        <section className="wmp-hero rounded-lg bg-[#fffdf8]">
           <div className="grid gap-6 lg:grid-cols-[1fr_0.35fr] lg:items-start">
             <div>
               <div className="flex items-start gap-4">
@@ -1161,7 +1170,7 @@ export default function RequestDetailPage() {
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-2xl font-semibold text-zinc-900">
+                    <h1 className="text-2xl font-bold text-zinc-900">
                       {req.title}
                     </h1>
 
@@ -1227,7 +1236,7 @@ export default function RequestDetailPage() {
                   {careTags.map((tag) => (
                     <span
                       key={tag}
-                      className="rounded-full border border-stone-200 bg-white/80 px-2 py-1 text-xs text-zinc-700"
+                      className="wmp-chip"
                     >
                       {tag}
                     </span>
@@ -1236,7 +1245,7 @@ export default function RequestDetailPage() {
               )}
 
               {req.details && (
-                <p className="mt-5 whitespace-pre-wrap rounded-[1.25rem] border border-stone-200 bg-white/75 p-4 text-sm leading-6 text-zinc-700">
+                <p className="mt-5 whitespace-pre-wrap rounded-lg border border-stone-200 bg-white/75 p-4 text-sm leading-6 text-zinc-700">
                   {req.details}
                 </p>
               )}
@@ -1264,7 +1273,7 @@ export default function RequestDetailPage() {
                       type="button"
                       onClick={deleteRequest}
                       disabled={deletingRequest}
-                      className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                      className="wmp-button border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                     >
                       {deletingRequest ? "Deleting..." : "Delete request"}
                     </button>
@@ -1286,8 +1295,8 @@ export default function RequestDetailPage() {
                   String(req.status) === "accepted" &&
                   acceptedOffer &&
                   !booking && (
-                    <div className="w-full rounded-[1.25rem] border border-emerald-100 bg-white/80 p-4">
-                      <p className="text-sm font-medium text-zinc-900">
+                    <div className="w-full rounded-lg border border-emerald-100 bg-white/80 p-4">
+                      <p className="text-sm font-bold text-zinc-900">
                         Ready to confirm this booking?
                       </p>
 
@@ -1315,8 +1324,8 @@ export default function RequestDetailPage() {
             <aside className="space-y-4">
               <NextStepPanel step={nextStep} />
 
-              <div className="rounded-[1.5rem] border border-emerald-100 bg-white/80 p-5 shadow-sm">
-                <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              <div className="rounded-lg border border-emerald-100 bg-[#f4f8ef] p-5 shadow-sm">
+                <p className="wmp-eyebrow">
                   Request summary
                 </p>
 
@@ -1351,9 +1360,9 @@ export default function RequestDetailPage() {
 
 
         {booking && (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900">
+          <div className="wmp-panel rounded-lg text-zinc-900">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-xl font-semibold">Booking</h2>
+              <h2 className="text-xl font-bold">Booking</h2>
 
               <span
                 className={`rounded-full border px-2 py-1 text-xs font-medium ${bookingStatusBadgeClass}`}
@@ -1447,14 +1456,14 @@ export default function RequestDetailPage() {
         {booking && booking.status === "completed" && (
           <div
             id="reviews"
-            className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900"
+            className="wmp-panel rounded-lg text-zinc-900"
           >
-            <h2 className="text-xl font-semibold">Reviews</h2>
+            <h2 className="text-xl font-bold">Reviews</h2>
 
             <div className="mt-4 space-y-4">
               {bookingReviews.length === 0 ? (
-                <div className="rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-4">
-                  <p className="text-sm font-medium text-zinc-900">
+                <div className="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-4">
+                  <p className="text-sm font-bold text-zinc-900">
                     No reviews yet
                   </p>
                   <p className="mt-2 text-sm leading-6 text-zinc-600">
@@ -1471,7 +1480,7 @@ export default function RequestDetailPage() {
                   return (
                     <div
                       key={review.id}
-                      className="rounded-xl border border-zinc-200 p-4"
+                      className="rounded-lg border border-zinc-200 p-4"
                     >
                       <p className="text-sm text-zinc-700">
                         Reviewer: {reviewerName}
@@ -1496,7 +1505,7 @@ export default function RequestDetailPage() {
             {canReview && !myBookingReview && (
               <form onSubmit={submitReview} className="mt-6 space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold">
+                  <h3 className="text-lg font-bold">
                     Leave a review for {reviewTargetName}
                   </h3>
                   <p className="mt-1 text-sm text-zinc-600">
@@ -1507,7 +1516,7 @@ export default function RequestDetailPage() {
                 <div>
                   <label className="text-sm text-zinc-700">Rating</label>
                   <select
-                    className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-zinc-900"
+                    className="mt-1 wmp-field rounded-lg"
                     value={reviewRating}
                     onChange={(e) => setReviewRating(e.target.value)}
                   >
@@ -1524,7 +1533,7 @@ export default function RequestDetailPage() {
                     Comment (optional)
                   </label>
                   <textarea
-                    className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-zinc-900"
+                    className="mt-1 wmp-field rounded-lg"
                     rows={4}
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
@@ -1552,10 +1561,10 @@ export default function RequestDetailPage() {
         {canSubmitOffer && (
           <section
             id="send-offer"
-            className="rounded-[2rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-sm"
+            className="wmp-panel rounded-lg text-zinc-900"
           >
             <div>
-              <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+              <h2 className="mt-1 text-2xl font-bold text-zinc-900">
                 Offer to help with this garden
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
@@ -1578,7 +1587,7 @@ export default function RequestDetailPage() {
                   Your message to the owner (optional)
                 </label>
                 <textarea
-                  className="mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:bg-white"
+                  className="mt-1 wmp-field rounded-lg"
                   value={offerMessage}
                   onChange={(e) => setOfferMessage(e.target.value)}
                   rows={4}
@@ -1591,7 +1600,7 @@ export default function RequestDetailPage() {
                   Total price (GBP) (optional)
                 </label>
                 <input
-                  className="mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:bg-white"
+                  className="mt-1 wmp-field rounded-lg"
                   type="number"
                   min="0.01"
                   max="999999.99"
@@ -1615,12 +1624,12 @@ export default function RequestDetailPage() {
         {!isOwner && String(req.status) === "open" && myExistingOffer && (
           <section
             id="your-offer"
-            className="rounded-[2rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-sm"
+            className="wmp-panel rounded-lg text-zinc-900"
           >
-            <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+            <p className="wmp-eyebrow">
               Your offer
             </p>
-            <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+            <h2 className="mt-1 text-2xl font-bold text-zinc-900">
               You’ve offered to help
             </h2>
 
@@ -1643,7 +1652,7 @@ export default function RequestDetailPage() {
             </div>
 
             {myExistingOffer.message && (
-              <p className="mt-4 whitespace-pre-wrap rounded-xl border border-stone-200 bg-stone-50/70 p-4 text-sm leading-6 text-zinc-700">
+              <p className="mt-4 whitespace-pre-wrap rounded-lg border border-stone-200 bg-stone-50/70 p-4 text-sm leading-6 text-zinc-700">
                 {myExistingOffer.message}
               </p>
             )}
@@ -1653,7 +1662,7 @@ export default function RequestDetailPage() {
                 type="button"
                 onClick={() => withdrawOffer(myExistingOffer.id)}
                 disabled={withdrawingOfferId === myExistingOffer.id}
-                className="mt-4 rounded-xl border border-red-300 px-4 py-2 text-sm font-medium text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-4 wmp-button border border-red-300 text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {withdrawingOfferId === myExistingOffer.id
                   ? "Withdrawing..."
@@ -1666,14 +1675,14 @@ export default function RequestDetailPage() {
         {isOwner && (
           <section
             id="offers"
-            className="rounded-[2rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-sm"
+            className="wmp-panel rounded-lg text-zinc-900"
           >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                <p className="wmp-eyebrow">
                   Offers
                 </p>
-                <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+                <h2 className="mt-1 text-2xl font-bold text-zinc-900">
                   Gardeners offering to help
                 </h2>
               </div>
@@ -1691,8 +1700,8 @@ export default function RequestDetailPage() {
             </SafetyNotice>
 
             {offersWithTrust.length === 0 ? (
-              <div className="mt-4 rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-5">
-                <p className="text-sm font-medium text-zinc-900">No offers yet.</p>
+              <div className="mt-4 rounded-lg border border-stone-200 bg-stone-50/70 p-5">
+                <p className="text-sm font-bold text-zinc-900">No offers yet.</p>
                 <p className="mt-1 text-sm leading-6 text-zinc-600">
                   Gardener offers will appear here. If none arrive, check that
                   the dates, rough area, budget, and care instructions are clear.
@@ -1711,7 +1720,7 @@ export default function RequestDetailPage() {
                 {offersWithTrust.map((o) => (
                   <div
                     key={o.id}
-                    className="rounded-[1.5rem] border border-stone-200 bg-stone-50/60 p-5"
+                    className="rounded-lg border border-stone-200 bg-stone-50/60 p-5"
                   >
                     <div className="flex items-start gap-4">
                       <Avatar profile={o.gardenerProfile} fallback={o.gardenerName} />
@@ -1742,7 +1751,7 @@ export default function RequestDetailPage() {
                             {o.gardenerSkillTags.map((tag) => (
                               <span
                                 key={tag}
-                                className="rounded-full border border-stone-200 bg-white px-2 py-1 text-xs text-zinc-700"
+                                className="wmp-chip bg-white"
                               >
                                 {tag}
                               </span>
@@ -1751,7 +1760,7 @@ export default function RequestDetailPage() {
                         )}
 
                         {(o.goodMatches.length > 0 || o.missingSkills.length > 0) && (
-                          <div className="mt-3 rounded-xl border border-stone-200 bg-white p-3 text-sm">
+                          <div className="mt-3 rounded-lg border border-stone-200 bg-white p-3 text-sm">
                             {o.goodMatches.length > 0 && (
                               <p className="text-emerald-900">
                                 Good match: {o.goodMatches.join(", ")}
@@ -1791,13 +1800,13 @@ export default function RequestDetailPage() {
                         </div>
 
                         {o.message && (
-                          <p className="mt-3 whitespace-pre-wrap rounded-xl bg-white p-3 text-sm leading-6 text-zinc-700">
+                          <p className="mt-3 whitespace-pre-wrap rounded-lg bg-white p-3 text-sm leading-6 text-zinc-700">
                             {o.message}
                           </p>
                         )}
 
                         {String(req.status) === "open" && o.status === "pending" && (
-                          <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 text-sm leading-6 text-emerald-950">
+                          <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 text-sm leading-6 text-emerald-950">
                             If you accept this offer, you will confirm the booking
                             and pay through Stripe before the gardener is paid out
                             after completion.
@@ -1817,7 +1826,7 @@ export default function RequestDetailPage() {
                                 <button
                                   type="button"
                                   disabled
-                                  className="w-full cursor-not-allowed rounded-xl border border-amber-100 bg-amber-50 px-4 py-2 text-left text-sm font-medium text-amber-800 opacity-90 sm:w-auto sm:text-center"
+                                  className="w-full cursor-not-allowed rounded-lg border border-amber-100 bg-amber-50 px-4 py-2 text-left text-sm font-bold text-amber-800 opacity-90 sm:w-auto sm:text-center"
                                 >
                                   Gardener needs to connect payouts before this offer can be accepted.
                                 </button>
@@ -1827,7 +1836,7 @@ export default function RequestDetailPage() {
                                 type="button"
                                 onClick={() => rejectOffer(o.id)}
                                 disabled={rejectingOfferId === o.id}
-                                className="w-full rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                                className="wmp-button w-full border border-red-200 bg-white text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                               >
                                 {rejectingOfferId === o.id ? "Rejecting..." : "Reject offer"}
                               </button>
@@ -1843,7 +1852,7 @@ export default function RequestDetailPage() {
         )}
 
         {msg && (
-          <div className="rounded-[1.25rem] border border-stone-200 bg-white p-4 text-sm leading-6 text-zinc-600 shadow-sm">
+          <div className="wmp-card rounded-lg text-sm leading-6 text-zinc-600">
             <p>{friendlyError(msg)}</p>
             {msgCanRetry && (
               <button

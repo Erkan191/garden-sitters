@@ -1,8 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f5ef;
-  --foreground: #18181b;
+  --background: #f7f7f1;
+  --foreground: #172019;
+  --wmp-paper: #fffdf8;
+  --wmp-chalk: #f7f7f1;
+  --wmp-mint: #e4efdd;
+  --wmp-sky: #d8ecee;
+  --wmp-leaf: #183f2a;
+  --wmp-leaf-soft: #eef6ea;
+  --wmp-clay: #d96f3f;
+  --wmp-ink-soft: #59665c;
+  --wmp-line: rgba(23, 32, 25, 0.12);
+  --wmp-shadow: 0 18px 45px rgba(26, 37, 30, 0.08);
 }
 
 @theme inline {
@@ -27,7 +37,284 @@ html {
 
 body {
   min-height: 100vh;
-  background: var(--background);
+  background:
+    linear-gradient(180deg, #fbfbf7 0%, #f4f7f1 46%, #fffdf8 100%);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: #f6cdb8;
+  color: var(--wmp-leaf);
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  text-underline-offset: 0.18em;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rounded-\[2rem\],
+.rounded-\[1\.75rem\],
+.rounded-\[1\.5rem\],
+.rounded-\[1\.25rem\],
+.rounded-\[1\.2rem\],
+.rounded-\[1rem\],
+.rounded-3xl,
+.rounded-2xl,
+.rounded-xl {
+  border-radius: 0.5rem;
+}
+
+.wmp-page {
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, #fbfbf7 0%, #f4f7f1 42%, #fffdf8 100%);
+  color: var(--foreground);
+  padding: 2.5rem 1rem;
+}
+
+.wmp-auth-page {
+  min-height: calc(100vh - 9rem);
+  background:
+    linear-gradient(180deg, #fbfbf7 0%, #f4f7f1 56%, #fffdf8 100%);
+  color: var(--foreground);
+  padding: 3rem 1.5rem;
+}
+
+.wmp-shell {
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.wmp-narrow {
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
+.wmp-stack > * + * {
+  margin-top: 1.5rem;
+}
+
+.wmp-hero,
+.wmp-panel,
+.wmp-card {
+  border: 1px solid var(--wmp-line);
+  background: rgba(255, 253, 248, 0.92);
+  box-shadow: var(--wmp-shadow);
+}
+
+.wmp-hero {
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+.wmp-panel {
+  padding: 1.5rem;
+}
+
+.wmp-card {
+  padding: 1.25rem;
+}
+
+.wmp-card-link {
+  display: block;
+  border: 1px solid var(--wmp-line);
+  background: rgba(255, 253, 248, 0.95);
+  color: var(--foreground);
+  padding: 1.25rem;
+  text-decoration: none;
+  box-shadow: 0 10px 26px rgba(26, 37, 30, 0.06);
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.wmp-card-link:hover {
+  transform: translateY(-2px);
+  border-color: rgba(24, 63, 42, 0.28);
+  background: #fffdf8;
+  box-shadow: 0 18px 36px rgba(26, 37, 30, 0.1);
+}
+
+.wmp-eyebrow {
+  color: var(--wmp-clay);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.wmp-h1 {
+  color: var(--foreground);
+  font-size: clamp(2.25rem, 5vw, 4.75rem);
+  font-weight: 760;
+  line-height: 0.96;
+  letter-spacing: 0;
+}
+
+.wmp-h2 {
+  color: var(--foreground);
+  font-size: clamp(1.75rem, 3vw, 2.75rem);
+  font-weight: 720;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.wmp-eyebrow-light {
+  color: #edcdb7;
+}
+
+.wmp-h2-light {
+  color: #ffffff;
+}
+
+.wmp-copy-light {
+  color: rgba(236, 253, 245, 0.82);
+}
+
+.wmp-muted {
+  color: var(--wmp-ink-soft);
+}
+
+.wmp-button {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.wmp-button:hover {
+  transform: translateY(-1px);
+}
+
+.wmp-button-primary {
+  border: 1px solid var(--wmp-leaf);
+  background: var(--wmp-leaf);
+  color: white;
+  box-shadow: 0 10px 20px rgba(24, 63, 42, 0.16);
+}
+
+.wmp-button-primary:hover {
+  background: #102f1f;
+}
+
+.wmp-button-secondary {
+  border: 1px solid rgba(24, 63, 42, 0.18);
+  background: white;
+  color: var(--wmp-leaf);
+}
+
+.wmp-button-secondary:hover {
+  border-color: rgba(24, 63, 42, 0.35);
+  background: var(--wmp-leaf-soft);
+}
+
+.wmp-button-clay {
+  border: 1px solid var(--wmp-clay);
+  background: var(--wmp-clay);
+  color: white;
+  box-shadow: 0 10px 20px rgba(217, 111, 63, 0.16);
+}
+
+.wmp-button-clay:hover {
+  background: #c85f32;
+}
+
+.wmp-field {
+  width: 100%;
+  border: 1px solid rgba(23, 32, 25, 0.14);
+  background: var(--wmp-paper);
+  color: var(--foreground);
+  padding: 0.62rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.wmp-field:focus {
+  border-color: rgba(24, 63, 42, 0.75);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(24, 63, 42, 0.1);
+}
+
+.wmp-label {
+  color: #334138;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.wmp-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(23, 32, 25, 0.12);
+  border-radius: 999px;
+  background: #fbf8ef;
+  color: #3f4a42;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.wmp-back-link {
+  display: inline-flex;
+  color: #59665c;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.wmp-back-link:hover {
+  color: var(--wmp-leaf);
+  text-decoration: underline;
+}
+
+.wmp-status-dot::before {
+  content: "";
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.45rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+@media (min-width: 640px) {
+  .wmp-page {
+    padding-inline: 1.5rem;
+  }
+
+  .wmp-hero {
+    padding: 2rem;
+  }
+
+  .wmp-auth-page {
+    padding-block: 4rem;
+  }
 }

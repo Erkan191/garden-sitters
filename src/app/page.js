@@ -1,14 +1,11 @@
 import Link from "next/link";
 import { BetaNotice } from "./LaunchNotices";
 
-const buttonBase =
-  "inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2";
-const primaryButton =
-  `${buttonBase} bg-emerald-950 text-white shadow-sm hover:bg-emerald-900 focus:ring-emerald-900`;
-const secondaryButton =
-  `${buttonBase} border border-emerald-900/20 bg-white text-emerald-950 hover:border-emerald-900/40 hover:bg-emerald-50 focus:ring-emerald-900`;
-const lightButton =
-  `${buttonBase} bg-white text-emerald-950 hover:bg-emerald-50 focus:ring-white`;
+const buttonBase = "wmp-button w-full sm:w-auto";
+const primaryButton = `${buttonBase} wmp-button-primary`;
+const secondaryButton = `${buttonBase} wmp-button-secondary`;
+const clayButton = `${buttonBase} wmp-button-clay`;
+const lightButton = `${buttonBase} bg-white text-emerald-950 hover:bg-emerald-50`;
 
 const careTasks = [
   {
@@ -97,16 +94,12 @@ function SectionIntro({
     <div
       className={`max-w-3xl ${align === "center" ? "mx-auto text-center" : ""}`}
     >
-      <p
-        className={`text-xs font-bold uppercase tracking-[0.18em] ${
-          isLight ? "text-clay-200" : "text-clay-700"
-        }`}
-      >
+      <p className={`wmp-eyebrow ${isLight ? "wmp-eyebrow-light" : ""}`}>
         {eyebrow}
       </p>
       <h2
-        className={`mt-3 text-3xl font-semibold tracking-tight sm:text-4xl ${
-          isLight ? "text-white" : "text-zinc-950"
+        className={`mt-3 wmp-h2 ${
+          isLight ? "wmp-h2-light" : "text-zinc-950"
         }`}
       >
         {title}
@@ -114,7 +107,7 @@ function SectionIntro({
       {copy && (
         <p
           className={`mt-4 text-base leading-7 ${
-            isLight ? "text-emerald-50/80" : "text-zinc-600"
+            isLight ? "wmp-copy-light" : "text-zinc-600"
           }`}
         >
           {copy}
@@ -131,17 +124,19 @@ function StepList({ title, steps, accent = "emerald" }) {
       : "border-emerald-100 bg-emerald-50 text-emerald-950";
 
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-      <h3 className="text-lg font-semibold text-zinc-950">{title}</h3>
-      <ol className="mt-5 space-y-3">
+    <div className="wmp-panel rounded-lg">
+      <h3 className="text-lg font-bold text-zinc-950">{title}</h3>
+      <ol className="mt-5 space-y-4">
         {steps.map((step, index) => (
-          <li key={step} className="flex items-center gap-3">
+          <li key={step} className="grid grid-cols-[2.25rem_1fr] gap-3">
             <span
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold ${accentClasses}`}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-bold ${accentClasses}`}
             >
               {index + 1}
             </span>
-            <span className="text-sm font-medium text-zinc-800">{step}</span>
+            <span className="self-center text-sm font-bold text-zinc-800">
+              {step}
+            </span>
           </li>
         ))}
       </ol>
@@ -152,31 +147,34 @@ function StepList({ title, steps, accent = "emerald" }) {
 function GardenPanel() {
   return (
     <div
-      className="relative mx-auto w-full max-w-lg overflow-hidden rounded-[1.75rem] border border-emerald-900/10 bg-[#f3ead9] p-5 shadow-[0_24px_70px_rgba(25,50,32,0.16)]"
+      className="relative mx-auto w-full max-w-lg overflow-hidden rounded-lg border border-emerald-900/10 bg-[#fffdf8] p-4 shadow-[0_24px_70px_rgba(25,50,32,0.14)]"
       aria-hidden="true"
     >
-      <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-sky-100 to-transparent" />
-      <div className="relative rounded-[1.25rem] border border-white/60 bg-[#f8f1df] p-4">
-        <div className="flex items-center justify-between rounded-full border border-emerald-900/10 bg-white/80 px-4 py-2 text-xs font-semibold text-emerald-950 shadow-sm">
-          <span>Example request</span>
-          <span>N13 garden care</span>
+      <div className="relative rounded-lg border border-emerald-950/10 bg-[#f1f7ed] p-4">
+        <div className="flex items-center justify-between gap-3 border-b border-emerald-950/10 pb-3 text-xs font-bold text-emerald-950">
+          <span>Nearby care request</span>
+          <span className="rounded-full bg-white px-2.5 py-1 text-clay-700">
+            N13
+          </span>
         </div>
 
-        <div className="mt-5 grid grid-cols-[1fr_0.85fr] gap-4">
-          <div className="space-y-3">
+        <div className="mt-4 grid grid-cols-[1fr_0.7fr] gap-3">
+          <div className="space-y-2">
             {[0, 1, 2, 3].map((row) => (
               <div
                 key={row}
-                className="rounded-full border border-emerald-950/10 bg-[#5d3f2b] p-1.5 shadow-inner"
+                className="rounded-full border border-emerald-950/10 bg-[#6a452f] p-1.5 shadow-inner"
               >
-                <div className="grid grid-cols-6 gap-1">
-                  {[0, 1, 2, 3, 4, 5].map((plant) => (
+                <div className="grid grid-cols-7 gap-1">
+                  {[0, 1, 2, 3, 4, 5, 6].map((plant) => (
                     <span
                       key={plant}
-                      className={`h-5 rounded-full ${
-                        (row + plant) % 3 === 0
+                      className={`h-4 rounded-full ${
+                        (row + plant) % 4 === 0
+                          ? "bg-clay-400"
+                          : (row + plant) % 4 === 1
                           ? "bg-emerald-300"
-                          : (row + plant) % 3 === 1
+                          : (row + plant) % 4 === 2
                           ? "bg-lime-200"
                           : "bg-sage-200"
                       }`}
@@ -187,35 +185,24 @@ function GardenPanel() {
             ))}
           </div>
 
-          <div className="rounded-[1.2rem] border border-emerald-900/10 bg-emerald-50/80 p-3">
-            <div className="mx-auto h-20 w-24 rounded-t-full border border-emerald-700/20 bg-white/70" />
-            <div className="mt-3 space-y-2">
-              <div className="h-2 rounded-full bg-emerald-800/80" />
-              <div className="h-2 w-4/5 rounded-full bg-emerald-600/50" />
-              <div className="h-2 w-2/3 rounded-full bg-clay-500/70" />
-            </div>
+          <div className="rounded-lg border border-emerald-900/10 bg-white p-3">
+            <p className="text-xs font-bold text-zinc-500">Offer</p>
+            <p className="mt-1 text-2xl font-bold text-emerald-950">£28</p>
+            <p className="mt-1 text-xs leading-5 text-zinc-600">
+              4 visits, greenhouse and pots
+            </p>
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
-            <p className="text-xs font-semibold text-zinc-500">Dates</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-950">
-              10-17 Jul
-            </p>
-          </div>
-          <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
-            <p className="text-xs font-semibold text-zinc-500">Care</p>
-            <p className="mt-1 text-sm font-semibold text-zinc-950">
-              Daily visits
-            </p>
-          </div>
-          <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
-            <p className="text-xs font-semibold text-zinc-500">Status</p>
-            <p className="mt-1 text-sm font-semibold text-emerald-950">
-              Offers open
-            </p>
-          </div>
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          {["10-17 Jul", "Daily", "Payout later"].map((item) => (
+            <span
+              key={item}
+              className="rounded-lg border border-emerald-950/10 bg-white px-3 py-2 text-xs font-bold text-emerald-950"
+            >
+              {item}
+            </span>
+          ))}
         </div>
       </div>
     </div>
@@ -224,45 +211,61 @@ function GardenPanel() {
 
 export default function HomePage() {
   return (
-    <main className="bg-[#fbf8f1] text-zinc-950">
-      <section className="relative overflow-hidden border-b border-emerald-950/10 bg-[linear-gradient(135deg,#fbf8f1_0%,#f5eddc_50%,#dfeedd_100%)]">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-20">
+    <main className="text-zinc-950">
+      <section className="relative overflow-hidden border-b border-emerald-950/10 bg-[#f7f7f1]">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 sm:py-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-16">
           <div>
-            <p className="inline-flex rounded-full border border-clay-200 bg-white/70 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-clay-800">
-              Private beta garden care marketplace
-            </p>
+            <p className="wmp-eyebrow">Garden care, sorted locally</p>
 
-            <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-zinc-950 sm:text-5xl lg:text-6xl">
-              Find trusted local help for your garden while you&apos;re away.
+            <h1 className="mt-5 max-w-4xl wmp-h1">
+              Find someone kind to watch your plot while you&apos;re away.
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-700">
               Post a care request for watering, harvesting, greenhouse checks,
               pots, seedlings, and veg beds. Local gardeners can offer to help,
-              and payments are handled securely through Watch My Plot.
+              and payment stays clear from booking to completion.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/requests/new" className={primaryButton}>
-                Post a garden care request
+            <form
+              action="/requests"
+              className="mt-7 grid gap-3 rounded-lg border border-emerald-950/10 bg-white p-3 shadow-[0_16px_36px_rgba(26,37,30,0.08)] sm:grid-cols-[1fr_auto]"
+            >
+              <label className="sr-only" htmlFor="postcode">
+                Postcode or area
+              </label>
+              <input
+                id="postcode"
+                name="postcode"
+                className="wmp-field rounded-lg"
+                placeholder="Enter postcode or area, e.g. N13"
+              />
+              <button className="wmp-button wmp-button-primary">
+                Browse nearby jobs
+              </button>
+            </form>
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <Link href="/requests/new" className={clayButton}>
+                Post a request
               </Link>
               <Link href="/requests" className={secondaryButton}>
-                Browse local garden jobs
+                Browse all jobs
               </Link>
             </div>
 
             <div className="mt-8 grid max-w-2xl gap-3 text-sm text-zinc-700 sm:grid-cols-3">
               <div className="border-l-2 border-clay-400 pl-3">
-                <p className="font-semibold text-zinc-950">Rough area first</p>
+                <p className="font-bold text-zinc-950">Rough area first</p>
                 <p className="mt-1">Share exact access details later.</p>
               </div>
               <div className="border-l-2 border-sage-500 pl-3">
-                <p className="font-semibold text-zinc-950">Clear offers</p>
-                <p className="mt-1">Compare messages, price, and fit.</p>
+                <p className="font-bold text-zinc-950">Clear offers</p>
+                <p className="mt-1">Compare message, price, skills, and fit.</p>
               </div>
               <div className="border-l-2 border-emerald-700 pl-3">
-                <p className="font-semibold text-zinc-950">Stripe payments</p>
-                <p className="mt-1">Payout after completion.</p>
+                <p className="font-bold text-zinc-950">Stripe payments</p>
+                <p className="mt-1">Gardeners are paid after completion.</p>
               </div>
             </div>
           </div>
@@ -271,14 +274,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-white py-14 sm:py-16">
+      <section className="bg-white py-12 sm:py-14">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="grid gap-5 md:grid-cols-2">
-            <div className="rounded-2xl border border-emerald-900/10 bg-[#f7f4eb] p-6 shadow-sm">
+            <div className="wmp-card rounded-lg bg-[#f4f8ef]">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
                 Owners
               </p>
-              <h2 className="mt-3 text-2xl font-semibold text-zinc-950">
+              <h2 className="mt-3 text-2xl font-bold text-zinc-950">
                 I need garden help
               </h2>
               <p className="mt-3 leading-7 text-zinc-700">
@@ -287,15 +290,15 @@ export default function HomePage() {
                 once the work is done.
               </p>
               <Link href="/requests/new" className={`mt-6 ${primaryButton}`}>
-                Post a request
+                Start a request
               </Link>
             </div>
 
-            <div className="rounded-2xl border border-clay-200 bg-white p-6 shadow-sm">
+            <div className="wmp-card rounded-lg bg-[#fff6ef]">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-clay-800">
                 Gardeners
               </p>
-              <h2 className="mt-3 text-2xl font-semibold text-zinc-950">
+              <h2 className="mt-3 text-2xl font-bold text-zinc-950">
                 I want garden jobs
               </h2>
               <p className="mt-3 leading-7 text-zinc-700">
@@ -311,7 +314,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="how-it-works" className="bg-[#fbf8f1] py-16 sm:py-20">
+      <section id="how-it-works" className="bg-[#f7f7f1] py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <SectionIntro
             eyebrow="How it works"
@@ -348,7 +351,7 @@ export default function HomePage() {
             ].map((item) => (
               <div
                 key={item}
-                className="rounded-2xl border border-white/10 bg-white/10 p-5 text-sm leading-6 text-emerald-50"
+                className="rounded-lg border border-white/10 bg-white/10 p-5 text-sm leading-6 text-emerald-50"
               >
                 {item}
               </div>
@@ -369,10 +372,10 @@ export default function HomePage() {
             {careTasks.map((task) => (
               <article
                 key={task.title}
-                className="rounded-2xl border border-stone-200 bg-[#fbf8f1] p-5 shadow-sm"
+                className="wmp-card rounded-lg bg-[#fbfbf7]"
               >
-                <div className="mb-4 h-2 w-16 rounded-full bg-clay-500" />
-                <h3 className="text-lg font-semibold text-zinc-950">
+                <div className="mb-4 h-1.5 w-16 rounded-full bg-clay-500" />
+                <h3 className="text-lg font-bold text-zinc-950">
                   {task.title}
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-zinc-700">
@@ -384,7 +387,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-[#f1eadc] py-16 sm:py-20">
+      <section className="bg-[#eef6ea] py-16 sm:py-20">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <SectionIntro
             eyebrow="Trust and safety"
@@ -401,7 +404,7 @@ export default function HomePage() {
             ].map((item) => (
               <div
                 key={item}
-                className="rounded-2xl border border-emerald-950/10 bg-white/70 p-5 text-sm leading-6 text-zinc-700 shadow-sm"
+                className="rounded-lg border border-emerald-950/10 bg-white/80 p-5 text-sm leading-6 text-zinc-700 shadow-sm"
               >
                 {item}
               </div>
@@ -425,10 +428,10 @@ export default function HomePage() {
             align="center"
           />
 
-          <div className="mt-10 divide-y divide-stone-200 rounded-2xl border border-stone-200 bg-white shadow-sm">
+          <div className="mt-10 divide-y divide-stone-200 rounded-lg border border-stone-200 bg-white shadow-sm">
             {faqs.map((faq) => (
               <details key={faq.question} className="group p-5">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-base font-semibold text-zinc-950">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-base font-bold text-zinc-950">
                   {faq.question}
                   <span className="text-xl leading-none text-emerald-900 transition-transform group-open:rotate-45">
                     +
@@ -449,7 +452,7 @@ export default function HomePage() {
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-clay-200">
               Private beta
             </p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
               Ready to test Watch My Plot?
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/80">
@@ -464,7 +467,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/requests"
-              className={`${buttonBase} border border-white/20 bg-white/10 text-white hover:bg-white/15 focus:ring-white`}
+              className={`${buttonBase} border border-white/20 bg-white/10 text-white hover:bg-white/15`}
             >
               Browse jobs
             </Link>

@@ -8,7 +8,16 @@ import { BetaNotice, PaymentSafetyNotice } from "../../LaunchNotices";
 
 function formatPrice(value) {
   if (value == null) return "Not set";
-  return `£${Number(value).toFixed(0)}`;
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) return "Not set";
+
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(number);
 }
 
 function formatDateTime(value) {
@@ -57,9 +66,9 @@ function getPayoutStatusBadgeClass(status) {
 }
 
 const primaryButtonClass =
-  "inline-flex justify-center rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800";
+  "wmp-button wmp-button-primary inline-flex justify-center";
 const secondaryButtonClass =
-  "inline-flex justify-center rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50";
+  "wmp-button wmp-button-secondary inline-flex justify-center";
 
 function friendlyError(message) {
   const text = String(message || "");
@@ -260,8 +269,8 @@ export default function BookingDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
-        <div className="mx-auto max-w-6xl rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+      <main className="wmp-page">
+        <div className="wmp-shell wmp-card rounded-lg text-sm text-zinc-600">
           Loading booking...
         </div>
       </main>
@@ -270,8 +279,8 @@ export default function BookingDetailPage() {
 
   if (!booking) {
     return (
-      <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
-        <div className="mx-auto max-w-6xl rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+      <main className="wmp-page">
+        <div className="wmp-shell wmp-card rounded-lg">
           <p className="font-medium text-zinc-900">Booking not found.</p>
           {msg && <p className="mt-2 text-sm text-zinc-600">{msg}</p>}
 
@@ -287,23 +296,23 @@ export default function BookingDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 px-4 py-10 text-zinc-900 sm:px-6">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <main className="wmp-page">
+      <div className="wmp-shell wmp-stack">
         <Link
           href="/bookings"
-          className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"
+          className="wmp-back-link"
         >
           ← Back to bookings
         </Link>
 
-        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+        <section className="wmp-hero rounded-lg bg-[#fffdf8]">
           <div className="grid gap-6 lg:grid-cols-[1fr_0.35fr] lg:items-start">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              <p className="wmp-eyebrow">
                 Booking
               </p>
 
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                 Booking details and completion.
               </h1>
 
@@ -328,8 +337,8 @@ export default function BookingDetailPage() {
               </div>
             </div>
 
-            <aside className="rounded-[1.5rem] border border-emerald-100 bg-white/80 p-5 shadow-sm">
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+            <aside className="rounded-lg border border-emerald-100 bg-[#f4f8ef] p-5 shadow-sm">
+              <p className="wmp-eyebrow">
                 Summary
               </p>
 
@@ -365,7 +374,7 @@ export default function BookingDetailPage() {
         <BetaNotice />
 
         {msg && (
-          <div className="rounded-[1.5rem] border border-stone-200 bg-white p-4 text-sm leading-6 text-zinc-600 shadow-sm">
+          <div className="wmp-card rounded-lg text-sm leading-6 text-zinc-600">
             <p>{friendlyError(msg)}</p>
             {(msg.toLowerCase().includes("failed to fetch") ||
               msg.toLowerCase().includes("typeerror") ||
@@ -383,17 +392,17 @@ export default function BookingDetailPage() {
 
         <section className="grid gap-6 lg:grid-cols-[1fr_0.38fr] lg:items-start">
           <div className="space-y-6">
-            <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+            <section className="wmp-panel rounded-lg">
+              <p className="wmp-eyebrow">
                 People
               </p>
 
-              <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+              <h2 className="mt-1 text-2xl font-bold text-zinc-900">
                 Owner and gardener
               </h2>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-4">
+                <div className="rounded-lg border border-stone-200 bg-stone-50/70 p-4">
                   <p className="text-sm text-zinc-500">Owner</p>
                   <Link
                     href={`/users/${booking.owner_id}`}
@@ -403,7 +412,7 @@ export default function BookingDetailPage() {
                   </Link>
                 </div>
 
-                <div className="rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-4">
+                <div className="rounded-lg border border-stone-200 bg-stone-50/70 p-4">
                   <p className="text-sm text-zinc-500">Gardener</p>
                   <Link
                     href={`/users/${booking.gardener_id}`}
@@ -431,13 +440,13 @@ export default function BookingDetailPage() {
               </div>
             </section>
 
-            <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+            <section className="wmp-panel rounded-lg">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                  <p className="wmp-eyebrow">
                     Reviews
                   </p>
-                  <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+                  <h2 className="mt-1 text-2xl font-bold text-zinc-900">
                     Booking reviews
                   </h2>
                 </div>
@@ -448,8 +457,8 @@ export default function BookingDetailPage() {
               </div>
 
               {reviews.length === 0 ? (
-                <div className="mt-5 rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-5">
-                  <p className="text-sm font-medium text-zinc-900">
+                <div className="mt-5 rounded-lg border border-stone-200 bg-stone-50/70 p-5">
+                  <p className="text-sm font-bold text-zinc-900">
                     No reviews yet.
                   </p>
                   <p className="mt-1 text-sm leading-6 text-zinc-600">
@@ -465,7 +474,7 @@ export default function BookingDetailPage() {
                     return (
                       <div
                         key={review.id}
-                        className="rounded-[1.5rem] border border-stone-200 bg-stone-50/60 p-5"
+                        className="rounded-lg border border-stone-200 bg-stone-50/60 p-5"
                       >
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                           <div>
@@ -483,7 +492,7 @@ export default function BookingDetailPage() {
                         </div>
 
                         {review.comment && (
-                          <p className="mt-4 whitespace-pre-wrap rounded-xl bg-white p-4 text-sm leading-6 text-zinc-700">
+                          <p className="mt-4 whitespace-pre-wrap rounded-lg bg-white p-4 text-sm leading-6 text-zinc-700">
                             {review.comment}
                           </p>
                         )}
@@ -513,12 +522,12 @@ export default function BookingDetailPage() {
           </div>
 
           <aside className="space-y-4 lg:sticky lg:top-6">
-            <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+            <section className="wmp-panel rounded-lg">
+              <p className="wmp-eyebrow">
                 Completion
               </p>
 
-              <h2 className="mt-1 text-xl font-semibold text-zinc-900">
+              <h2 className="mt-1 text-xl font-bold text-zinc-900">
                 {booking.payout_status === "failed"
                   ? "Payout needs attention."
                   : "Release payout after the job."}
@@ -535,7 +544,7 @@ export default function BookingDetailPage() {
                   type="button"
                   onClick={completeAndPayGardener}
                   disabled={completingBooking}
-                  className="mt-5 w-full whitespace-normal rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium leading-5 text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-5 wmp-button wmp-button-primary w-full whitespace-normal leading-5 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {completingBooking
                     ? "Trying payout..."
@@ -544,28 +553,28 @@ export default function BookingDetailPage() {
                     : "Complete booking and release payout"}
                 </button>
               ) : booking.status === "completed" ? (
-                <div className="mt-5 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
+                <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
                   This booking is complete. Reviews can now be left.
                 </div>
               ) : isGardener ? (
-                <div className="mt-5 rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm leading-6 text-zinc-600">
+                <div className="mt-5 rounded-lg border border-stone-200 bg-stone-50 p-4 text-sm leading-6 text-zinc-600">
                   The owner marks the booking complete after the job has been carried out.
                 </div>
               ) : (
-                <div className="mt-5 rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm leading-6 text-zinc-600">
+                <div className="mt-5 rounded-lg border border-stone-200 bg-stone-50 p-4 text-sm leading-6 text-zinc-600">
                   This booking cannot be completed yet.
                 </div>
               )}
 
               {booking.payout_error && (
-                <div className="mt-4 rounded-xl border border-red-100 bg-red-50 p-4 text-sm leading-6 text-red-700">
+                <div className="mt-4 rounded-lg border border-red-100 bg-red-50 p-4 text-sm leading-6 text-red-700">
                   Payout issue: {booking.payout_error}
                 </div>
               )}
             </section>
 
-            <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+            <section className="wmp-panel rounded-lg">
+              <p className="wmp-eyebrow">
                 Payment note
               </p>
 

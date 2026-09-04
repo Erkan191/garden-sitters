@@ -30,24 +30,24 @@ export default function SignupPage() {
   }
 
   const inputClass =
-    "mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:bg-white";
+    "mt-1 wmp-field rounded-lg";
 
   return (
-    <main className="flex min-h-[calc(100vh-9rem)] items-center bg-stone-50 px-6 py-12 text-zinc-900 sm:py-16">
+    <main className="wmp-auth-page flex items-center">
       <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+        <section className="wmp-hero rounded-lg bg-[#fffdf8]">
           <Link
             href="/"
-            className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"
+            className="wmp-back-link"
           >
             ← Back home
           </Link>
 
-          <p className="mt-8 text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+          <p className="mt-8 wmp-eyebrow">
             Join Watch My Plot
           </p>
 
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
             Create an account to post, offer, chat, and review.
           </h1>
 
@@ -60,22 +60,22 @@ export default function SignupPage() {
           <BetaNotice className="mt-6" />
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[1.25rem] border border-stone-200 bg-white/80 p-4">
-              <p className="text-sm font-medium text-zinc-900">Owners</p>
+            <div className="rounded-lg border border-stone-200 bg-[#fbfbf7] p-4">
+              <p className="text-sm font-bold text-zinc-900">Owners</p>
               <p className="mt-1 text-xs leading-5 text-zinc-600">
                 Post plot care requests while you’re away.
               </p>
             </div>
 
-            <div className="rounded-[1.25rem] border border-stone-200 bg-white/80 p-4">
-              <p className="text-sm font-medium text-zinc-900">Gardeners</p>
+            <div className="rounded-lg border border-stone-200 bg-[#fbfbf7] p-4">
+              <p className="text-sm font-bold text-zinc-900">Gardeners</p>
               <p className="mt-1 text-xs leading-5 text-zinc-600">
                 Offer to help local growers with practical care.
               </p>
             </div>
 
-            <div className="rounded-[1.25rem] border border-stone-200 bg-white/80 p-4">
-              <p className="text-sm font-medium text-zinc-900">Reviews</p>
+            <div className="rounded-lg border border-stone-200 bg-[#fbfbf7] p-4">
+              <p className="text-sm font-bold text-zinc-900">Reviews</p>
               <p className="mt-1 text-xs leading-5 text-zinc-600">
                 Build trust after completed jobs.
               </p>
@@ -83,13 +83,13 @@ export default function SignupPage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
+        <section className="wmp-panel rounded-lg sm:p-8">
           <div>
-            <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+            <p className="wmp-eyebrow">
               Sign up
             </p>
 
-            <h2 className="mt-2 text-2xl font-semibold text-zinc-900">
+            <h2 className="mt-2 text-2xl font-bold text-zinc-900">
               Create your account
             </h2>
 
@@ -100,7 +100,7 @@ export default function SignupPage() {
 
           <form onSubmit={handleSignup} className="mt-6 space-y-4">
             <div>
-              <label className="text-sm font-medium text-zinc-700">Email</label>
+              <label className="wmp-label">Email</label>
               <input
                 className={inputClass}
                 value={email}
@@ -112,7 +112,7 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-zinc-700">
+              <label className="wmp-label">
                 Password
               </label>
 
@@ -173,7 +173,7 @@ export default function SignupPage() {
               </p>
             </div>
 
-            <button className="w-full rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
+            <button className="wmp-button wmp-button-primary w-full">
               Sign up
             </button>
 
@@ -196,7 +196,7 @@ export default function SignupPage() {
             </p>
 
             {msg && (
-              <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-zinc-600">
+              <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-zinc-600">
                 {msg}
               </div>
             )}

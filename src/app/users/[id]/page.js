@@ -121,39 +121,39 @@ export default function UserProfilePage() {
     profile?.full_name?.trim() || (isOwnProfile ? "You" : "User");
   const skillTags = useMemo(() => buildSkillTags(profile), [profile]);
 
-      return (
-    <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
-      <div className="mx-auto max-w-6xl space-y-6">
+  return (
+    <main className="wmp-page">
+      <div className="wmp-shell wmp-stack">
         <button
           type="button"
           onClick={() => router.back()}
-          className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"
+          className="wmp-back-link"
         >
           ← Back
         </button>
 
         {loading && (
-          <div className="rounded-[1.5rem] border border-stone-200 bg-white p-6 text-sm text-zinc-600 shadow-sm">
+          <div className="wmp-card rounded-lg text-sm text-zinc-600">
             Loading profile...
           </div>
         )}
 
         {msg && (
-          <div className="rounded-[1.5rem] border border-red-100 bg-red-50 p-6 text-sm text-red-700">
+          <div className="rounded-lg border border-red-100 bg-red-50 p-6 text-sm text-red-700">
             {msg}
           </div>
         )}
 
         {!loading && !profile && (
-          <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-            <p className="font-medium text-zinc-900">Profile not found.</p>
+          <section className="wmp-card rounded-lg">
+            <p className="font-bold text-zinc-900">Profile not found.</p>
             <p className="mt-2 text-sm text-zinc-600">
               This user profile may no longer exist or may not be public.
             </p>
 
             <Link
               href="/requests"
-              className="mt-4 inline-flex rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+              className="mt-4 wmp-button wmp-button-secondary"
             >
               Browse jobs
             </Link>
@@ -162,7 +162,7 @@ export default function UserProfilePage() {
 
         {!loading && profile && (
           <>
-            <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+            <section className="wmp-hero rounded-lg bg-[#fffdf8]">
               <div className="grid gap-6 lg:grid-cols-[1fr_0.35fr] lg:items-start">
                 <div>
                   <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
@@ -181,11 +181,11 @@ export default function UserProfilePage() {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                      <p className="wmp-eyebrow">
                         Public profile
                       </p>
 
-                      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+                      <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                         {isOwnProfile ? "Your profile" : displayName}
                       </h1>
 
@@ -196,11 +196,11 @@ export default function UserProfilePage() {
                       )}
 
                       {profile.bio ? (
-                        <p className="mt-5 max-w-2xl whitespace-pre-wrap rounded-[1.25rem] border border-stone-200 bg-white/75 p-4 text-sm leading-6 text-zinc-700">
+                        <p className="mt-5 max-w-2xl whitespace-pre-wrap rounded-lg border border-stone-200 bg-white/75 p-4 text-sm leading-6 text-zinc-700">
                           {profile.bio}
                         </p>
                       ) : (
-                        <p className="mt-5 max-w-2xl rounded-[1.25rem] border border-stone-200 bg-white/75 p-4 text-sm leading-6 text-zinc-600">
+                        <p className="mt-5 max-w-2xl rounded-lg border border-stone-200 bg-white/75 p-4 text-sm leading-6 text-zinc-600">
                           No bio yet.
                         </p>
                       )}
@@ -210,7 +210,7 @@ export default function UserProfilePage() {
                           {skillTags.map((tag) => (
                             <span
                               key={tag}
-                              className="rounded-full border border-stone-200 bg-white/80 px-2 py-1 text-xs text-zinc-700"
+                              className="wmp-chip bg-white/80"
                             >
                               {tag}
                             </span>
@@ -222,7 +222,7 @@ export default function UserProfilePage() {
                         <div className="mt-5">
                           <Link
                             href="/profile"
-                            className="inline-flex rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+                            className="wmp-button wmp-button-primary"
                           >
                             Edit your profile
                           </Link>
@@ -232,22 +232,22 @@ export default function UserProfilePage() {
                   </div>
                 </div>
 
-                <aside className="rounded-[1.5rem] border border-emerald-100 bg-white/80 p-5 shadow-sm">
-                  <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                <aside className="rounded-lg border border-emerald-100 bg-[#f4f8ef] p-5 shadow-sm">
+                  <p className="wmp-eyebrow">
                     Trust summary
                   </p>
 
                   <div className="mt-4 grid gap-3">
-                    <div className="rounded-[1.25rem] border border-stone-200 bg-white p-4">
+                    <div className="rounded-lg border border-stone-200 bg-white p-4">
                       <p className="text-sm text-zinc-500">Average rating</p>
-                      <p className="mt-1 text-3xl font-semibold text-zinc-900">
+                      <p className="mt-1 text-3xl font-bold text-zinc-900">
                         {averageRating ? `${averageRating}/5` : "No rating yet"}
                       </p>
                     </div>
 
-                    <div className="rounded-[1.25rem] border border-stone-200 bg-white p-4">
+                    <div className="rounded-lg border border-stone-200 bg-white p-4">
                       <p className="text-sm text-zinc-500">Reviews</p>
-                      <p className="mt-1 text-3xl font-semibold text-zinc-900">
+                      <p className="mt-1 text-3xl font-bold text-zinc-900">
                         {totalReviews}
                       </p>
                     </div>
@@ -256,13 +256,13 @@ export default function UserProfilePage() {
               </div>
             </section>
 
-            <section className="rounded-[2rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-sm">
+            <section className="wmp-panel rounded-lg text-zinc-900">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+                  <p className="wmp-eyebrow">
                     Reviews
                   </p>
-                  <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+                  <h2 className="mt-1 text-2xl font-bold text-zinc-900">
                     What people said
                   </h2>
                 </div>
@@ -273,8 +273,8 @@ export default function UserProfilePage() {
               </div>
 
               {reviews.length === 0 ? (
-                <div className="mt-5 rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-5">
-                  <p className="text-sm font-medium text-zinc-900">
+                <div className="mt-5 rounded-lg border border-stone-200 bg-stone-50/70 p-5">
+                  <p className="text-sm font-bold text-zinc-900">
                     No reviews yet.
                   </p>
                   <p className="mt-1 text-sm leading-6 text-zinc-600">
@@ -290,7 +290,7 @@ export default function UserProfilePage() {
                     return (
                       <div
                         key={review.id}
-                        className="rounded-[1.5rem] border border-stone-200 bg-stone-50/60 p-5"
+                        className="rounded-lg border border-stone-200 bg-stone-50/60 p-5"
                       >
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                           <div>
@@ -308,11 +308,11 @@ export default function UserProfilePage() {
                         </div>
 
                         {review.comment ? (
-                          <p className="mt-4 whitespace-pre-wrap rounded-xl bg-white p-4 text-sm leading-6 text-zinc-700">
+                          <p className="mt-4 whitespace-pre-wrap rounded-lg bg-white p-4 text-sm leading-6 text-zinc-700">
                             {review.comment}
                           </p>
                         ) : (
-                          <p className="mt-4 rounded-xl bg-white p-4 text-sm italic leading-6 text-zinc-500">
+                          <p className="mt-4 rounded-lg bg-white p-4 text-sm italic leading-6 text-zinc-500">
                             No written comment left.
                           </p>
                         )}

@@ -22,7 +22,16 @@ function formatDateRange(start, end) {
 
 function formatPrice(value) {
   if (value == null) return null;
-  return `£${Number(value).toFixed(0)}`;
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) return null;
+
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(number);
 }
 
 function formatVisitFrequency(value) {
@@ -104,9 +113,9 @@ function buildRequestTags(request) {
 }
 
 const primaryButtonClass =
-  "inline-flex justify-center rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800";
+  "wmp-button wmp-button-primary inline-flex justify-center";
 const secondaryButtonClass =
-  "inline-flex justify-center rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50";
+  "wmp-button wmp-button-secondary inline-flex justify-center";
 
 function friendlyError(message) {
   const text = String(message || "");
@@ -125,7 +134,7 @@ function friendlyError(message) {
 
 function EmptyState({ title, children, href, actionLabel }) {
   return (
-    <div className="mt-4 rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-5">
+    <div className="mt-4 rounded-lg border border-dashed border-stone-300 bg-stone-50 p-5">
       <p className="text-sm font-medium text-zinc-900">{title}</p>
       <p className="mt-2 text-sm leading-6 text-zinc-600">{children}</p>
       {href && actionLabel && (
@@ -139,13 +148,13 @@ function EmptyState({ title, children, href, actionLabel }) {
 
 function ErrorState({ title = "We couldn't load this just now.", message }) {
   return (
-    <div className="mt-6 rounded-[1.25rem] border border-red-100 bg-red-50 p-5 text-sm leading-6 text-red-800">
+    <div className="mt-6 rounded-lg border border-red-100 bg-red-50 p-5 text-sm leading-6 text-red-800">
       <p className="font-medium">{title}</p>
       <p className="mt-1">{friendlyError(message)}</p>
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="mt-4 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-50"
+        className="mt-4 wmp-button border border-red-200 bg-white text-red-800 hover:bg-red-50"
       >
         Retry
       </button>
@@ -163,8 +172,8 @@ function ActionCard({
   srActionText = "",
 }) {
   return (
-    <div className="rounded-[1.25rem] border border-stone-200 bg-white p-5 shadow-sm">
-      <p className="text-sm font-semibold text-zinc-900">{title}</p>
+    <div className="wmp-card rounded-lg">
+      <p className="text-sm font-bold text-zinc-900">{title}</p>
       <p className="mt-2 text-sm leading-6 text-zinc-600">{children}</p>
 
       {href && actionLabel && (
@@ -189,7 +198,7 @@ function ActionCard({
 }
 
 function filterButtonClass(active) {
-  return `rounded-full border px-3 py-1 text-sm font-medium ${
+  return `rounded-full border px-3 py-1 text-sm font-bold ${
     active
       ? "border-emerald-900 bg-emerald-900 text-white"
       : "border-stone-300 bg-white text-zinc-700 hover:bg-stone-50"
@@ -574,9 +583,9 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-stone-50 px-6 py-12">
-        <div className="mx-auto max-w-6xl">
-          <div className="rounded-3xl border border-zinc-200 bg-white p-8 text-zinc-900 shadow-sm">
+      <main className="wmp-page">
+        <div className="wmp-shell">
+          <div className="wmp-card rounded-lg text-zinc-900">
             <p className="text-sm text-zinc-500">Loading dashboard...</p>
           </div>
         </div>
@@ -585,16 +594,16 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 px-6 py-12">
-      <div className="mx-auto max-w-6xl space-y-8">
-        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/60 p-8 text-zinc-900 shadow-[0_18px_50px_rgba(0,0,0,0.08)]">
+    <main className="wmp-page">
+      <div className="wmp-shell wmp-stack">
+        <section className="wmp-hero rounded-lg bg-[#fffdf8] text-zinc-900">
           <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-900/70">
+              <p className="wmp-eyebrow">
                 Watch My Plot
               </p>
 
-              <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
+              <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
                 Welcome back, {displayName}
               </h1>
 
@@ -608,29 +617,29 @@ export default function DashboardPage() {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link
                   href="/requests"
-                  className="inline-block rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800"
+                  className="wmp-button wmp-button-primary"
                 >
                   Browse jobs
                 </Link>
 
                 <Link
                   href="/requests/new"
-                  className="inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                  className="wmp-button wmp-button-clay"
                 >
                   Post a request
                 </Link>
 
                 <Link
                   href="/profile"
-                  className="inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                  className="wmp-button wmp-button-secondary"
                 >
                   Edit profile
                 </Link>
               </div>
             </div>
 
-            <div className="rounded-[1.5rem] border border-emerald-100 bg-white/80 p-5 shadow-sm backdrop-blur">
-              <p className="text-sm font-medium text-zinc-900">
+            <div className="rounded-lg border border-emerald-100 bg-[#f4f8ef] p-5 shadow-sm backdrop-blur">
+              <p className="text-sm font-bold text-zinc-900">
                 Profile and payouts
               </p>
 
@@ -639,9 +648,9 @@ export default function DashboardPage() {
               </p>
 
               <div className="mt-4 space-y-3">
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2">
                   <div>
-                    <p className="text-sm font-medium text-zinc-900">Public profile</p>
+                    <p className="text-sm font-bold text-zinc-900">Public profile</p>
                     <p className="text-xs text-zinc-500">
                       {profileReady ? "Basic profile details added" : "Add your name and details"}
                     </p>
@@ -658,9 +667,9 @@ export default function DashboardPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2">
                   <div>
-                    <p className="text-sm font-medium text-zinc-900">Payout setup</p>
+                    <p className="text-sm font-bold text-zinc-900">Payout setup</p>
                     <p className="text-xs text-zinc-500">
                       {payoutConnected ? "Stripe payouts connected" : "Finish Stripe payout setup"}
                     </p>
@@ -681,14 +690,14 @@ export default function DashboardPage() {
               <div className="mt-4 flex flex-wrap gap-3">
                 <Link
                   href="/profile"
-                  className="inline-block rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800"
+                  className="wmp-button wmp-button-primary"
                 >
                   Manage profile
                 </Link>
 
                 <Link
                   href={`/users/${userId}`}
-                  className="inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                  className="wmp-button wmp-button-secondary"
                 >
                   View public profile
                 </Link>
@@ -703,13 +712,13 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-stone-200 bg-white/95 p-6 text-zinc-900 shadow-[0_12px_35px_rgba(0,0,0,0.06)] sm:p-8">
+        <section className="wmp-panel rounded-lg text-zinc-900 sm:p-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              <p className="wmp-eyebrow">
                 Start here
               </p>
-              <h2 className="mt-1 text-2xl font-semibold">Needs your attention</h2>
+              <h2 className="mt-1 text-2xl font-bold">Needs your attention</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
                 These are the account, owner, and gardener tasks most likely to
                 need a decision before the next booking can move forward.
@@ -833,38 +842,38 @@ export default function DashboardPage() {
           )}
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 p-4">
+            <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
               <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
                 Requests awaiting offers
               </p>
-              <p className="mt-2 text-2xl font-semibold text-zinc-900">
+              <p className="mt-2 text-2xl font-bold text-zinc-900">
                 {requestsAwaitingOffers.length}
               </p>
             </div>
 
-            <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 p-4">
+            <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
               <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
                 Offers received
               </p>
-              <p className="mt-2 text-2xl font-semibold text-zinc-900">
+              <p className="mt-2 text-2xl font-bold text-zinc-900">
                 {requestsWithOffers.length}
               </p>
             </div>
 
-            <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 p-4">
+            <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
               <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
                 Bookings needing payment
               </p>
-              <p className="mt-2 text-2xl font-semibold text-zinc-900">
+              <p className="mt-2 text-2xl font-bold text-zinc-900">
                 {bookingsNeedingPayment.length}
               </p>
             </div>
 
-            <div className="rounded-[1.25rem] border border-stone-200 bg-stone-50 p-4">
+            <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
               <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
                 Upcoming jobs
               </p>
-              <p className="mt-2 text-2xl font-semibold text-zinc-900">
+              <p className="mt-2 text-2xl font-bold text-zinc-900">
                 {liveGardenerOffers.length}
               </p>
             </div>
@@ -872,35 +881,35 @@ export default function DashboardPage() {
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[1.5rem] border border-emerald-100 bg-white p-6 text-zinc-900 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+          <div className="wmp-card rounded-lg text-zinc-900">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-emerald-800/70">
               Your owner dashboard
             </p>
             <p className="mt-3 text-sm text-zinc-500">Your requests</p>
-            <p className="mt-2 text-3xl font-semibold">{requests.length}</p>
+            <p className="mt-2 text-3xl font-bold">{requests.length}</p>
             <p className="mt-2 text-sm text-zinc-600">
               {openRequestsCount} open • {liveOwnerRequests.length} live •{" "}
               {completedRequestsCount} completed • {closedRequestsCount} closed
             </p>
           </div>
 
-          <div className="rounded-[1.5rem] border border-sky-100 bg-white p-6 text-zinc-900 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+          <div className="wmp-card rounded-lg border-sky-100 text-zinc-900">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-sky-800/70">
               Your gardener dashboard
             </p>
             <p className="mt-3 text-sm text-zinc-500">Your offers</p>
-            <p className="mt-2 text-3xl font-semibold">{offers.length}</p>
+            <p className="mt-2 text-3xl font-bold">{offers.length}</p>
             <p className="mt-2 text-sm text-zinc-600">
               {pendingOffersCount} pending • {liveGardenerOffers.length} live
             </p>
           </div>
 
-          <div className="rounded-[1.5rem] border border-amber-100 bg-white p-6 text-zinc-900 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+          <div className="wmp-card rounded-lg border-amber-100 text-zinc-900">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-amber-800/70">
               In progress
             </p>
             <p className="mt-3 text-sm text-zinc-500">Live work</p>
-            <p className="mt-2 text-3xl font-semibold">
+            <p className="mt-2 text-3xl font-bold">
               {liveOwnerRequests.length + liveGardenerOffers.length}
             </p>
             <p className="mt-2 text-sm text-zinc-600">
@@ -908,12 +917,12 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div className="rounded-[1.5rem] border border-stone-200 bg-white p-6 text-zinc-900 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+          <div className="wmp-card rounded-lg text-zinc-900">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
               Messages
             </p>
             <p className="mt-3 text-sm text-zinc-500">Unread chats</p>
-            <p className="mt-2 text-3xl font-semibold">{totalUnreadCount}</p>
+            <p className="mt-2 text-3xl font-bold">{totalUnreadCount}</p>
             <p className="mt-2 text-sm text-zinc-600">
               Messages waiting across your active requests and jobs.
             </p>
@@ -922,20 +931,20 @@ export default function DashboardPage() {
 
         <section
           id="live-work"
-          className="rounded-[2rem] border border-stone-200 bg-white/95 p-8 text-zinc-900 shadow-[0_12px_35px_rgba(0,0,0,0.06)]"
+          className="wmp-panel rounded-lg text-zinc-900"
         >
           <div className="flex flex-col gap-2">
-            <h2 className="text-xl font-semibold">What happens next</h2>
+            <h2 className="text-xl font-bold">What happens next</h2>
             <p className="text-sm text-zinc-600">
               Active owner requests and gardener jobs, with the next practical step.
             </p>
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-[1.5rem] border border-stone-200 bg-white p-6">
+            <div className="rounded-lg border border-stone-200 bg-white p-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-lg font-semibold text-zinc-900">
+                  <h3 className="text-lg font-bold text-zinc-900">
                     Requests needing action
                   </h3>
                   <p className="mt-1 text-sm text-zinc-600">
@@ -950,7 +959,7 @@ export default function DashboardPage() {
               </div>
 
               {liveOwnerRequests.length === 0 ? (
-                <div className="mt-4 rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-4">
+                <div className="mt-4 rounded-lg border border-dashed border-stone-300 bg-stone-50 p-4">
                   <p className="text-sm font-medium text-zinc-700">
                     No live requests need action.
                   </p>
@@ -983,9 +992,9 @@ export default function DashboardPage() {
                     return (
                       <div
                         key={request.id}
-                        className="rounded-2xl border border-zinc-200 p-4"
+                        className="rounded-lg border border-zinc-200 p-4"
                       >
-                        <h4 className="text-base font-semibold text-zinc-900">
+                        <h4 className="text-base font-bold text-zinc-900">
                           {request.title}
                         </h4>
 
@@ -1028,7 +1037,7 @@ export default function DashboardPage() {
                           </Link>
 
                           {canBookAndPay && (
-                            <div className="w-full rounded-[1rem] border border-emerald-100 bg-emerald-50/70 p-3 sm:max-w-md">
+                            <div className="w-full rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 sm:max-w-md">
                               <p className="text-sm leading-6 text-emerald-950">
                                 Owner pays through Stripe. The gardener is not paid
                                 until completion. Private beta issues and refunds
@@ -1068,10 +1077,10 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div className="rounded-[1.5rem] border border-stone-200 bg-white p-6">
+            <div className="rounded-lg border border-stone-200 bg-white p-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-lg font-semibold text-zinc-900">
+                  <h3 className="text-lg font-bold text-zinc-900">
                     Live jobs
                   </h3>
                   <p className="mt-1 text-sm text-zinc-600">
@@ -1086,7 +1095,7 @@ export default function DashboardPage() {
               </div>
 
               {liveGardenerOffers.length === 0 ? (
-                <div className="mt-4 rounded-[1.25rem] border border-dashed border-stone-300 bg-stone-50 p-4">
+                <div className="mt-4 rounded-lg border border-dashed border-stone-300 bg-stone-50 p-4">
                   <p className="text-sm font-medium text-zinc-700">
                     No live jobs yet.
                   </p>
@@ -1112,9 +1121,9 @@ export default function DashboardPage() {
                     return (
                       <div
                         key={offer.id}
-                        className="rounded-2xl border border-zinc-200 p-4"
+                        className="rounded-lg border border-zinc-200 p-4"
                       >
-                        <h4 className="text-base font-semibold text-zinc-900">
+                        <h4 className="text-base font-bold text-zinc-900">
                           {request?.title || "Request"}
                         </h4>
 
@@ -1179,12 +1188,12 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-stone-200 bg-white/95 p-8 text-zinc-900 shadow-[0_12px_35px_rgba(0,0,0,0.06)]">
+        <section className="wmp-panel rounded-lg text-zinc-900">
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-xl font-semibold">Your requests</h2>
+                <h2 className="text-xl font-bold">Your requests</h2>
                 <p className="mt-1 text-sm text-zinc-600">
                   Requests you’ve posted as an owner.
                 </p>
@@ -1261,11 +1270,11 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={request.id}
-                    className="rounded-[1.5rem] border border-stone-200 bg-white p-5"
+                    className="rounded-lg border border-stone-200 bg-white p-5"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <h3 className="text-lg font-semibold text-zinc-900">
+                        <h3 className="text-lg font-bold text-zinc-900">
                           {request.title}
                         </h3>
 
@@ -1368,11 +1377,11 @@ export default function DashboardPage() {
           )}
         </section>
 
-        <section className="rounded-[2rem] border border-stone-200 bg-white/95 p-8 text-zinc-900 shadow-[0_12px_35px_rgba(0,0,0,0.06)]">
+        <section className="wmp-panel rounded-lg text-zinc-900">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-xl font-semibold">Your offers</h2>
+                <h2 className="text-xl font-bold">Your offers</h2>
                 <p className="mt-1 text-sm text-zinc-600">
                   Offers you’ve sent as a gardener.
                 </p>
@@ -1439,11 +1448,11 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={offer.id}
-                    className="rounded-[1.5rem] border border-stone-200 bg-white p-5"
+                    className="rounded-lg border border-stone-200 bg-white p-5"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <h3 className="text-lg font-semibold text-zinc-900">
+                        <h3 className="text-lg font-bold text-zinc-900">
                           {request?.title || "Request"}
                         </h3>
 
@@ -1523,17 +1532,17 @@ export default function DashboardPage() {
         </section>
 
 
-        <section className="rounded-[2rem] border border-stone-200 bg-white/95 p-8 text-zinc-900 shadow-[0_12px_35px_rgba(0,0,0,0.06)]">
+        <section className="wmp-panel rounded-lg text-zinc-900">
           <div className="flex flex-col gap-3">
-            <h2 className="text-xl font-semibold">Quick links</h2>
+            <h2 className="text-xl font-bold">Quick links</h2>
             <p className="text-sm text-zinc-600">
               A few useful shortcuts for keeping your account in good shape.
             </p>
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-[1.5rem] border border-stone-200 p-5">
-              <h3 className="text-base font-semibold">Profile and payouts</h3>
+            <div className="rounded-lg border border-stone-200 p-5">
+              <h3 className="text-base font-bold">Profile and payouts</h3>
               <p className="mt-2 text-sm text-zinc-600">
                 {payoutConnected
                   ? "Your payout setup is connected and ready."
@@ -1542,35 +1551,35 @@ export default function DashboardPage() {
 
               <Link
                 href="/profile"
-                className="mt-4 inline-block rounded-xl bg-emerald-900 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+                className="mt-4 wmp-button wmp-button-primary"
               >
                 Manage profile
               </Link>
             </div>
 
-            <div className="rounded-[1.5rem] border border-stone-200 p-5">
-              <h3 className="text-base font-semibold">Your public profile</h3>
+            <div className="rounded-lg border border-stone-200 p-5">
+              <h3 className="text-base font-bold">Your public profile</h3>
               <p className="mt-2 text-sm text-zinc-600">
                 See your profile the same way owners and gardeners will see it.
               </p>
 
               <Link
                 href={`/users/${userId}`}
-                className="mt-4 inline-block rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                className="mt-4 wmp-button wmp-button-secondary"
               >
                 View public profile
               </Link>
             </div>
 
-            <div className="rounded-[1.5rem] border border-stone-200 p-5">
-              <h3 className="text-base font-semibold">Account</h3>
+            <div className="rounded-lg border border-stone-200 p-5">
+              <h3 className="text-base font-bold">Account</h3>
               <p className="mt-2 text-sm text-zinc-600">
                 Sign out securely when you’re done.
               </p>
 
               <button
                 onClick={logout}
-                className="mt-4 rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-stone-50"
+                className="mt-4 wmp-button wmp-button-secondary"
               >
                 Log out
               </button>

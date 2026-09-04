@@ -25,7 +25,7 @@ function friendlyError(message) {
 
 function CareCheckbox({ checked, onChange, label, helper }) {
   return (
-    <label className="rounded-[1.25rem] border border-stone-200 bg-stone-50/70 p-4 text-sm text-zinc-700">
+    <label className="rounded-lg border border-stone-200 bg-[#fbfbf7] p-4 text-sm text-zinc-700">
       <div className="flex items-start gap-3">
         <input
           type="checkbox"
@@ -35,7 +35,7 @@ function CareCheckbox({ checked, onChange, label, helper }) {
         />
 
         <div>
-          <p className="font-medium text-zinc-900">{label}</p>
+          <p className="font-bold text-zinc-900">{label}</p>
           {helper && <p className="mt-1 text-xs leading-5 text-zinc-500">{helper}</p>}
         </div>
       </div>
@@ -125,28 +125,28 @@ export default function NewRequestPage() {
   }
 
   const inputClass =
-    "mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:bg-white";
+    "mt-1 wmp-field rounded-lg";
 
-  const labelClass = "text-sm font-medium text-zinc-700";
+  const labelClass = "wmp-label";
 
   return (
-    <main className="min-h-screen bg-stone-50 px-6 py-10 text-zinc-900">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <main className="wmp-page">
+      <div className="wmp-shell wmp-stack">
         <Link
           href="/dashboard"
-          className="inline-flex text-sm font-medium text-zinc-600 hover:text-emerald-900"
+          className="wmp-back-link"
         >
           ← Back to dashboard
         </Link>
 
-        <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-gradient-to-br from-white via-stone-50 to-emerald-50/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-8">
+        <section className="wmp-hero rounded-lg bg-[#fffdf8]">
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              <p className="wmp-eyebrow">
                 New request
               </p>
 
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                 Post a garden care request.
               </h1>
 
@@ -157,8 +157,8 @@ export default function NewRequestPage() {
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-emerald-100 bg-white/75 p-4 shadow-sm">
-              <p className="text-sm font-medium text-zinc-900">
+            <div className="rounded-lg border border-emerald-100 bg-[#f4f8ef] p-4 shadow-sm">
+              <p className="text-sm font-bold text-zinc-900">
                 A good request is specific.
               </p>
               <p className="mt-1 text-sm leading-6 text-zinc-600">
@@ -175,12 +175,12 @@ export default function NewRequestPage() {
           onSubmit={handleCreate}
           className="grid gap-6 lg:grid-cols-[1fr_0.38fr] lg:items-start"
         >
-          <section className="space-y-6 rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+          <section className="wmp-panel space-y-6 rounded-lg">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              <p className="wmp-eyebrow">
                 Request details
               </p>
-              <h2 className="mt-1 text-2xl font-semibold text-zinc-900">
+              <h2 className="mt-1 text-2xl font-bold text-zinc-900">
                 What do you need help with?
               </h2>
             </div>
@@ -257,8 +257,8 @@ export default function NewRequestPage() {
               </select>
             </div>
 
-            <div className="rounded-[1.5rem] border border-stone-200 bg-white p-4">
-              <p className="text-sm font-medium text-zinc-900">What needs care?</p>
+            <div className="rounded-lg border border-stone-200 bg-white p-4">
+              <p className="text-sm font-bold text-zinc-900">What needs care?</p>
               <p className="mt-1 text-sm leading-6 text-zinc-600">
                 Choose the things that matter so gardeners can see whether they’re a
                 good fit.
@@ -336,23 +336,23 @@ export default function NewRequestPage() {
               instructions clearly.
             </SafetyNotice>
 
-            <button className="w-full rounded-xl bg-emerald-900 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
+            <button className="wmp-button wmp-button-primary w-full">
               Post request
             </button>
 
             {msg && (
-              <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-zinc-600">
+              <div className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-zinc-600">
                 {friendlyError(msg)}
               </div>
             )}
           </section>
 
-          <aside className="space-y-4 rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm lg:sticky lg:top-6">
+          <aside className="wmp-panel space-y-4 rounded-lg lg:sticky lg:top-6">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.14em] text-emerald-800/70">
+              <p className="wmp-eyebrow">
                 Tips
               </p>
-              <h2 className="mt-1 text-xl font-semibold text-zinc-900">
+              <h2 className="mt-1 text-xl font-bold text-zinc-900">
                 Make it easy for the right gardener to say yes.
               </h2>
             </div>
@@ -379,8 +379,8 @@ export default function NewRequestPage() {
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-emerald-100 bg-emerald-50/70 p-4">
-              <p className="text-sm font-medium text-emerald-950">
+            <div className="rounded-lg border border-emerald-100 bg-emerald-50/70 p-4">
+              <p className="text-sm font-bold text-emerald-950">
                 Example title
               </p>
               <p className="mt-1 text-sm leading-6 text-emerald-900/80">
@@ -388,8 +388,8 @@ export default function NewRequestPage() {
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-4">
-              <p className="text-sm font-medium text-zinc-900">
+            <div className="rounded-lg border border-stone-200 bg-stone-50/70 p-4">
+              <p className="text-sm font-bold text-zinc-900">
                 What happens next
               </p>
               <p className="mt-1 text-sm leading-6 text-zinc-600">
