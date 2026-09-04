@@ -41,7 +41,7 @@ export async function POST(request) {
   const { data: booking, error: bookErr } = await supabase
     .from("bookings")
     .select(
-      "id, owner_id, gardener_id, amount_gbp, platform_fee_gbp, status, stripe_transfer_id, payout_status"
+      "id, owner_id, gardener_id, amount_gbp, platform_fee_gbp, status, stripe_payment_intent_id, stripe_transfer_id, payout_status"
     )
     .eq("id", bookingId)
     .maybeSingle();
@@ -142,13 +142,33 @@ export async function POST(request) {
   const payoutPence = Math.round(payout * 100);
 
   try {
+    if (!booking.stripe_payment_intent_id) {
+      throw new Error("Missing Stripe payment intent for this booking");
+    }
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(
+      booking.stripe_payment_intent_id
+    );
+    const sourceChargeId =
+      typeof paymentIntent.latest_charge === "string"
+        ? paymentIntent.latest_charge
+        : paymentIntent.latest_charge?.id || null;
+
+    if (!sourceChargeId) {
+      throw new Error("Could not find the Stripe charge for this booking");
+    }
+
     // Create Stripe Transfer (idempotent: if Stripe succeeds but DB update fails, retry won’t duplicate)
     const transfer = await stripe.transfers.create(
       {
         amount: payoutPence,
         currency: "gbp",
         destination: gardenerProfile.stripe_account_id,
-        metadata: { booking_id: booking.id },
+        source_transaction: sourceChargeId,
+        metadata: {
+          booking_id: booking.id,
+          payment_intent_id: booking.stripe_payment_intent_id,
+        },
       },
       { idempotencyKey: `booking_${booking.id}_transfer` }
     );
@@ -156,6 +176,7 @@ export async function POST(request) {
     const { error: upErr } = await supabaseAdmin
       .from("bookings")
       .update({
+        stripe_account_id: gardenerProfile.stripe_account_id,
         stripe_transfer_id: transfer.id,
         payout_status: "paid",
         payout_error: null,
