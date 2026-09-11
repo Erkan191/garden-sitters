@@ -205,10 +205,10 @@ function getPayoutStatusBadgeClass(status) {
 }
 
 function getPayoutStatusLabel(status) {
-  if (status === "paid") return "Payout paid";
-  if (status === "pending") return "Payout pending";
-  if (status === "failed") return "Payout failed";
-  return "Payout not started";
+  if (status === "paid") return "Transfer released";
+  if (status === "pending") return "Transfer pending";
+  if (status === "failed") return "Transfer failed";
+  return "Transfer not started";
 }
 
 const primaryButtonClass =
@@ -263,6 +263,7 @@ function NextStepPanel({ step }) {
 }
 
 const MAX_PRICE_GBP = 999999.99;
+const MIN_PAID_BOOKING_GBP = 5;
 
 export default function RequestDetailPage() {
   const router = useRouter();
@@ -468,12 +469,12 @@ export default function RequestDetailPage() {
     if (
       parsedOfferPrice !== null &&
       (!Number.isFinite(parsedOfferPrice) ||
-        parsedOfferPrice <= 0 ||
+        parsedOfferPrice < MIN_PAID_BOOKING_GBP ||
         parsedOfferPrice > MAX_PRICE_GBP ||
         Math.round(parsedOfferPrice * 100) !== parsedOfferPrice * 100)
     ) {
       setMsg(
-        "Price must be between £0.01 and £999,999.99, with no more than 2 decimal places."
+        "Price must be between £5.00 and £999,999.99, with no more than 2 decimal places."
       );
       return;
     }
@@ -829,7 +830,7 @@ export default function RequestDetailPage() {
     if (!booking?.id) return;
 
     setCompletingBooking(true);
-    setMsg("Completing booking and paying gardener...");
+    setMsg("Completing booking and releasing the gardener transfer...");
 
     const { data } = await supabase.auth.getSession();
     const token = data?.session?.access_token;
@@ -852,12 +853,12 @@ export default function RequestDetailPage() {
     const json = await res.json();
 
     if (!res.ok) {
-      setMsg(json.error || "Failed to pay gardener");
+      setMsg(json.error || "Failed to complete booking and release the gardener transfer.");
       setCompletingBooking(false);
       return;
     }
 
-    setMsg(`Completed ✅ Transfer: ${json.transferId}`);
+    setMsg("Booking completed and gardener transfer released.");
     setCompletingBooking(false);
     await loadAll();
   }
@@ -1097,7 +1098,7 @@ export default function RequestDetailPage() {
   } else if (myExistingOffer?.status === "pending") {
     nextStep = {
       title: "Offer sent",
-      body: "Your offer is with the owner. If they accept, they pay through Stripe and your payout is released after completion.",
+      body: "Your offer is with the owner. If they accept, they pay through Stripe and your transfer is released after completion.",
       href: "#your-offer",
       actionLabel: "View your offer",
     };
@@ -1348,7 +1349,7 @@ export default function RequestDetailPage() {
                   </p>
                   {booking && (
                     <p>
-                      <span className="font-medium text-zinc-900">Payout:</span>{" "}
+                      <span className="font-medium text-zinc-900">Transfer:</span>{" "}
                       {payoutStatusLabel}
                     </p>
                   )}
@@ -1387,7 +1388,7 @@ export default function RequestDetailPage() {
                 Platform fee: {formatPrice(booking.platform_fee_gbp) || "No fee"}
               </p>
 
-              <p>Payout status: {booking.payout_status || "unknown"}</p>
+              <p>Transfer status: {payoutStatusLabel}</p>
 
               {booking.created_at && (
                 <p>Created: {formatDateTime(booking.created_at)}</p>
@@ -1431,7 +1432,7 @@ export default function RequestDetailPage() {
                 >
                   {completingBooking
                     ? "Completing booking..."
-                    : "Complete booking and pay gardener"}
+                    : "Complete booking and release transfer"}
                 </button>
               )}
 
@@ -1569,7 +1570,7 @@ export default function RequestDetailPage() {
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
                 Tell the owner what you can do and your total price. If the owner
-                accepts, they pay through Stripe. The payout is released after the
+                accepts, they pay through Stripe. Your transfer is released after the
                 booking is completed.
               </p>
             </div>
@@ -1602,7 +1603,7 @@ export default function RequestDetailPage() {
                 <input
                   className="mt-1 wmp-field rounded-lg"
                   type="number"
-                  min="0.01"
+                  min="5"
                   max="999999.99"
                   step="0.01"
                   value={offerPrice}
@@ -1610,7 +1611,7 @@ export default function RequestDetailPage() {
                   inputMode="decimal"
                 />
                 <p className="mt-1 text-xs text-zinc-500">
-                  Maximum GBP 999,999.99. Use the total price for the whole job.
+                  Minimum £5.00. Use the total price for the whole job.
                 </p>
               </div>
 
@@ -1808,7 +1809,7 @@ export default function RequestDetailPage() {
                         {String(req.status) === "open" && o.status === "pending" && (
                           <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 text-sm leading-6 text-emerald-950">
                             If you accept this offer, you will confirm the booking
-                            and pay through Stripe before the gardener is paid out
+                            and pay through Stripe before the gardener transfer is released
                             after completion.
                           </div>
                         )}

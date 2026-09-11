@@ -65,6 +65,13 @@ function getPayoutStatusBadgeClass(status) {
   return "bg-stone-100 text-stone-700 border-stone-200";
 }
 
+function getPayoutStatusLabel(status) {
+  if (status === "paid") return "Transfer released";
+  if (status === "pending") return "Transfer pending";
+  if (status === "failed") return "Transfer failed";
+  return "Transfer not started";
+}
+
 const primaryButtonClass =
   "wmp-button wmp-button-primary inline-flex justify-center";
 const secondaryButtonClass =
@@ -191,7 +198,7 @@ export default function BookingDetailPage() {
     if (!booking?.id) return;
 
     setCompletingBooking(true);
-    setMsg("Completing booking and releasing gardener payout...");
+    setMsg("Completing booking and releasing the gardener transfer...");
 
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData?.session?.access_token;
@@ -214,13 +221,13 @@ export default function BookingDetailPage() {
     const json = await res.json();
 
     if (!res.ok) {
-      setMsg(json.error || "Failed to complete booking and release payout.");
+      setMsg(json.error || "Failed to complete booking and release the gardener transfer.");
       setCompletingBooking(false);
       await load();
       return;
     }
 
-    setMsg("Booking completed and gardener payout triggered ✅");
+    setMsg("Booking completed and gardener transfer released.");
     setCompletingBooking(false);
     await load();
   }
@@ -239,7 +246,7 @@ export default function BookingDetailPage() {
   const bookingStatusBadgeClass = getStatusBadgeClass(booking?.status);
 
   const payoutStatus = booking?.payout_status || "not_started";
-  const payoutStatusLabel = getStatusLabel(payoutStatus);
+  const payoutStatusLabel = getPayoutStatusLabel(payoutStatus);
   const payoutStatusBadgeClass = getPayoutStatusBadgeClass(payoutStatus);
 
   const canCompleteAndPay =
@@ -319,7 +326,7 @@ export default function BookingDetailPage() {
               <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
                 Track the booking status, return to the request chat, and once the
                 garden care has been carried out, complete the booking to release the
-                gardener payout.
+                gardener transfer.
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2">
@@ -332,7 +339,7 @@ export default function BookingDetailPage() {
                 <span
                   className={`rounded-full border px-2 py-1 text-xs font-medium ${payoutStatusBadgeClass}`}
                 >
-                  Payout: {payoutStatusLabel}
+                  Transfer: {payoutStatusLabel}
                 </span>
               </div>
             </div>
@@ -529,14 +536,14 @@ export default function BookingDetailPage() {
 
               <h2 className="mt-1 text-xl font-bold text-zinc-900">
                 {booking.payout_status === "failed"
-                  ? "Payout needs attention."
-                  : "Release payout after the job."}
+                  ? "Transfer needs attention."
+                  : "Release transfer after the job."}
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-zinc-600">
                 {booking.payout_status === "failed"
-                  ? "The booking is paid, but the gardener payout could not be released. The gardener may need to connect Stripe in their profile, then the owner can retry the payout."
-                  : "The owner should only complete the booking once the agreed plot care has actually been carried out. Completing the booking releases the gardener payout."}
+                  ? "The booking is paid, but the gardener transfer could not be released. The gardener may need to connect Stripe in their profile, then the owner can retry it."
+                  : "The owner should only complete the booking once the agreed plot care has actually been carried out. Completing the booking releases the gardener transfer to Stripe; Stripe then pays the gardener's bank on its normal schedule."}
               </p>
 
               {canCompleteAndPay ? (
@@ -547,10 +554,10 @@ export default function BookingDetailPage() {
                   className="mt-5 wmp-button wmp-button-primary w-full whitespace-normal leading-5 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {completingBooking
-                    ? "Trying payout..."
+                    ? "Trying transfer..."
                     : booking.payout_status === "failed"
-                    ? "Retry gardener payout"
-                    : "Complete booking and release payout"}
+                    ? "Retry gardener transfer"
+                    : "Complete booking and release transfer"}
                 </button>
               ) : booking.status === "completed" ? (
                 <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
@@ -568,7 +575,7 @@ export default function BookingDetailPage() {
 
               {booking.payout_error && (
                 <div className="mt-4 rounded-lg border border-red-100 bg-red-50 p-4 text-sm leading-6 text-red-700">
-                  Payout issue: {booking.payout_error}
+                  Transfer issue: {booking.payout_error}
                 </div>
               )}
             </section>
@@ -580,7 +587,7 @@ export default function BookingDetailPage() {
 
               <p className="mt-3 text-sm leading-6 text-zinc-600">
                 Payment is handled securely through Watch My Plot. The gardener is not
-                paid out until the booking is completed.
+                sent their Stripe transfer until the booking is completed.
               </p>
 
               <PaymentSafetyNotice className="mt-4" />

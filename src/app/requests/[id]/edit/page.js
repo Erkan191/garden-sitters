@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 const MAX_PRICE_GBP = 999999.99;
+const MIN_PAID_BOOKING_GBP = 5;
 
 function CareCheckbox({ checked, onChange, label, helper }) {
   return (
@@ -174,12 +175,12 @@ export default function EditRequestPage() {
     if (
       parsedPrice !== null &&
       (!Number.isFinite(parsedPrice) ||
-        parsedPrice <= 0 ||
+        parsedPrice < MIN_PAID_BOOKING_GBP ||
         parsedPrice > MAX_PRICE_GBP ||
         Math.round(parsedPrice * 100) !== parsedPrice * 100)
     ) {
       setMsg(
-        "Price must be between £0.01 and £999,999.99, with no more than 2 decimal places."
+        "Price must be between £5.00 and £999,999.99, with no more than 2 decimal places."
       );
       return;
     }
@@ -435,7 +436,7 @@ export default function EditRequestPage() {
                 <input
                   className={inputClass}
                   type="number"
-                  min="0.01"
+                  min="5"
                   max="999999.99"
                   step="0.01"
                   value={price}
@@ -443,6 +444,9 @@ export default function EditRequestPage() {
                   inputMode="decimal"
                   placeholder="e.g. 30"
                 />
+                <p className="mt-1 text-xs leading-5 text-zinc-500">
+                  Paid bookings start at £5 so fees and bank payouts work reliably.
+                </p>
               </div>
 
               <button className="wmp-button wmp-button-primary w-full">

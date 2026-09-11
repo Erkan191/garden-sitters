@@ -6,7 +6,8 @@ export const runtime = "nodejs";
 
 const MAX_PRICE_GBP = 999999.99;
 const MAX_STRIPE_AMOUNT_PENCE = 99999999;
-const MIN_STRIPE_AMOUNT_PENCE = 50;
+const MIN_PAID_BOOKING_GBP = 5;
+const MIN_PAID_BOOKING_PENCE = MIN_PAID_BOOKING_GBP * 100;
 
 function supabaseFromToken(token) {
   return createClient(
@@ -151,7 +152,7 @@ export async function POST(request) {
       return Response.json(
         {
           error:
-            "Amount must be between £0.01 and £999,999.99, with no more than 2 decimal places.",
+            "Amount must be between £5.00 and £999,999.99, with no more than 2 decimal places.",
         },
         { status: 400 }
       );
@@ -162,6 +163,16 @@ export async function POST(request) {
     if (amountPenceForFee === null) {
       return Response.json(
         { error: "Amount could not be converted safely for Checkout" },
+        { status: 400 }
+      );
+    }
+
+    if (amountPenceForFee < MIN_PAID_BOOKING_PENCE) {
+      return Response.json(
+        {
+          error:
+            "Paid bookings must be at least £5.00 so Stripe fees and bank payouts work reliably.",
+        },
         { status: 400 }
       );
     }
@@ -259,9 +270,12 @@ export async function POST(request) {
       );
     }
 
-    if (amountPence < MIN_STRIPE_AMOUNT_PENCE) {
+    if (amountPence < MIN_PAID_BOOKING_PENCE) {
       return Response.json(
-        { error: "Amount too small for Checkout" },
+        {
+          error:
+            "Paid bookings must be at least £5.00 so Stripe fees and bank payouts work reliably.",
+        },
         { status: 400 }
       );
     }

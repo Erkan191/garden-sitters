@@ -50,6 +50,13 @@ function getStatusBadgeClass(status) {
   return "bg-stone-100 text-stone-700 border-stone-200";
 }
 
+function getPayoutStatusLabel(status) {
+  if (status === "paid") return "Transfer released";
+  if (status === "pending") return "Transfer pending";
+  if (status === "failed") return "Transfer failed";
+  return "Transfer not started";
+}
+
 const primaryButtonClass =
   "wmp-button wmp-button-primary inline-flex justify-center";
 const secondaryButtonClass =
@@ -131,7 +138,7 @@ export default function BookingsPage() {
                 Payment note
               </p>
               <p className="mt-1 text-sm leading-6 text-zinc-600">
-                Gardeners are only paid out once a booking is completed.
+                Gardener transfers are only released once a booking is completed.
               </p>
             </div>
           </div>
@@ -243,7 +250,7 @@ export default function BookingsPage() {
                         )}
 
                         <p className="mt-1 text-sm text-zinc-600">
-                          Payout: {getStatusLabel(b.payout_status || "not_started")}
+                          Transfer: {getPayoutStatusLabel(b.payout_status || "not_started")}
                         </p>
                       </div>
 

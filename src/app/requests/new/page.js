@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { BetaNotice, SafetyNotice } from "../../LaunchNotices";
 
 const MAX_PRICE_GBP = 999999.99;
+const MIN_PAID_BOOKING_GBP = 5;
 
 function friendlyError(message) {
   const text = String(message || "");
@@ -84,13 +85,13 @@ export default function NewRequestPage() {
 
     if (
       parsedPrice !== null &&
-      (!Number.isFinite(parsedPrice) ||
-        parsedPrice <= 0 ||
+        (!Number.isFinite(parsedPrice) ||
+        parsedPrice < MIN_PAID_BOOKING_GBP ||
         parsedPrice > MAX_PRICE_GBP ||
         Math.round(parsedPrice * 100) !== parsedPrice * 100)
     ) {
       setMsg(
-        "Price must be between £0.01 and £999,999.99, with no more than 2 decimal places."
+        "Price must be between £5.00 and £999,999.99, with no more than 2 decimal places."
       );
       return;
     }
@@ -314,7 +315,7 @@ export default function NewRequestPage() {
               <input
                 className={inputClass}
                 type="number"
-                min="0.01"
+                min="5"
                 max="999999.99"
                 step="0.01"
                 value={price}
@@ -324,7 +325,8 @@ export default function NewRequestPage() {
               />
               <p className="mt-1 text-xs leading-5 text-zinc-500">
                 Gardeners can send their own total offer. If you accept one, you
-                confirm the booking and pay through Stripe.
+                confirm the booking and pay through Stripe. Paid bookings start
+                at £5 so fees and bank payouts work reliably.
               </p>
             </div>
 

@@ -82,10 +82,10 @@ function getBookingStatusBadgeClass(status, fallbackStatus) {
 }
 
 function getPayoutStatusLabel(status) {
-  if (status === "paid") return "Payout paid";
-  if (status === "pending") return "Payout pending";
-  if (status === "failed") return "Payout failed";
-  return "Payout not started";
+  if (status === "paid") return "Transfer released";
+  if (status === "pending") return "Transfer pending";
+  if (status === "failed") return "Transfer failed";
+  return "Transfer not started";
 }
 
 function getPayoutStatusBadgeClass(status) {

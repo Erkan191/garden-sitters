@@ -62,9 +62,9 @@ export default function BookingSuccessPage() {
 
       if (bookingRow?.status === "completed") {
         setCompleted(true);
-        setMsg("Booking completed and gardener payout triggered ✅");
+        setMsg("Booking completed and gardener transfer released.");
       } else {
-        setMsg("Payment confirmed ✅ Booking is now paid.");
+        setMsg("Payment confirmed. Booking is now paid.");
       }
     }
 
@@ -73,7 +73,7 @@ export default function BookingSuccessPage() {
 
   async function completeAndPay() {
     setCompleting(true);
-    setMsg("Completing booking and triggering gardener payout...");
+    setMsg("Completing booking and releasing the gardener transfer...");
 
     const { data } = await supabase.auth.getSession();
     const token = data?.session?.access_token;
@@ -96,14 +96,14 @@ export default function BookingSuccessPage() {
     const json = await res.json();
 
     if (!res.ok) {
-      setMsg(json.error || "Failed to complete booking and pay gardener.");
+      setMsg(json.error || "Failed to complete booking and release the gardener transfer.");
       setCompleting(false);
       return;
     }
 
     setCompleted(true);
     setCompleting(false);
-    setMsg("Booking completed and gardener payout triggered ✅");
+    setMsg("Booking completed and gardener transfer released.");
   }
 
   return (
@@ -162,7 +162,7 @@ export default function BookingSuccessPage() {
               <p className="mt-1">
                 The gardener is not paid out yet. Come back after the plot care has
                 been completed to mark the booking complete and release the gardener
-                payout.
+                transfer.
               </p>
             </div>
           )}
