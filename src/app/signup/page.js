@@ -26,7 +26,15 @@ export default function SignupPage() {
     e.preventDefault();
     setMsg("Creating your account...");
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          signup_intent: isGardenerIntent ? "gardener" : "owner",
+        },
+      },
+    });
 
     if (error) {
       setMsg(error.message);
