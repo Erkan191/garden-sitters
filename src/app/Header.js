@@ -82,6 +82,12 @@ export default function Header() {
           {user ? (
             <>
               <Link
+                href="/profile"
+                className="rounded-lg border border-emerald-900/15 bg-white px-4 py-2 text-emerald-950 shadow-sm hover:border-emerald-900/30 hover:bg-emerald-50"
+              >
+                Profile
+              </Link>
+              <Link
                 href="/dashboard"
                 className="rounded-lg border border-emerald-900/15 bg-white px-4 py-2 text-emerald-950 shadow-sm hover:border-emerald-900/30 hover:bg-emerald-50"
               >

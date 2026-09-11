@@ -43,6 +43,9 @@ function SkillCheckbox({ checked, onChange, label, helper }) {
 function MyProfilePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const welcomeState = searchParams.get("welcome");
+  const isGardenerWelcome = welcomeState === "gardener";
+  const isOwnerWelcome = welcomeState === "owner";
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -272,7 +275,11 @@ function MyProfilePageContent() {
       return;
     }
 
-    setMsg("Profile saved ✅");
+    setMsg(
+      isGardenerWelcome
+        ? "Gardener profile saved. Next, connect Stripe payouts before taking paid work."
+        : "Profile saved ✅"
+    );
     setSaving(false);
   }
 
@@ -319,17 +326,19 @@ function MyProfilePageContent() {
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
             <div>
               <p className="wmp-eyebrow">
-                Your profile
+                {isGardenerWelcome ? "Gardener setup" : "Your profile"}
               </p>
 
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-                Build trust before people book you.
+                {isGardenerWelcome
+                  ? "Create your gardener profile."
+                  : "Build trust before people book you."}
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
-                Your public profile is what owners and gardeners see before deciding
-                whether to work with you. Add a clear bio, location, skills, and payout
-                setup if you want to receive payments.
+                {isGardenerWelcome
+                  ? "Your account has been created. Add your name, broad area, bio, and gardening skills here, then connect Stripe payouts before taking paid work."
+                  : "Your public profile is what owners and gardeners see before deciding whether to work with you. Add a clear bio, location, skills, and payout setup if you want to receive payments."}
               </p>
             </div>
 
@@ -344,6 +353,64 @@ function MyProfilePageContent() {
           </div>
         </section>
 
+        {isGardenerWelcome && (
+          <section className="wmp-panel rounded-lg border-emerald-100 bg-[#f4f8ef]">
+            <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+              <div>
+                <p className="wmp-eyebrow">Account created</p>
+                <h2 className="mt-2 text-2xl font-bold text-zinc-900">
+                  Next: finish your gardener profile
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-zinc-600">
+                  Owners need enough trust signals before accepting an offer. Start with
+                  your name, area, short bio, skills, and payout setup.
+                </p>
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                {[
+                  "Add your name and area",
+                  "Tick the garden-care jobs you can do",
+                  "Write a short, trustworthy bio",
+                  "Connect Stripe payouts",
+                ].map((item, index) => (
+                  <div
+                    key={item}
+                    className="flex items-center gap-3 rounded-lg border border-emerald-900/10 bg-white px-3 py-3 text-sm font-semibold text-zinc-800"
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-950 text-xs font-bold text-white">
+                      {index + 1}
+                    </span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              <a href="#profile-details" className="wmp-button wmp-button-primary">
+                Start profile
+              </a>
+              <Link href="/requests" className="wmp-button wmp-button-secondary">
+                Browse paid jobs later
+              </Link>
+            </div>
+          </section>
+        )}
+
+        {isOwnerWelcome && (
+          <section className="wmp-panel rounded-lg border-emerald-100 bg-[#f4f8ef]">
+            <p className="wmp-eyebrow">Account created</p>
+            <h2 className="mt-2 text-2xl font-bold text-zinc-900">
+              Add a few profile details
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-zinc-600">
+              A simple profile helps gardeners understand who they are speaking to
+              when you post a plot-care request.
+            </p>
+          </section>
+        )}
+
         {loading ? (
           <div className="wmp-card rounded-lg text-sm text-zinc-600">
             Loading profile...
@@ -353,13 +420,15 @@ function MyProfilePageContent() {
             onSubmit={saveProfile}
             className="grid gap-6 lg:grid-cols-[1fr_0.42fr] lg:items-start"
           >
-            <section className="wmp-panel space-y-6 rounded-lg">
+            <section id="profile-details" className="wmp-panel space-y-6 rounded-lg">
               <div>
                 <p className="wmp-eyebrow">
-                  Profile details
+                  {isGardenerWelcome ? "Gardener profile" : "Profile details"}
                 </p>
                 <h2 className="mt-1 text-2xl font-bold text-zinc-900">
-                  Tell people who you are
+                  {isGardenerWelcome
+                    ? "Tell owners why they can trust you"
+                    : "Tell people who you are"}
                 </h2>
               </div>
 
@@ -491,7 +560,11 @@ function MyProfilePageContent() {
                 disabled={saving}
                 className="wmp-button wmp-button-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {saving ? "Saving..." : "Save profile"}
+                {saving
+                  ? "Saving..."
+                  : isGardenerWelcome
+                    ? "Save gardener profile"
+                    : "Save profile"}
               </button>
             </section>
 

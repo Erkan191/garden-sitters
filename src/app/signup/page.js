@@ -1,32 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { BetaNotice } from "../LaunchNotices";
 
-export default function SignupPage() {
+function SignupPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [intent, setIntent] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [msg, setMsg] = useState("");
 
-  const isGardenerIntent = intent === "gardener";
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setIntent(params.get("intent") || "");
-  }, []);
+  const isGardenerIntent = searchParams.get("intent") === "gardener";
+  const onboardingPath = isGardenerIntent
+    ? "/profile?welcome=gardener"
+    : "/profile?welcome=owner";
 
   async function handleSignup(e) {
     e.preventDefault();
     setMsg("Creating your account...");
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -41,8 +39,16 @@ export default function SignupPage() {
       return;
     }
 
-    setMsg("Success! Now log in.");
-    router.push("/login");
+    if (data?.session) {
+      setMsg("Account created. Taking you to your profile...");
+      router.push(onboardingPath);
+      return;
+    }
+
+    setMsg("Account created. Log in to finish your profile.");
+    router.push(
+      `/login?created=${isGardenerIntent ? "gardener" : "owner"}&next=${encodeURIComponent(onboardingPath)}`
+    );
   }
 
   const inputClass =
@@ -226,7 +232,11 @@ export default function SignupPage() {
             Already got an account?{" "}
             <Link
               className="font-medium text-emerald-900 hover:underline"
-              href="/login"
+              href={
+                isGardenerIntent
+                  ? `/login?next=${encodeURIComponent("/profile?welcome=gardener")}`
+                  : "/login"
+              }
             >
               Log in
             </Link>
@@ -234,5 +244,23 @@ export default function SignupPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="wmp-auth-page flex items-center">
+          <div className="mx-auto w-full max-w-6xl">
+            <section className="wmp-panel rounded-lg text-sm text-zinc-600">
+              Loading sign up...
+            </section>
+          </div>
+        </main>
+      }
+    >
+      <SignupPageContent />
+    </Suspense>
   );
 }

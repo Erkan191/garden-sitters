@@ -1,16 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function LoginPage() {
+function safeInternalPath(value) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/dashboard";
+  }
+
+  return value;
+}
+
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [msg, setMsg] = useState("");
+  const nextPath = safeInternalPath(searchParams.get("next"));
+  const createdContext = searchParams.get("created") || "";
+
+  const isGardenerOnboarding =
+    createdContext === "gardener" || nextPath.includes("welcome=gardener");
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -26,7 +40,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push(nextPath);
   }
 
   const inputClass =
@@ -44,16 +58,19 @@ export default function LoginPage() {
           </Link>
 
           <p className="mt-8 wmp-eyebrow">
-            Welcome back
+            {isGardenerOnboarding ? "Gardener setup" : "Welcome back"}
           </p>
 
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-            Log in to manage your plot care.
+            {isGardenerOnboarding
+              ? "Log in to finish your gardener profile."
+              : "Log in to manage your plot care."}
           </h1>
 
           <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
-            Sign in to post requests, send offers, chat after jobs are accepted,
-            manage bookings, complete payments, and leave reviews.
+            {isGardenerOnboarding
+              ? "Your account is ready. Sign in and you’ll go straight to the profile page where you can add your skills, area, bio, and Stripe payout setup."
+              : "Sign in to post requests, send offers, chat after jobs are accepted, manage bookings, complete payments, and leave reviews."}
           </p>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -96,6 +113,13 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="mt-6 space-y-4">
+            {createdContext && (
+              <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950">
+                Account created. Log in now to finish setting up your{" "}
+                {createdContext === "gardener" ? "gardener profile" : "profile"}.
+              </div>
+            )}
+
             <div>
               <label className="wmp-label">Email</label>
               <input
@@ -180,7 +204,7 @@ export default function LoginPage() {
             No account yet?{" "}
             <Link
               className="font-medium text-emerald-900 hover:underline"
-              href="/signup"
+              href={isGardenerOnboarding ? "/signup?intent=gardener" : "/signup"}
             >
               Sign up
             </Link>
@@ -188,5 +212,23 @@ export default function LoginPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="wmp-auth-page flex items-center">
+          <div className="mx-auto w-full max-w-6xl">
+            <section className="wmp-panel rounded-lg text-sm text-zinc-600">
+              Loading login...
+            </section>
+          </div>
+        </main>
+      }
+    >
+      <LoginPageContent />
+    </Suspense>
   );
 }
