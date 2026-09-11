@@ -61,8 +61,8 @@ export default function RootLayout({ children }) {
                 <Link href="/#how-it-works" className="hover:text-white">
                   How it works
                 </Link>
-                <Link href="/requests" className="hover:text-white">
-                  Browse jobs
+                <Link href="/#earn-as-gardener" className="hover:text-white">
+                  Earn as a gardener
                 </Link>
                 <Link href="/requests/new" className="hover:text-white">
                   Post a request

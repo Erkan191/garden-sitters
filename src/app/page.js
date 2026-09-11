@@ -2,7 +2,6 @@ import Link from "next/link";
 import { BetaNotice } from "./LaunchNotices";
 
 const buttonBase = "wmp-button w-full sm:w-auto";
-const primaryButton = `${buttonBase} wmp-button-primary`;
 const secondaryButton = `${buttonBase} wmp-button-secondary`;
 const clayButton = `${buttonBase} wmp-button-clay`;
 const lightButton = `${buttonBase} bg-white text-emerald-950 hover:bg-emerald-50`;
@@ -35,17 +34,17 @@ const careTasks = [
 ];
 
 const ownerSteps = [
-  "Post a request",
-  "Compare offers",
+  "Post a care request",
+  "Choose a gardener",
   "Pay securely",
-  "Mark complete",
+  "Complete when done",
 ];
 
 const gardenerSteps = [
-  "Browse jobs",
+  "Browse paid jobs",
+  "Create your profile",
   "Send an offer",
-  "Do the work",
-  "Get paid after completion",
+  "Receive transfer after completion",
 ];
 
 const faqs = [
@@ -62,7 +61,7 @@ const faqs = [
   {
     question: "When does the gardener get paid?",
     answer:
-      "The gardener is not paid out until the owner marks the booking complete after the agreed care has been carried out.",
+      "The gardener transfer is released after the owner marks the booking complete. Stripe then sends bank payouts on its normal schedule.",
   },
   {
     question: "Should I share my exact address publicly?",
@@ -195,7 +194,7 @@ function GardenPanel() {
         </div>
 
         <div className="mt-4 grid gap-2 sm:grid-cols-3">
-          {["10-17 Jul", "Daily", "Payout later"].map((item) => (
+          {["10-17 Jul", "Daily", "Transfer later"].map((item) => (
             <span
               key={item}
               className="rounded-lg border border-emerald-950/10 bg-white px-3 py-2 text-xs font-bold text-emerald-950"
@@ -227,31 +226,34 @@ export default function HomePage() {
               and payment stays clear from booking to completion.
             </p>
 
-            <form
-              action="/requests"
-              className="mt-7 grid gap-3 rounded-lg border border-emerald-950/10 bg-white p-3 shadow-[0_16px_36px_rgba(26,37,30,0.08)] sm:grid-cols-[1fr_auto]"
-            >
-              <label className="sr-only" htmlFor="postcode">
-                Postcode or area
-              </label>
-              <input
-                id="postcode"
-                name="postcode"
-                className="wmp-field rounded-lg"
-                placeholder="Enter postcode or area, e.g. N13"
-              />
-              <button className="wmp-button wmp-button-primary">
-                Browse nearby jobs
-              </button>
-            </form>
-
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Link href="/requests/new" className={clayButton}>
-                Post a request
+                Post a garden request
               </Link>
-              <Link href="/requests" className={secondaryButton}>
-                Browse all jobs
+              <Link href="/#earn-as-gardener" className={secondaryButton}>
+                Earn as a gardener
               </Link>
+            </div>
+
+            <div className="mt-4 max-w-2xl rounded-lg border border-emerald-950/10 bg-white/80 p-4 shadow-[0_12px_28px_rgba(26,37,30,0.07)]">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-bold text-zinc-950">
+                    Want paid garden-care work?
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-zinc-600">
+                    Browse nearby requests, create a gardener profile, then send
+                    offers for paid plot care jobs.
+                  </p>
+                </div>
+
+                <Link
+                  href="/signup?intent=gardener"
+                  className="wmp-button wmp-button-secondary w-full shrink-0 sm:w-auto"
+                >
+                  Create gardener account
+                </Link>
+              </div>
             </div>
 
             <div className="mt-8 grid max-w-2xl gap-3 text-sm text-zinc-700 sm:grid-cols-3">
@@ -265,7 +267,7 @@ export default function HomePage() {
               </div>
               <div className="border-l-2 border-emerald-700 pl-3">
                 <p className="font-bold text-zinc-950">Stripe payments</p>
-                <p className="mt-1">Gardeners are paid after completion.</p>
+                <p className="mt-1">Transfers release after completion.</p>
               </div>
             </div>
           </div>
@@ -276,39 +278,52 @@ export default function HomePage() {
 
       <section className="bg-white py-12 sm:py-14">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="grid gap-5 md:grid-cols-2">
-            <div className="wmp-card rounded-lg bg-[#f4f8ef]">
+          <div className="grid gap-5 md:grid-cols-[1.15fr_0.85fr]">
+            <div className="wmp-card rounded-lg border-emerald-950/15 bg-[#f4f8ef]">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">
                 Owners
               </p>
               <h2 className="mt-3 text-2xl font-bold text-zinc-950">
-                I need garden help
+                I need someone to look after my plot
               </h2>
               <p className="mt-3 leading-7 text-zinc-700">
                 Post what needs care, keep your public location broad, compare
                 gardener offers, pay securely, then mark the booking complete
                 once the work is done.
               </p>
-              <Link href="/requests/new" className={`mt-6 ${primaryButton}`}>
-                Start a request
+              <Link href="/requests/new" className={`mt-6 ${clayButton}`}>
+                Post a care request
               </Link>
             </div>
 
-            <div className="wmp-card rounded-lg bg-[#fff6ef]">
+            <div
+              id="earn-as-gardener"
+              className="wmp-card rounded-lg bg-[#fff6ef]"
+            >
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-clay-800">
                 Gardeners
               </p>
               <h2 className="mt-3 text-2xl font-bold text-zinc-950">
-                I want garden jobs
+                I want to earn money helping with gardens
               </h2>
               <p className="mt-3 leading-7 text-zinc-700">
-                Browse local care requests, send practical offers, agree the
-                details in chat, do the work, and receive payout after the owner
-                completes the booking.
+                Create a profile, connect Stripe payouts, browse local care
+                requests, and send offers for paid garden work near you.
               </p>
-              <Link href="/requests" className={`mt-6 ${secondaryButton}`}>
-                Browse jobs
-              </Link>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row md:flex-col">
+                <Link
+                  href="/signup?intent=gardener"
+                  className={secondaryButton}
+                >
+                  Create gardener account
+                </Link>
+                <Link
+                  href="/requests"
+                  className="inline-flex text-sm font-bold text-clay-800 hover:underline"
+                >
+                  Browse paid jobs first
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -346,7 +361,7 @@ export default function HomePage() {
           <div className="grid gap-3 sm:grid-cols-3">
             {[
               "Owners pay through Stripe after accepting an offer.",
-              "The gardener is not paid out until the booking is completed.",
+              "The gardener transfer is released after the booking is completed.",
               "During private beta, refunds and issues are handled case by case.",
             ].map((item) => (
               <div
@@ -457,7 +472,7 @@ export default function HomePage() {
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/80">
               Try the core marketplace flow: post a garden care request or
-              browse local jobs from owners who need help.
+              create a gardener account to earn from local plot care jobs.
             </p>
           </div>
 
@@ -466,10 +481,10 @@ export default function HomePage() {
               Post a request
             </Link>
             <Link
-              href="/requests"
+              href="/signup?intent=gardener"
               className={`${buttonBase} border border-white/20 bg-white/10 text-white hover:bg-white/15`}
             >
-              Browse jobs
+              Earn as a gardener
             </Link>
           </div>
         </div>

@@ -67,10 +67,10 @@ export default function Header() {
             How it works
           </Link>
           <Link
-            href="/requests"
+            href="/#earn-as-gardener"
             className="rounded-lg px-3 py-2 hover:bg-emerald-50 hover:text-emerald-950"
           >
-            Browse jobs
+            Earn as a gardener
           </Link>
           <Link
             href="/requests/new"

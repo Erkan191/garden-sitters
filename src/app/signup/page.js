@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -9,10 +9,18 @@ import { BetaNotice } from "../LaunchNotices";
 export default function SignupPage() {
   const router = useRouter();
 
+  const [intent, setIntent] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [msg, setMsg] = useState("");
+
+  const isGardenerIntent = intent === "gardener";
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setIntent(params.get("intent") || "");
+  }, []);
 
   async function handleSignup(e) {
     e.preventDefault();
@@ -44,17 +52,19 @@ export default function SignupPage() {
           </Link>
 
           <p className="mt-8 wmp-eyebrow">
-            Join Watch My Plot
+            {isGardenerIntent ? "Earn as a gardener" : "Join Watch My Plot"}
           </p>
 
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-            Create an account to post, offer, chat, and review.
+            {isGardenerIntent
+              ? "Create an account to earn from garden-care jobs."
+              : "Create an account to post, offer, chat, and review."}
           </h1>
 
           <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
-            Browse without signing up, then create an account when you want to take
-            action: post a request, send an offer, manage bookings, or build trust
-            through reviews.
+            {isGardenerIntent
+              ? "Sign up, complete your public profile, connect Stripe payouts, then send offers on nearby garden-care requests."
+              : "Browse without signing up, then create an account when you want to take action: post a request, send an offer, manage bookings, or build trust through reviews."}
           </p>
 
           <BetaNotice className="mt-6" />
@@ -70,7 +80,7 @@ export default function SignupPage() {
             <div className="rounded-lg border border-stone-200 bg-[#fbfbf7] p-4">
               <p className="text-sm font-bold text-zinc-900">Gardeners</p>
               <p className="mt-1 text-xs leading-5 text-zinc-600">
-                Offer to help local growers with practical care.
+                Earn from practical local garden care.
               </p>
             </div>
 
@@ -90,11 +100,13 @@ export default function SignupPage() {
             </p>
 
             <h2 className="mt-2 text-2xl font-bold text-zinc-900">
-              Create your account
+              {isGardenerIntent ? "Create your gardener account" : "Create your account"}
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-zinc-600">
-              Use an email and password. You can complete your profile after signing in.
+              {isGardenerIntent
+                ? "Use an email and password. After signing in, add your profile and connect Stripe payouts before taking paid work."
+                : "Use an email and password. You can complete your profile after signing in."}
             </p>
           </div>
 
@@ -174,7 +186,7 @@ export default function SignupPage() {
             </div>
 
             <button className="wmp-button wmp-button-primary w-full">
-              Sign up
+              {isGardenerIntent ? "Create gardener account" : "Sign up"}
             </button>
 
             <p className="text-xs leading-5 text-zinc-500">
