@@ -96,7 +96,7 @@ const faqs = [
   {
     question: "Is Watch My Plot live?",
     answer:
-      "Watch My Plot is in private beta. A small group is testing the marketplace, so features, support processes, and availability may change.",
+      "Yes. Watch My Plot is in private beta. A small group is testing the marketplace, so features, support processes, and availability may change.",
   },
   {
     question: "How do payments work?",
