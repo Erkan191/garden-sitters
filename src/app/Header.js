@@ -61,6 +61,18 @@ export default function Header() {
             Home
           </Link>
           <Link
+            href="/sitters"
+            className="rounded-lg px-3 py-2 hover:bg-emerald-50 hover:text-emerald-950"
+          >
+            Find sitters
+          </Link>
+          <Link
+            href="/requests"
+            className="rounded-lg px-3 py-2 hover:bg-emerald-50 hover:text-emerald-950"
+          >
+            Browse jobs
+          </Link>
+          <Link
             href="/#how-it-works"
             className="rounded-lg px-3 py-2 hover:bg-emerald-50 hover:text-emerald-950"
           >

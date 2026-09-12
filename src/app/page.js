@@ -47,6 +47,51 @@ const gardenerSteps = [
   "Receive transfer after completion",
 ];
 
+const discoveryRoutes = [
+  {
+    eyebrow: "For owners",
+    title: "Find garden sitters",
+    copy: "Browse public profiles first: area, skills, reviews, and whether payouts are ready.",
+    href: "/sitters",
+    action: "Browse sitters",
+    tone: "sage",
+  },
+  {
+    eyebrow: "For owners",
+    title: "Post a request",
+    copy: "Share dates, tasks, and budget so local gardeners can send clear offers.",
+    href: "/requests/new",
+    action: "Post a request",
+    tone: "clay",
+  },
+  {
+    eyebrow: "For gardeners",
+    title: "Find paid garden work",
+    copy: "Browse open plot-care requests before signing up, then create a profile when you are ready to offer.",
+    href: "/requests",
+    action: "Browse jobs",
+    tone: "cream",
+  },
+];
+
+const serviceCards = [
+  {
+    title: "Daily watering visits",
+    copy: "For pots, veg beds, greenhouses, and plants that need regular checks while owners are away.",
+    href: "/sitters",
+  },
+  {
+    title: "Holiday plot care",
+    copy: "For owners who want someone local to keep an eye on the garden across a full trip.",
+    href: "/requests/new",
+  },
+  {
+    title: "Harvest and greenhouse help",
+    copy: "For ripe crops, greenhouse vents, seedlings, and practical jobs that need timing and care.",
+    href: "/sitters",
+  },
+];
+
 const faqs = [
   {
     question: "Is Watch My Plot live?",
@@ -217,26 +262,31 @@ export default function HomePage() {
             <p className="wmp-eyebrow">Garden care, sorted locally</p>
 
             <h1 className="mt-5 max-w-4xl wmp-h1">
-              Find someone kind to watch your plot while you&apos;re away.
+              Find a local garden sitter, or post the plot-care job you need
+              done.
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-700">
-              Post a care request for watering, harvesting, greenhouse checks,
-              pots, seedlings, and veg beds. Local gardeners can offer to help,
-              and payment stays clear from booking to completion.
+              Browse garden sitters by area and skills, or post a care request
+              for watering, harvesting, greenhouse checks, pots, seedlings, and
+              veg beds. Local gardeners can offer to help, and payment stays
+              clear from booking to completion.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Link href="/requests/new" className={clayButton}>
-                Post a garden request
+              <Link href="/sitters" className={clayButton}>
+                Find a garden sitter
               </Link>
-              <Link href="/#earn-as-gardener" className={secondaryButton}>
-                Earn as a gardener
+              <Link href="/requests/new" className={secondaryButton}>
+                Post a request
+              </Link>
+              <Link href="/requests" className={secondaryButton}>
+                Browse jobs
               </Link>
             </div>
 
             <div className="mt-4 max-w-2xl rounded-lg border border-emerald-950/10 bg-white/80 p-4 shadow-[0_12px_28px_rgba(26,37,30,0.07)]">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="text-sm font-bold text-zinc-950">
                     Want paid garden-care work?
@@ -247,12 +297,20 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                <Link
-                  href="/signup?intent=gardener"
-                  className="wmp-button wmp-button-secondary w-full shrink-0 sm:w-auto"
-                >
-                  Create gardener account
-                </Link>
+                <div className="flex flex-col gap-2 sm:flex-row lg:w-56 lg:flex-col">
+                  <Link
+                    href="/requests"
+                    className="wmp-button wmp-button-primary w-full shrink-0 sm:w-auto"
+                  >
+                    Browse paid jobs
+                  </Link>
+                  <Link
+                    href="/signup?intent=gardener"
+                    className="wmp-button wmp-button-secondary w-full shrink-0 sm:w-auto"
+                  >
+                    Create gardener account
+                  </Link>
+                </div>
               </div>
             </div>
 
@@ -291,9 +349,14 @@ export default function HomePage() {
                 gardener offers, pay securely, then mark the booking complete
                 once the work is done.
               </p>
-              <Link href="/requests/new" className={`mt-6 ${clayButton}`}>
-                Post a care request
-              </Link>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link href="/sitters" className={clayButton}>
+                  Browse sitters
+                </Link>
+                <Link href="/requests/new" className={secondaryButton}>
+                  Post a care request
+                </Link>
+              </div>
             </div>
 
             <div
@@ -311,20 +374,63 @@ export default function HomePage() {
                 requests, and send offers for paid garden work near you.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row md:flex-col">
+                <Link href="/requests" className={clayButton}>
+                  Browse paid jobs
+                </Link>
                 <Link
                   href="/signup?intent=gardener"
                   className={secondaryButton}
                 >
                   Create gardener account
                 </Link>
-                <Link
-                  href="/requests"
-                  className="inline-flex text-sm font-bold text-clay-800 hover:underline"
-                >
-                  Browse paid jobs first
-                </Link>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#fbf8f1] py-14 sm:py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <SectionIntro
+            eyebrow="Browse first"
+            title="Look around before you commit."
+            copy="Owners can inspect local sitters or post a job straight away. Gardeners can see the kind of paid work available before creating a profile."
+            align="center"
+          />
+
+          <div className="mt-9 grid gap-4 lg:grid-cols-3">
+            {discoveryRoutes.map((route) => {
+              const toneClass =
+                route.tone === "clay"
+                  ? "bg-[#fff6ef]"
+                  : route.tone === "cream"
+                    ? "bg-[#fffdf8]"
+                    : "bg-[#f4f8ef]";
+              const actionClass =
+                route.tone === "clay"
+                  ? "wmp-button-clay"
+                  : route.tone === "cream"
+                    ? "wmp-button-secondary"
+                    : "wmp-button-primary";
+
+              return (
+                <article key={route.title} className={`wmp-card rounded-lg ${toneClass}`}>
+                  <p className="wmp-eyebrow">{route.eyebrow}</p>
+                  <h3 className="mt-3 text-xl font-bold text-zinc-950">
+                    {route.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-zinc-700">
+                    {route.copy}
+                  </p>
+                  <Link
+                    href={route.href}
+                    className={`mt-5 wmp-button w-full ${actionClass}`}
+                  >
+                    {route.action}
+                  </Link>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -382,6 +488,31 @@ export default function HomePage() {
             title="Built for the small jobs that keep gardens alive."
             copy="From a few pots on a patio to a productive greenhouse, requests can describe the care that actually matters."
           />
+
+          <div className="mt-10 grid gap-4 lg:grid-cols-3">
+            {serviceCards.map((service) => (
+              <Link
+                key={service.title}
+                href={service.href}
+                className="wmp-card-link rounded-lg bg-[#f4f8ef]"
+              >
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-800">
+                  Popular route
+                </p>
+                <h3 className="mt-3 text-lg font-bold text-zinc-950">
+                  {service.title}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-700">
+                  {service.copy}
+                </p>
+                <span className="mt-4 inline-flex text-sm font-bold text-emerald-900">
+                  {service.href === "/requests/new"
+                    ? "Post this kind of request"
+                    : "Find sitters for this"}
+                </span>
+              </Link>
+            ))}
+          </div>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {careTasks.map((task) => (
@@ -477,7 +608,13 @@ export default function HomePage() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link href="/requests/new" className={lightButton}>
+            <Link href="/sitters" className={lightButton}>
+              Find sitters
+            </Link>
+            <Link
+              href="/requests/new"
+              className={`${buttonBase} border border-white/20 bg-white/10 text-white hover:bg-white/15`}
+            >
               Post a request
             </Link>
             <Link

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Watch My Plot",
   description:
-    "Find trusted local gardeners to look after watering, harvesting, greenhouses, pots, seedlings, and veg beds while you're away.",
+    "Browse trusted local garden sitters, post plot-care requests, and find paid gardening work for watering, harvesting, greenhouses, pots, seedlings, and veg beds.",
 };
 
 export default function RootLayout({ children }) {
@@ -57,6 +57,12 @@ export default function RootLayout({ children }) {
               <nav className="grid grid-cols-2 gap-x-6 gap-y-3 text-zinc-300 md:justify-self-end">
                 <Link href="/" className="hover:text-white">
                   Home
+                </Link>
+                <Link href="/sitters" className="hover:text-white">
+                  Find sitters
+                </Link>
+                <Link href="/requests" className="hover:text-white">
+                  Browse jobs
                 </Link>
                 <Link href="/#how-it-works" className="hover:text-white">
                   How it works
