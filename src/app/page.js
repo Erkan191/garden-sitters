@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { BetaNotice } from "./LaunchNotices";
 
 const buttonBase = "wmp-button w-full sm:w-auto";
@@ -190,11 +191,23 @@ function StepList({ title, steps, accent = "emerald" }) {
 
 function GardenPanel() {
   return (
-    <div
-      className="relative mx-auto w-full max-w-lg overflow-hidden rounded-lg border border-emerald-900/10 bg-[#fffdf8] p-4 shadow-[0_24px_70px_rgba(25,50,32,0.14)]"
-      aria-hidden="true"
-    >
-      <div className="relative rounded-lg border border-emerald-950/10 bg-[#f1f7ed] p-4">
+    <div className="relative mx-auto w-full max-w-lg">
+      <div className="mb-5 flex justify-center">
+        <Image
+          src="/watch-my-plot-logo.png"
+          alt="Watch My Plot logo"
+          width={360}
+          height={360}
+          priority
+          className="h-auto w-56 object-contain drop-shadow-[0_22px_36px_rgba(24,63,42,0.2)] sm:w-72"
+        />
+      </div>
+
+      <div
+        className="relative overflow-hidden rounded-lg border border-emerald-900/10 bg-[#fffdf8] p-4 shadow-[0_24px_70px_rgba(25,50,32,0.14)]"
+        aria-hidden="true"
+      >
+        <div className="relative rounded-lg border border-emerald-950/10 bg-[#f1f7ed] p-4">
         <div className="flex items-center justify-between gap-3 border-b border-emerald-950/10 pb-3 text-xs font-bold text-emerald-950">
           <span>Nearby care request</span>
           <span className="rounded-full bg-white px-2.5 py-1 text-clay-700">
@@ -249,6 +262,7 @@ function GardenPanel() {
           ))}
         </div>
       </div>
+      </div>
     </div>
   );
 }
@@ -260,6 +274,17 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 sm:py-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-16">
           <div>
             <p className="wmp-eyebrow">Garden care, sorted locally</p>
+
+            <div className="mt-5 flex justify-center lg:hidden">
+              <Image
+                src="/watch-my-plot-logo.png"
+                alt=""
+                width={180}
+                height={180}
+                priority
+                className="h-auto w-36 object-contain drop-shadow-[0_16px_28px_rgba(24,63,42,0.18)]"
+              />
+            </div>
 
             <h1 className="mt-5 max-w-4xl wmp-h1">
               Find a local garden sitter, or post the plot-care job you need

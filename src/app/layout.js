@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import Image from "next/image";
 import Link from "next/link";
 import Header from "./Header";
 import "./globals.css";
@@ -17,6 +18,13 @@ export const metadata = {
   title: "Watch My Plot",
   description:
     "Browse trusted local garden sitters, post plot-care requests, and find paid gardening work for watering, harvesting, greenhouses, pots, seedlings, and veg beds.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -37,9 +45,13 @@ export default function RootLayout({ children }) {
                   href="/"
                   className="inline-flex items-center gap-3 text-lg font-bold tracking-tight text-white"
                 >
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-emerald-950 ring-2 ring-clay-400/80">
-                    W
-                  </span>
+                  <Image
+                    src="/watch-my-plot-logo.png"
+                    alt="Watch My Plot logo"
+                    width={64}
+                    height={64}
+                    className="h-14 w-14 rounded-lg object-contain drop-shadow-sm"
+                  />
                   <span>Watch My Plot</span>
                 </Link>
                 <p className="mt-4 max-w-xl leading-6 text-zinc-200">

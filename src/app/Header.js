@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -47,9 +48,14 @@ export default function Header() {
           href="/"
           className="inline-flex items-center gap-3 text-lg font-bold tracking-tight text-zinc-950"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-950 text-sm font-bold text-white shadow-sm ring-2 ring-clay-200/70">
-            W
-          </span>
+          <Image
+            src="/watch-my-plot-logo.png"
+            alt="Watch My Plot logo"
+            width={56}
+            height={56}
+            priority
+            className="h-12 w-12 rounded-lg object-contain drop-shadow-sm"
+          />
           <span>Watch My Plot</span>
         </Link>
 
