@@ -20,9 +20,10 @@ export const metadata = {
     "Browse trusted local garden sitters, post plot-care requests, and find paid gardening work for watering, harvesting, greenhouses, pots, seedlings, and veg beds.",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/png" },
+      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" },
     ],
+    shortcut: "/favicon.ico",
     apple: "/apple-icon.png",
   },
 };
