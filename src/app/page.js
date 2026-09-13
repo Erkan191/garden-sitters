@@ -287,8 +287,7 @@ export default function HomePage() {
             </div>
 
             <h1 className="mt-5 max-w-4xl wmp-h1">
-              Find a local garden sitter, or post the plot-care job you need
-              done.
+              Find a local green fingered friend to care for your crops while you're away.
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-700">
