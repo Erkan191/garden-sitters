@@ -191,20 +191,21 @@ function StepList({ title, steps, accent = "emerald" }) {
 
 function GardenPanel() {
   return (
-    <div className="relative mx-auto w-full max-w-lg">
-      <div className="mb-5 flex justify-center">
+    <div className="relative mx-auto w-full max-w-xl lg:self-start lg:-mt-3">
+      <div className="mb-3 flex justify-center lg:mb-4">
         <Image
           src="/watch-my-plot-logo.png"
           alt="Watch My Plot logo"
-          width={360}
-          height={360}
+          width={560}
+          height={560}
           priority
-          className="h-auto w-56 object-contain drop-shadow-[0_22px_36px_rgba(24,63,42,0.2)] sm:w-72"
+          sizes="(max-width: 640px) 18rem, (max-width: 1024px) 24rem, 31rem"
+          className="h-auto w-72 object-contain drop-shadow-[0_26px_44px_rgba(24,63,42,0.22)] sm:w-96 lg:w-[31rem]"
         />
       </div>
 
       <div
-        className="relative overflow-hidden rounded-lg border border-emerald-900/10 bg-[#fffdf8] p-4 shadow-[0_24px_70px_rgba(25,50,32,0.14)]"
+        className="relative mx-auto max-w-lg overflow-hidden rounded-lg border border-emerald-900/10 bg-[#fffdf8] p-4 shadow-[0_24px_70px_rgba(25,50,32,0.14)]"
         aria-hidden="true"
       >
         <div className="relative rounded-lg border border-emerald-950/10 bg-[#f1f7ed] p-4">
