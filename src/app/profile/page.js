@@ -5,6 +5,14 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
+const PROFILE_PHOTO_BUCKET = "profile-photos";
+const MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024;
+const PROFILE_PHOTO_EXTENSIONS = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
 function buildSkillTags(profile) {
   if (!profile) return [];
 
@@ -63,6 +71,7 @@ function MyProfilePageContent() {
   const [location, setLocation] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const [skillWatering, setSkillWatering] = useState(false);
   const [skillHarvesting, setSkillHarvesting] = useState(false);
@@ -283,6 +292,73 @@ function MyProfilePageContent() {
     setSaving(false);
   }
 
+  async function uploadProfilePhoto(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!userId) {
+      setMsg("You are not logged in.");
+      return;
+    }
+
+    const extension = PROFILE_PHOTO_EXTENSIONS[file.type];
+
+    if (!extension) {
+      setMsg("Choose a JPG, PNG, or WebP image.");
+      return;
+    }
+
+    if (file.size > MAX_PROFILE_PHOTO_BYTES) {
+      setMsg("Choose an image smaller than 5 MB.");
+      return;
+    }
+
+    setAvatarUploading(true);
+    setMsg("Uploading profile photo...");
+
+    const filePath = `${userId}/profile.${extension}`;
+    const { error: uploadError } = await supabase.storage
+      .from(PROFILE_PHOTO_BUCKET)
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        contentType: file.type,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      setMsg(uploadError.message || "Could not upload the profile photo.");
+      setAvatarUploading(false);
+      return;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from(PROFILE_PHOTO_BUCKET)
+      .getPublicUrl(filePath);
+    const publicUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`;
+
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .upsert(
+        {
+          id: userId,
+          avatar_url: publicUrl,
+        },
+        { onConflict: "id" }
+      );
+
+    if (profileError) {
+      setMsg(profileError.message || "The photo uploaded but could not be added to your profile.");
+      setAvatarUploading(false);
+      return;
+    }
+
+    setAvatarUrl(publicUrl);
+    setMsg("Profile photo uploaded and saved.");
+    setAvatarUploading(false);
+  }
+
   const previewTags = useMemo(() => {
     return buildSkillTags({
       skill_watering: skillWatering,
@@ -463,18 +539,41 @@ function MyProfilePageContent() {
                 </p>
               </div>
 
-              <div>
-                <label className={labelClass}>Profile photo URL</label>
-                <input
-                  className={inputClass}
-                  type="text"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="https://..."
-                />
-                <p className="mt-1 text-xs text-zinc-500">
-                  For now this uses an image URL. Proper uploads can come later.
-                </p>
+              <div className="rounded-lg border border-stone-200 bg-white p-4">
+                <p className={labelClass}>Profile photo</p>
+                <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center">
+                  {avatarUrl.trim() !== "" ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Your profile"
+                      className="h-24 w-24 shrink-0 rounded-full border border-stone-200 bg-stone-100 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 text-3xl font-semibold text-emerald-900">
+                      {displayName.slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="wmp-button wmp-button-secondary cursor-pointer">
+                      {avatarUploading
+                        ? "Uploading..."
+                        : avatarUrl
+                          ? "Change photo"
+                          : "Upload photo"}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={uploadProfilePhoto}
+                        disabled={avatarUploading}
+                        className="sr-only"
+                      />
+                    </label>
+                    <p className="mt-2 text-xs leading-5 text-zinc-500">
+                      Use a clear photo of yourself. JPG, PNG, or WebP, up to 5 MB.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div>
