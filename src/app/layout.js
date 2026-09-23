@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
+import Script from "next/script";
 import Header from "./Header";
 import "./globals.css";
 
@@ -34,6 +35,14 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} text-zinc-900 antialiased`}
       >
+        <Script id="password-recovery-redirect" strategy="beforeInteractive">
+          {`if (window.location.hash) {
+            const params = new URLSearchParams(window.location.hash.slice(1));
+            if (params.get("type") === "recovery" && window.location.pathname !== "/reset-password") {
+              window.location.replace("/reset-password" + window.location.hash);
+            }
+          }`}
+        </Script>
         <div className="min-h-screen">
           <Header />
 

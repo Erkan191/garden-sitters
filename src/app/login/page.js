@@ -22,6 +22,7 @@ function LoginPageContent() {
   const [msg, setMsg] = useState("");
   const nextPath = safeInternalPath(searchParams.get("next"));
   const createdContext = searchParams.get("created") || "";
+  const passwordWasReset = searchParams.get("reset") === "success";
 
   const isGardenerOnboarding =
     createdContext === "gardener" || nextPath.includes("welcome=gardener");
@@ -113,6 +114,12 @@ function LoginPageContent() {
           </div>
 
           <form onSubmit={handleLogin} className="mt-6 space-y-4">
+            {passwordWasReset && (
+              <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950">
+                Your password has been changed. Log in with your new password.
+              </div>
+            )}
+
             {createdContext && (
               <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950">
                 Account created. Log in now to finish setting up your{" "}
@@ -133,9 +140,17 @@ function LoginPageContent() {
             </div>
 
             <div>
-              <label className="wmp-label">
-                Password
-              </label>
+              <div className="flex items-center justify-between gap-4">
+                <label className="wmp-label">
+                  Password
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-semibold text-emerald-900 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
 
               <div className="relative">
                 <input
