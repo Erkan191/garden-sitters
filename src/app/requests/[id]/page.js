@@ -343,7 +343,7 @@ export default function RequestDetailPage() {
     const { data: bookingRow, error: bookingError } = await supabase
       .from("bookings")
       .select(
-        "id, request_id, offer_id, owner_id, gardener_id, amount_gbp, platform_fee_gbp, status, stripe_checkout_session_id, stripe_payment_intent_id, created_at, payout_status, payout_error, completed_at"
+        "id, request_id, offer_id, owner_id, gardener_id, amount_gbp, platform_fee_gbp, status, stripe_checkout_session_id, stripe_payment_intent_id, stripe_charge_model, created_at, payout_status, payout_error, completed_at"
       )
       .eq("request_id", id)
       .order("created_at", { ascending: false })
@@ -400,7 +400,8 @@ export default function RequestDetailPage() {
           skill_veg_beds,
           skill_pots,
           skill_seedlings,
-          stripe_onboarding_complete
+          stripe_onboarding_complete,
+          stripe_direct_charges_ready
         `)
         .in("id", uniqueProfileIds);
 
@@ -603,7 +604,7 @@ export default function RequestDetailPage() {
   async function acceptOffer(offerId) {
     const offer = offers.find((row) => row.id === offerId);
     const gardenerProfile = offer ? profilesById[offer.gardener_id] : null;
-    const payoutReady = Boolean(gardenerProfile?.stripe_onboarding_complete);
+    const payoutReady = Boolean(gardenerProfile?.stripe_direct_charges_ready);
 
     if (!payoutReady) {
       setMsg("Gardener needs to connect payouts before this offer can be accepted.");
@@ -830,7 +831,7 @@ export default function RequestDetailPage() {
     if (!booking?.id) return;
 
     setCompletingBooking(true);
-    setMsg("Completing booking and releasing the gardener transfer...");
+    setMsg("Marking the booking complete...");
 
     const { data } = await supabase.auth.getSession();
     const token = data?.session?.access_token;
@@ -853,12 +854,12 @@ export default function RequestDetailPage() {
     const json = await res.json();
 
     if (!res.ok) {
-      setMsg(json.error || "Failed to complete booking and release the gardener transfer.");
+      setMsg(json.error || "Failed to complete the booking.");
       setCompletingBooking(false);
       return;
     }
 
-    setMsg("Booking completed and gardener transfer released.");
+    setMsg("Booking completed.");
     setCompletingBooking(false);
     await loadAll();
   }
@@ -1013,7 +1014,7 @@ export default function RequestDetailPage() {
         gardenerLocation: gardenerProfile?.location?.trim() || "",
         gardenerRating: formatRating(reviewStatsByUserId[offer.gardener_id]),
         gardenerSkillTags: buildSkillTags(gardenerProfile),
-        payoutReady: Boolean(gardenerProfile?.stripe_onboarding_complete),
+        payoutReady: Boolean(gardenerProfile?.stripe_direct_charges_ready),
         goodMatches: matchData.goodMatches,
         missingSkills: matchData.missingSkills,
         statusLabel: getStatusLabel(offer.status),
@@ -1026,7 +1027,7 @@ export default function RequestDetailPage() {
   const currentUserProfile = userId ? profilesById[userId] : null;
   const currentUserProfileReady = Boolean(currentUserProfile?.full_name?.trim());
   const currentUserPayoutReady = Boolean(
-    currentUserProfile?.stripe_onboarding_complete
+    currentUserProfile?.stripe_direct_charges_ready
   );
   const pendingOffers = offersWithTrust.filter((offer) => offer.status === "pending");
 
@@ -1068,7 +1069,7 @@ export default function RequestDetailPage() {
     ) {
       nextStep = {
         title: "Pay to confirm booking",
-        body: "Owner pays through Stripe. The gardener is not paid until completion. During private beta, issues and refunds are handled case by case.",
+        body: "Pay securely to confirm the booking. Stripe sends the gardener their share and Watch My Plot keeps its 10% service fee.",
         onClick: () => bookAndPay(acceptedOffer.id),
         actionLabel: "Confirm booking and pay",
         srActionText: " securely",
@@ -1098,7 +1099,7 @@ export default function RequestDetailPage() {
   } else if (myExistingOffer?.status === "pending") {
     nextStep = {
       title: "Offer sent",
-      body: "Your offer is with the owner. If they accept, they pay through Stripe and your transfer is released after completion.",
+      body: "Your offer is with the owner. If they accept, they pay securely through Stripe and your share is added to your Stripe balance.",
       href: "#your-offer",
       actionLabel: "View your offer",
     };
@@ -1302,9 +1303,9 @@ export default function RequestDetailPage() {
                       </p>
 
                       <p className="mt-1 text-sm leading-6 text-zinc-600">
-                        Owner pays through Stripe. The gardener is not paid until
-                        completion. During private beta, issues and refunds are
-                        handled case by case.
+                        The owner pays securely through Stripe when booking. Stripe
+                        sends the gardener their share and Watch My Plot keeps its
+                        10% service fee.
                       </p>
 
                       <PaymentSafetyNotice className="mt-3" />
@@ -1407,9 +1408,8 @@ export default function RequestDetailPage() {
               {isOwner && booking.status === "pending_payment" && acceptedOffer && (
                 <div className="w-full space-y-3">
                   <p className="rounded-[1rem] border border-emerald-100 bg-emerald-50/70 p-3 text-sm leading-6 text-emerald-950">
-                    Owner pays through Stripe. The gardener is not paid until
-                    completion. During private beta, issues and refunds are handled
-                    case by case.
+                    Pay securely to confirm the booking. Stripe sends the gardener
+                    their share and Watch My Plot keeps its 10% service fee.
                   </p>
 
                   <PaymentSafetyNotice />
@@ -1432,7 +1432,7 @@ export default function RequestDetailPage() {
                 >
                   {completingBooking
                     ? "Completing booking..."
-                    : "Complete booking and release transfer"}
+                    : "Mark care complete"}
                 </button>
               )}
 
@@ -1570,8 +1570,8 @@ export default function RequestDetailPage() {
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
                 Tell the owner what you can do and your total price. If the owner
-                accepts, they pay through Stripe. Your transfer is released after the
-                booking is completed.
+                accepts, they pay through Stripe and your share is added to your
+                Stripe balance.
               </p>
             </div>
 
@@ -1809,8 +1809,8 @@ export default function RequestDetailPage() {
                         {String(req.status) === "open" && o.status === "pending" && (
                           <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 text-sm leading-6 text-emerald-950">
                             If you accept this offer, you will confirm the booking
-                            and pay through Stripe before the gardener transfer is released
-                            after completion.
+                            and pay securely through Stripe. The gardener receives
+                            their share through their connected Stripe account.
                           </div>
                         )}
 

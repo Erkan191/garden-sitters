@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
+import { STRIPE_CHARGE_MODEL_DIRECT } from "@/lib/stripeConnect";
 
 export const runtime = "nodejs";
 
@@ -41,7 +42,7 @@ export async function POST(request) {
   const { data: booking, error: bookErr } = await supabase
     .from("bookings")
     .select(
-      "id, owner_id, gardener_id, amount_gbp, platform_fee_gbp, status, stripe_payment_intent_id, stripe_transfer_id, payout_status"
+      "id, owner_id, gardener_id, amount_gbp, platform_fee_gbp, status, stripe_payment_intent_id, stripe_account_id, stripe_transfer_id, stripe_charge_model, payout_status"
     )
     .eq("id", bookingId)
     .maybeSingle();
@@ -71,6 +72,25 @@ export async function POST(request) {
       { error: "Server is missing Supabase admin environment variables" },
       { status: 500 }
     );
+  }
+
+  if (booking.stripe_charge_model === STRIPE_CHARGE_MODEL_DIRECT) {
+    const { error: completeError } = await supabaseAdmin
+      .from("bookings")
+      .update({
+        status: "completed",
+        payout_status: "paid",
+        payout_error: null,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", booking.id)
+      .eq("status", "paid");
+
+    if (completeError) {
+      return Response.json({ error: completeError.message }, { status: 400 });
+    }
+
+    return Response.json({ ok: true, paymentAlreadySent: true });
   }
 
   const stripe = getStripe();

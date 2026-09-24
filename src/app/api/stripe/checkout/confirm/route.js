@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
+import { STRIPE_CHARGE_MODEL_DIRECT } from "@/lib/stripeConnect";
 
 export const runtime = "nodejs";
 
@@ -45,7 +46,9 @@ export async function POST(request) {
 
     const { data: booking, error: bookErr } = await supabase
       .from("bookings")
-      .select("id, owner_id, stripe_checkout_session_id, status")
+      .select(
+        "id, owner_id, stripe_checkout_session_id, stripe_account_id, stripe_charge_model, status"
+      )
       .eq("id", bookingId)
       .maybeSingle();
 
@@ -66,9 +69,16 @@ export async function POST(request) {
       );
     }
 
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["payment_intent"],
-    });
+    const retrieveOptions =
+      booking.stripe_charge_model === STRIPE_CHARGE_MODEL_DIRECT
+        ? { stripeAccount: booking.stripe_account_id }
+        : undefined;
+
+    const session = await stripe.checkout.sessions.retrieve(
+      sessionId,
+      { expand: ["payment_intent"] },
+      retrieveOptions
+    );
 
     if (String(session.metadata?.booking_id || "") !== String(bookingId)) {
       return Response.json({ error: "Session does not match booking" }, { status: 400 });
@@ -101,6 +111,9 @@ export async function POST(request) {
         status: "paid",
         stripe_checkout_session_id: session.id,
         stripe_payment_intent_id: paymentIntentId,
+        ...(booking.stripe_charge_model === STRIPE_CHARGE_MODEL_DIRECT
+          ? { payout_status: "paid", payout_error: null }
+          : {}),
       })
       .eq("id", bookingId)
       .neq("status", "completed");

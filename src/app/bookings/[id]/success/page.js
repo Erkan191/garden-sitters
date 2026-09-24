@@ -19,7 +19,6 @@ export default function BookingSuccessPage() {
   const [msg, setMsg] = useState("Confirming payment...");
   const [paid, setPaid] = useState(false);
   const [completed, setCompleted] = useState(false);
-  const [completing, setCompleting] = useState(false);
 
   useEffect(() => {
     async function confirm() {
@@ -62,49 +61,14 @@ export default function BookingSuccessPage() {
 
       if (bookingRow?.status === "completed") {
         setCompleted(true);
-        setMsg("Booking completed and gardener transfer released.");
+        setMsg("Booking completed.");
       } else {
-        setMsg("Payment confirmed. Booking is now paid.");
+        setMsg("You're booked. Payment is confirmed and the gardener's share is in their Stripe account.");
       }
     }
 
     confirm();
   }, [id, sessionId]);
-
-  async function completeAndPay() {
-    setCompleting(true);
-    setMsg("Completing booking and releasing the gardener transfer...");
-
-    const { data } = await supabase.auth.getSession();
-    const token = data?.session?.access_token;
-
-    if (!token) {
-      setMsg("Please log in again.");
-      setCompleting(false);
-      return;
-    }
-
-    const res = await fetch("/api/stripe/payout/complete", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ bookingId: id }),
-    });
-
-    const json = await res.json();
-
-    if (!res.ok) {
-      setMsg(json.error || "Failed to complete booking and release the gardener transfer.");
-      setCompleting(false);
-      return;
-    }
-
-    setCompleted(true);
-    setCompleting(false);
-    setMsg("Booking completed and gardener transfer released.");
-  }
 
   return (
     <main className="wmp-page">
@@ -119,13 +83,12 @@ export default function BookingSuccessPage() {
           </p>
 
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-            Booking payment received.
+            You're booked.
           </h1>
 
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
-            Your payment has been confirmed. The booking is now paid, and you can
-            return to the request to chat, check the booking status, or complete the
-            job when the care has been carried out.
+            Your payment has been confirmed. Return to the conversation to message
+            your gardener and keep everything about the visit in one place.
           </p>
         </section>
 
@@ -160,9 +123,8 @@ export default function BookingSuccessPage() {
             <div className="mt-6 rounded-lg border border-emerald-100 bg-emerald-50/70 p-4 text-sm leading-6 text-emerald-950">
               <p className="font-medium">Booking confirmed and paid securely.</p>
               <p className="mt-1">
-                The gardener is not paid out yet. Come back after the plot care has
-                been completed to mark the booking complete and release the gardener
-                transfer.
+                The gardener's share has been sent to their Stripe balance. Come back
+                after the plot care has been carried out to mark the booking complete.
               </p>
             </div>
           )}

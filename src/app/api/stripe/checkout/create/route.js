@@ -1,6 +1,10 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
+import {
+  isDirectChargeAccount,
+  STRIPE_CHARGE_MODEL_DIRECT,
+} from "@/lib/stripeConnect";
 
 export const runtime = "nodejs";
 
@@ -146,6 +150,53 @@ export async function POST(request) {
       );
     }
 
+    const { data: gardenerProfile, error: gardenerProfileError } =
+      await supabaseAdmin
+        .from("profiles")
+        .select(
+          "stripe_account_id, stripe_onboarding_complete, stripe_direct_charges_ready"
+        )
+        .eq("id", offer.gardener_id)
+        .maybeSingle();
+
+    if (gardenerProfileError || !gardenerProfile?.stripe_account_id) {
+      return Response.json(
+        {
+          error:
+            gardenerProfileError?.message ||
+            "The gardener has not connected Stripe yet.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      !gardenerProfile.stripe_onboarding_complete ||
+      !gardenerProfile.stripe_direct_charges_ready
+    ) {
+      return Response.json(
+        {
+          error:
+            "The gardener must finish the updated Stripe payment setup before this booking can be paid.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const connectedAccount = await stripe.accounts.retrieve(
+      gardenerProfile.stripe_account_id
+    );
+
+    if (!isDirectChargeAccount(connectedAccount)) {
+      return Response.json(
+        {
+          error:
+            "The gardener's Stripe account is not ready for payments. Ask them to refresh Stripe status in their profile.",
+        },
+        { status: 400 }
+      );
+    }
+
     let amount = Number(offer.proposed_price_gbp ?? reqRow.price_offered_gbp ?? 0);
 
     if (!isValidMoneyAmount(amount)) {
@@ -189,7 +240,7 @@ export async function POST(request) {
 
     const { data: existingBooking, error: existingBookingErr } = await supabaseAdmin
       .from("bookings")
-      .select("id, status, amount_gbp, platform_fee_gbp")
+      .select("id, status, amount_gbp, platform_fee_gbp, stripe_charge_model")
       .eq("request_id", reqRow.id)
       .eq("offer_id", offer.id)
       .eq("owner_id", userId)
@@ -247,6 +298,8 @@ export async function POST(request) {
           amount_gbp: amount,
           platform_fee_gbp: fee,
           status: "pending_payment",
+          stripe_account_id: gardenerProfile.stripe_account_id,
+          stripe_charge_model: STRIPE_CHARGE_MODEL_DIRECT,
         })
         .select("id")
         .maybeSingle();
@@ -289,34 +342,52 @@ export async function POST(request) {
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      success_url: `${siteUrl}/bookings/${bookingId}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/bookings/${bookingId}/cancel`,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "gbp",
-            unit_amount: amountPence,
-            product_data: {
-              name: "Garden care booking",
-              description: reqRow.title || "Garden care",
-            },
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: "payment",
+        payment_method_types: ["card"],
+        success_url: `${siteUrl}/bookings/${bookingId}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${siteUrl}/bookings/${bookingId}/cancel`,
+        payment_intent_data: {
+          application_fee_amount: feePence,
+          metadata: {
+            booking_id: bookingId,
+            request_id: reqRow.id,
+            offer_id: offer.id,
           },
         },
-      ],
-      metadata: {
-        booking_id: bookingId,
-        request_id: reqRow.id,
-        offer_id: offer.id,
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: "gbp",
+              unit_amount: amountPence,
+              product_data: {
+                name: "Garden care booking",
+                description: reqRow.title || "Garden care",
+              },
+            },
+          },
+        ],
+        metadata: {
+          booking_id: bookingId,
+          request_id: reqRow.id,
+          offer_id: offer.id,
+        },
       },
-    });
+      {
+        stripeAccount: gardenerProfile.stripe_account_id,
+        idempotencyKey: `booking_${bookingId}_${gardenerProfile.stripe_account_id}_direct_checkout`,
+      }
+    );
 
     const { error: upErr } = await supabaseAdmin
       .from("bookings")
-      .update({ stripe_checkout_session_id: session.id })
+      .update({
+        stripe_checkout_session_id: session.id,
+        stripe_account_id: gardenerProfile.stripe_account_id,
+        stripe_charge_model: STRIPE_CHARGE_MODEL_DIRECT,
+      })
       .eq("id", bookingId);
 
     if (upErr) {

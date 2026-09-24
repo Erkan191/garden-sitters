@@ -64,6 +64,7 @@ function MyProfilePageContent() {
 
   const [stripeAccountId, setStripeAccountId] = useState("");
   const [stripeOnboardingComplete, setStripeOnboardingComplete] = useState(false);
+  const [stripeDirectChargesReady, setStripeDirectChargesReady] = useState(false);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeMsg, setStripeMsg] = useState("");
 
@@ -111,7 +112,8 @@ function MyProfilePageContent() {
           skill_pots,
           skill_seedlings,
           stripe_account_id,
-          stripe_onboarding_complete
+          stripe_onboarding_complete,
+          stripe_direct_charges_ready
         `)
         .eq("id", user.id)
         .maybeSingle();
@@ -136,6 +138,7 @@ function MyProfilePageContent() {
 
       setStripeAccountId(profile?.stripe_account_id || "");
       setStripeOnboardingComplete(Boolean(profile?.stripe_onboarding_complete));
+      setStripeDirectChargesReady(Boolean(profile?.stripe_direct_charges_ready));
       setStripeMsg("");
 
       setLoading(false);
@@ -186,6 +189,7 @@ function MyProfilePageContent() {
 
       setStripeAccountId(data.stripe_account_id || "");
       setStripeOnboardingComplete(Boolean(data.onboardingComplete));
+      setStripeDirectChargesReady(Boolean(data.directChargesReady));
 
       if (data.onboardingComplete) {
         setStripeMsg("");
@@ -728,16 +732,18 @@ function MyProfilePageContent() {
                 </h2>
 
                 <p className="mt-3 text-sm leading-6 text-zinc-600">
-                  {stripeOnboardingComplete
-                    ? "Payouts are connected. You can receive payments when bookings are completed."
+                  {stripeDirectChargesReady
+                    ? "Payments are connected. Owners pay securely when they book, and Stripe sends your share to your Stripe balance after deducting its processing costs and Watch My Plot's 10% fee."
                     : stripeAccountId
-                      ? "Your Stripe account exists, but onboarding is not complete yet."
+                      ? stripeOnboardingComplete
+                        ? "Your existing payout account needs a short Stripe update before you can take new paid bookings. Historical bookings are unchanged."
+                        : "Your Stripe account exists, but onboarding is not complete yet."
                       : "Connect Stripe if you want to receive payouts as a gardener."}
                 </p>
 
-                {stripeOnboardingComplete && (
+                {stripeDirectChargesReady && (
                   <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-sm font-bold text-emerald-900">
-                    Payouts connected ✅
+                    Payments connected and ready
                   </div>
                 )}
 
@@ -754,7 +760,7 @@ function MyProfilePageContent() {
                 )}
 
                 <div className="mt-5 flex flex-col gap-2">
-                  {!stripeOnboardingComplete && (
+                  {!stripeDirectChargesReady && (
                     <button
                       type="button"
                       onClick={startStripeOnboarding}
@@ -764,7 +770,9 @@ function MyProfilePageContent() {
                       {stripeLoading
                         ? "Please wait..."
                         : stripeAccountId
-                          ? "Continue Stripe setup"
+                          ? stripeOnboardingComplete
+                            ? "Update Stripe payment setup"
+                            : "Continue Stripe setup"
                           : "Connect Stripe for payouts"}
                     </button>
                   )}

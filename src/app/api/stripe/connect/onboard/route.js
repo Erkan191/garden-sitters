@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
+import { isDirectChargeConfiguration } from "@/lib/stripeConnect";
 
 export const runtime = "nodejs";
 
@@ -56,25 +57,43 @@ export async function POST(request) {
       );
     }
 
-    // Read existing stripe_account_id
+    // Keep legacy accounts for historical bookings, but never use them for new
+    // direct-charge bookings because their fee payer is immutable.
     const { data: profile, error: profileErr } = await supabaseAdmin
       .from("profiles")
-      .select("stripe_account_id")
+      .select("stripe_account_id, stripe_legacy_account_id")
       .eq("id", userId)
       .maybeSingle();
 
     if (profileErr) return Response.json({ error: profileErr.message }, { status: 400 });
 
     let stripeAccountId = profile?.stripe_account_id;
+    let existingAccount = null;
 
-    // Create Express connected account if needed
-    if (!stripeAccountId) {
+    if (stripeAccountId) {
+      existingAccount = await stripe.accounts.retrieve(stripeAccountId);
+    }
+
+    if (!existingAccount || !isDirectChargeConfiguration(existingAccount)) {
+      const legacyAccountId = stripeAccountId || profile?.stripe_legacy_account_id || null;
       const account = await stripe.accounts.create({
-        type: "express",
         country: "GB",
+        email: userData.user.email || undefined,
+        controller: {
+          fees: { payer: "account" },
+          losses: { payments: "stripe" },
+          requirement_collection: "stripe",
+          stripe_dashboard: { type: "full" },
+        },
         capabilities: {
           card_payments: { requested: true },
           transfers: { requested: true },
+        },
+        metadata: {
+          watch_my_plot_user_id: userId,
+          ...(legacyAccountId
+            ? { migrated_from_account_id: legacyAccountId }
+            : {}),
         },
       });
 
@@ -82,7 +101,16 @@ export async function POST(request) {
 
       const { error: upErr } = await supabaseAdmin
         .from("profiles")
-        .upsert({ id: userId, stripe_account_id: stripeAccountId }, { onConflict: "id" });
+        .upsert(
+          {
+            id: userId,
+            stripe_account_id: stripeAccountId,
+            stripe_legacy_account_id: legacyAccountId,
+            stripe_onboarding_complete: false,
+            stripe_direct_charges_ready: false,
+          },
+          { onConflict: "id" }
+        );
 
       if (upErr) return Response.json({ error: upErr.message }, { status: 400 });
     }

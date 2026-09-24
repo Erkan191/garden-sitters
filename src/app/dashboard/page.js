@@ -271,7 +271,9 @@ export default function DashboardPage() {
 
         supabase
           .from("profiles")
-          .select("id, full_name, stripe_account_id, stripe_onboarding_complete")
+          .select(
+            "id, full_name, stripe_account_id, stripe_onboarding_complete, stripe_direct_charges_ready"
+          )
           .eq("id", currentUser.id)
           .maybeSingle(),
       ]);
@@ -538,7 +540,7 @@ export default function DashboardPage() {
     (offer) => offer.status === "pending"
   ).length;
 
-  const payoutConnected = Boolean(profile?.stripe_onboarding_complete);
+  const payoutConnected = Boolean(profile?.stripe_direct_charges_ready);
   const profileReady = Boolean(profile?.full_name?.trim());
   const requestsAwaitingOffers = requests.filter(
     (request) =>

@@ -198,7 +198,7 @@ export default function BookingDetailPage() {
     if (!booking?.id) return;
 
     setCompletingBooking(true);
-    setMsg("Completing booking and releasing the gardener transfer...");
+    setMsg("Marking the booking complete...");
 
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData?.session?.access_token;
@@ -221,13 +221,13 @@ export default function BookingDetailPage() {
     const json = await res.json();
 
     if (!res.ok) {
-      setMsg(json.error || "Failed to complete booking and release the gardener transfer.");
+      setMsg(json.error || "Failed to complete the booking.");
       setCompletingBooking(false);
       await load();
       return;
     }
 
-    setMsg("Booking completed and gardener transfer released.");
+    setMsg("Booking completed.");
     setCompletingBooking(false);
     await load();
   }
@@ -245,8 +245,12 @@ export default function BookingDetailPage() {
   const bookingStatusLabel = getStatusLabel(booking?.status);
   const bookingStatusBadgeClass = getStatusBadgeClass(booking?.status);
 
+  const isDirectCharge = booking?.stripe_charge_model === "direct";
   const payoutStatus = booking?.payout_status || "not_started";
-  const payoutStatusLabel = getPayoutStatusLabel(payoutStatus);
+  const payoutStatusLabel =
+    isDirectCharge && payoutStatus === "paid"
+      ? "Gardener paid through Stripe"
+      : getPayoutStatusLabel(payoutStatus);
   const payoutStatusBadgeClass = getPayoutStatusBadgeClass(payoutStatus);
 
   const canCompleteAndPay =
@@ -325,8 +329,7 @@ export default function BookingDetailPage() {
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
                 Track the booking status, return to the request chat, and once the
-                garden care has been carried out, complete the booking to release the
-                gardener transfer.
+                garden care has been carried out, mark the booking complete.
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2">
@@ -339,7 +342,7 @@ export default function BookingDetailPage() {
                 <span
                   className={`rounded-full border px-2 py-1 text-xs font-medium ${payoutStatusBadgeClass}`}
                 >
-                  Transfer: {payoutStatusLabel}
+                  Payment: {payoutStatusLabel}
                 </span>
               </div>
             </div>
@@ -536,14 +539,18 @@ export default function BookingDetailPage() {
 
               <h2 className="mt-1 text-xl font-bold text-zinc-900">
                 {booking.payout_status === "failed"
-                  ? "Transfer needs attention."
-                  : "Release transfer after the job."}
+                  ? "Payment needs attention."
+                  : isDirectCharge
+                    ? "Mark complete after the care."
+                    : "Release transfer after the job."}
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-zinc-600">
                 {booking.payout_status === "failed"
-                  ? "The booking is paid, but the gardener transfer could not be released. The gardener may need to connect Stripe in their profile, then the owner can retry it."
-                  : "The owner should only complete the booking once the agreed plot care has actually been carried out. Completing the booking releases the gardener transfer to Stripe; Stripe then pays the gardener's bank on its normal schedule."}
+                  ? "The booking is paid, but its payment needs attention. The gardener may need to reconnect Stripe in their profile."
+                  : isDirectCharge
+                    ? "The gardener's share was sent to their Stripe balance when the booking was paid. Only mark the booking complete after the agreed plot care has been carried out."
+                    : "The owner should only complete the booking once the agreed plot care has actually been carried out. Completing this older booking releases its gardener transfer."}
               </p>
 
               {canCompleteAndPay ? (
@@ -554,10 +561,12 @@ export default function BookingDetailPage() {
                   className="mt-5 wmp-button wmp-button-primary w-full whitespace-normal leading-5 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {completingBooking
-                    ? "Trying transfer..."
+                    ? "Completing..."
                     : booking.payout_status === "failed"
                     ? "Retry gardener transfer"
-                    : "Complete booking and release transfer"}
+                    : isDirectCharge
+                      ? "Mark care complete"
+                      : "Complete booking and release transfer"}
                 </button>
               ) : booking.status === "completed" ? (
                 <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
@@ -586,8 +595,9 @@ export default function BookingDetailPage() {
               </p>
 
               <p className="mt-3 text-sm leading-6 text-zinc-600">
-                Payment is handled securely through Watch My Plot. The gardener is not
-                sent their Stripe transfer until the booking is completed.
+                Payment is handled securely through Stripe. For new bookings, Stripe
+                sends the gardener their share at booking and Watch My Plot keeps its
+                10% service fee.
               </p>
 
               <PaymentSafetyNotice className="mt-4" />

@@ -1,6 +1,10 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "@/lib/supabaseAdmin";
+import {
+  getAccountRequirements,
+  isDirectChargeAccount,
+} from "@/lib/stripeConnect";
 
 export const runtime = "nodejs";
 
@@ -66,13 +70,15 @@ export async function POST(request) {
 
     const acct = await stripe.accounts.retrieve(profile.stripe_account_id);
 
-    const onboardingComplete =
-      Boolean(acct.details_submitted) &&
-      (acct.charges_enabled || acct.payouts_enabled);
+    const directChargesReady = isDirectChargeAccount(acct);
+    const onboardingComplete = Boolean(acct.details_submitted) && directChargesReady;
 
     const { error: updateErr } = await supabaseAdmin
       .from("profiles")
-      .update({ stripe_onboarding_complete: onboardingComplete })
+      .update({
+        stripe_onboarding_complete: onboardingComplete,
+        stripe_direct_charges_ready: directChargesReady,
+      })
       .eq("id", userId);
 
     if (updateErr) {
@@ -85,6 +91,11 @@ export async function POST(request) {
       charges_enabled: acct.charges_enabled,
       payouts_enabled: acct.payouts_enabled,
       onboardingComplete,
+      directChargesReady,
+      migrationRequired:
+        acct.controller?.fees?.payer !== "account" ||
+        acct.controller?.losses?.payments !== "stripe",
+      requirements: getAccountRequirements(acct),
     });
   } catch (err) {
     return Response.json({ error: err.message || "Server error" }, { status: 500 });
