@@ -1100,7 +1100,7 @@ export default function RequestDetailPage() {
     ) {
       nextStep = {
         title: "Pay to confirm booking",
-        body: "Pay securely to confirm the booking. Stripe sends the gardener their share and Watch My Plot keeps its 10% service fee.",
+        body: "Pay securely to confirm the booking. Stripe sends the gardener their share and Watch My Plot keeps its 15% service fee.",
         onClick: () => bookAndPay(acceptedOffer.id),
         actionLabel: `Book ${bookingGardenerName} and pay`,
         srActionText: " securely",
@@ -1336,7 +1336,7 @@ export default function RequestDetailPage() {
                       <p className="mt-1 text-sm leading-6 text-zinc-600">
                         The owner pays securely through Stripe when booking. Stripe
                         sends the gardener their share and Watch My Plot keeps its
-                        10% service fee.
+                        15% service fee.
                       </p>
 
                       <PaymentSafetyNotice className="mt-3" />
@@ -1440,7 +1440,7 @@ export default function RequestDetailPage() {
                 <div className="w-full space-y-3">
                   <p className="rounded-[1rem] border border-emerald-100 bg-emerald-50/70 p-3 text-sm leading-6 text-emerald-950">
                     Pay securely to confirm the booking. Stripe sends the gardener
-                    their share and Watch My Plot keeps its 10% service fee.
+                    their share and Watch My Plot keeps its 15% service fee.
                   </p>
 
                   <PaymentSafetyNotice />
@@ -1841,7 +1841,7 @@ export default function RequestDetailPage() {
                           <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 text-sm leading-6 text-emerald-950">
                             Book this gardener at the agreed total and pay securely
                             through Stripe. Their share goes to their connected Stripe
-                            balance and Watch My Plot keeps its 10% fee.
+                            balance and Watch My Plot keeps its 15% fee.
                           </div>
                         )}
 

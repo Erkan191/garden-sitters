@@ -107,7 +107,7 @@ const faqs = [
   {
     question: "When does the gardener get paid?",
     answer:
-      "The gardener's share goes to their connected Stripe balance after the owner pays, less Stripe's costs and Watch My Plot's 10% fee. Stripe sends it to their bank on their payout schedule.",
+      "The gardener's share goes to their connected Stripe balance after the owner pays, less Stripe's costs and Watch My Plot's 15% fee. Stripe sends it to their bank on their payout schedule.",
   },
   {
     question: "Should I share my exact address publicly?",
@@ -492,7 +492,7 @@ export default function HomePage() {
           <div className="grid gap-3 sm:grid-cols-3">
             {[
               "Owners pay through Stripe when they book.",
-              "The gardener's share goes to their Stripe balance after payment, less Stripe costs and Watch My Plot's 10% fee.",
+              "The gardener's share goes to their Stripe balance after payment, less Stripe costs and Watch My Plot's 15% fee.",
               "During private beta, refunds and issues are handled case by case.",
             ].map((item) => (
               <div

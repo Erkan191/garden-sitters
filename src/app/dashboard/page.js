@@ -815,7 +815,7 @@ export default function DashboardPage() {
                     srActionText=" Book and pay"
                   >
                     Pay securely to confirm the booking. The gardener’s share goes
-                    to their Stripe balance and Watch My Plot keeps its 10% fee.
+                    to their Stripe balance and Watch My Plot keeps its 15% fee.
                   </ActionCard>
                 );
               })}
@@ -1076,7 +1076,7 @@ export default function DashboardPage() {
                               <p className="text-sm leading-6 text-emerald-950">
                                 Pay securely to confirm the booking. The gardener’s
                                 share goes to their Stripe balance and Watch My Plot
-                                keeps its 10% fee.
+                                keeps its 15% fee.
                               </p>
                               <button
                                 type="button"

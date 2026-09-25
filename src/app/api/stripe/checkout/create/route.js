@@ -5,6 +5,10 @@ import {
   isDirectChargeAccount,
   STRIPE_CHARGE_MODEL_DIRECT,
 } from "@/lib/stripeConnect";
+import {
+  calculatePlatformFeePence,
+  PLATFORM_FEE_PERCENT,
+} from "@/lib/platformFees";
 
 export const runtime = "nodejs";
 
@@ -228,7 +232,7 @@ export async function POST(request) {
       );
     }
 
-    const feePence = Math.round(amountPenceForFee * 0.1);
+    let feePence = calculatePlatformFeePence(amountPenceForFee);
     let fee = feePence / 100;
 
     if (feePence < 0 || feePence > MAX_STRIPE_AMOUNT_PENCE) {
@@ -240,7 +244,9 @@ export async function POST(request) {
 
     const { data: existingBooking, error: existingBookingErr } = await supabaseAdmin
       .from("bookings")
-      .select("id, status, amount_gbp, platform_fee_gbp, stripe_charge_model")
+      .select(
+        "id, status, amount_gbp, platform_fee_gbp, stripe_charge_model"
+      )
       .eq("request_id", reqRow.id)
       .eq("offer_id", offer.id)
       .eq("owner_id", userId)
@@ -267,7 +273,6 @@ export async function POST(request) {
 
     if (existingBooking?.status === "pending_payment") {
       const storedAmount = Number(existingBooking.amount_gbp ?? amount);
-      const storedFee = Number(existingBooking.platform_fee_gbp ?? fee);
 
       if (!isValidMoneyAmount(storedAmount)) {
         return Response.json(
@@ -276,15 +281,9 @@ export async function POST(request) {
         );
       }
 
-      if (!isValidMoneyAmount(storedFee) && storedFee !== 0) {
-        return Response.json(
-          { error: "Existing booking has an invalid platform fee." },
-          { status: 400 }
-        );
-      }
-
       amount = storedAmount;
-      fee = storedFee;
+      feePence = calculatePlatformFeePence(moneyToPence(storedAmount));
+      fee = feePence / 100;
     }
 
     if (!bookingId) {
@@ -377,7 +376,7 @@ export async function POST(request) {
       },
       {
         stripeAccount: gardenerProfile.stripe_account_id,
-        idempotencyKey: `booking_${bookingId}_${gardenerProfile.stripe_account_id}_direct_checkout`,
+        idempotencyKey: `booking_${bookingId}_${gardenerProfile.stripe_account_id}_direct_checkout_fee_${PLATFORM_FEE_PERCENT}`,
       }
     );
 
@@ -387,6 +386,7 @@ export async function POST(request) {
         stripe_checkout_session_id: session.id,
         stripe_account_id: gardenerProfile.stripe_account_id,
         stripe_charge_model: STRIPE_CHARGE_MODEL_DIRECT,
+        platform_fee_gbp: fee,
       })
       .eq("id", bookingId);
 

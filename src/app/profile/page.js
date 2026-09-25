@@ -733,7 +733,7 @@ function MyProfilePageContent() {
 
                 <p className="mt-3 text-sm leading-6 text-zinc-600">
                   {stripeDirectChargesReady
-                    ? "Payments are connected. Owners pay securely when they book, and Stripe sends your share to your Stripe balance after deducting its processing costs and Watch My Plot's 10% fee."
+                    ? "Payments are connected. Owners pay securely when they book, and Stripe sends your share to your Stripe balance after deducting its processing costs and Watch My Plot's 15% fee."
                     : stripeAccountId
                       ? stripeOnboardingComplete
                         ? "Your existing payout account needs a short Stripe update before you can take new paid bookings. Historical bookings are unchanged."

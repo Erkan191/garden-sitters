@@ -606,7 +606,7 @@ export default function BookingDetailPage() {
               <p className="mt-3 text-sm leading-6 text-zinc-600">
                 Payment is handled securely through Stripe. For new bookings, Stripe
                 sends the gardener their share at booking and Watch My Plot keeps its
-                10% service fee.
+                15% service fee.
               </p>
 
               <PaymentSafetyNotice className="mt-4" />
