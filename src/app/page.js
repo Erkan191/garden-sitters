@@ -102,12 +102,12 @@ const faqs = [
   {
     question: "How do payments work?",
     answer:
-      "Owners pay through Stripe after accepting an offer. Watch My Plot records the booking and keeps both sides clear on the status.",
+      "Owners pay securely through Stripe when they book a gardener at the agreed total. The booking is confirmed as soon as payment succeeds.",
   },
   {
     question: "When does the gardener get paid?",
     answer:
-      "The gardener transfer is released after the owner marks the booking complete. Stripe then sends bank payouts on its normal schedule.",
+      "The gardener's share goes to their connected Stripe balance after the owner pays, less Stripe's costs and Watch My Plot's 10% fee. Stripe sends it to their bank on their payout schedule.",
   },
   {
     question: "Should I share my exact address publicly?",
