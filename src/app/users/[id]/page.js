@@ -120,6 +120,7 @@ export default function UserProfilePage() {
   const displayName =
     profile?.full_name?.trim() || (isOwnProfile ? "You" : "User");
   const skillTags = useMemo(() => buildSkillTags(profile), [profile]);
+  const askForHelpHref = `/requests/new?gardener=${encodeURIComponent(id)}`;
 
   return (
     <main className="wmp-page">
@@ -225,6 +226,27 @@ export default function UserProfilePage() {
                             className="wmp-button wmp-button-primary"
                           >
                             Edit your profile
+                          </Link>
+                        </div>
+                      )}
+
+                      {!isOwnProfile && (
+                        <div className="mt-5 flex flex-wrap gap-3">
+                          <Link
+                            href={
+                              currentUserId
+                                ? askForHelpHref
+                                : `/login?next=${encodeURIComponent(askForHelpHref)}`
+                            }
+                            className="wmp-button wmp-button-primary"
+                          >
+                            Ask {displayName} to help
+                          </Link>
+                          <Link
+                            href="/sitters"
+                            className="wmp-button wmp-button-secondary"
+                          >
+                            Find another gardener
                           </Link>
                         </div>
                       )}

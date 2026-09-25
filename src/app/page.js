@@ -35,17 +35,17 @@ const careTasks = [
 ];
 
 const ownerSteps = [
-  "Post a care request",
-  "Choose a gardener",
-  "Pay securely",
-  "Complete when done",
+  "Search or post",
+  "Chat and agree a price",
+  "Book and pay securely",
+  "Care, review, and rebook",
 ];
 
 const gardenerSteps = [
   "Browse paid jobs",
   "Create your profile",
-  "Send an offer",
-  "Receive transfer after completion",
+  "Respond with your total price",
+  "Get booked and paid",
 ];
 
 const discoveryRoutes = [
@@ -288,7 +288,7 @@ export default function HomePage() {
             </div>
 
             <h1 className="mt-5 max-w-4xl wmp-h1">
-              Find a local green fingered friend to care for your crops while you're away.
+              Find a local green fingered friend to care for your crops while you&apos;re away.
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-700">
@@ -350,7 +350,7 @@ export default function HomePage() {
               </div>
               <div className="border-l-2 border-emerald-700 pl-3">
                 <p className="font-bold text-zinc-950">Stripe payments</p>
-                <p className="mt-1">Transfers release after completion.</p>
+                <p className="mt-1">Pay securely when you book.</p>
               </div>
             </div>
           </div>
@@ -491,8 +491,8 @@ export default function HomePage() {
 
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              "Owners pay through Stripe after accepting an offer.",
-              "The gardener transfer is released after the booking is completed.",
+              "Owners pay through Stripe when they book.",
+              "The gardener's share goes to their Stripe balance after payment, less Stripe costs and Watch My Plot's 10% fee.",
               "During private beta, refunds and issues are handled case by case.",
             ].map((item) => (
               <div

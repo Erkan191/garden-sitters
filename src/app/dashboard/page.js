@@ -225,6 +225,7 @@ export default function DashboardPage() {
   const [offersError, setOffersError] = useState("");
   const [requestsById, setRequestsById] = useState({});
   const [bookingByRequestId, setBookingByRequestId] = useState({});
+  const [directInvites, setDirectInvites] = useState([]);
 
   const [requestFilter, setRequestFilter] = useState("all");
   const [offerFilter, setOfferFilter] = useState("all");
@@ -252,6 +253,7 @@ export default function DashboardPage() {
         { data: offerRows, error: offerError },
         { data: unreadRows, error: unreadError },
         { data: profileRow, error: profileLoadError },
+        { data: directInviteRows, error: directInviteError },
       ] = await Promise.all([
         supabase
           .from("care_requests")
@@ -276,7 +278,16 @@ export default function DashboardPage() {
           )
           .eq("id", currentUser.id)
           .maybeSingle(),
+
+        supabase
+          .from("care_requests")
+          .select("id, title, postcode, start_date, end_date, invitation_status, status")
+          .eq("invited_gardener_id", currentUser.id)
+          .eq("status", "open")
+          .order("created_at", { ascending: false }),
       ]);
+
+      setDirectInvites(directInviteError ? [] : directInviteRows ?? []);
 
       const safeRequests = requestRows ?? [];
       const safeProfile = profileRow ?? null;
@@ -577,6 +588,7 @@ export default function DashboardPage() {
   ].filter(Boolean);
   const hasActionNeeded =
     setupNeeds.length > 0 ||
+    directInvites.some((request) => request.invitation_status === "pending") ||
     requestsWithOffers.length > 0 ||
     bookingsNeedingPayment.length > 0 ||
     jobsAwaitingCompletion.length > 0 ||
@@ -714,7 +726,14 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="wmp-panel rounded-lg text-zinc-900 sm:p-8">
+        <nav className="grid grid-cols-2 gap-2 rounded-lg border border-stone-200 bg-white p-2 sm:grid-cols-4" aria-label="Dashboard sections">
+          <a href="#attention" className="rounded-md bg-emerald-900 px-3 py-3 text-center text-sm font-bold text-white">Needs your attention</a>
+          <a href="#upcoming" className="rounded-md px-3 py-3 text-center text-sm font-bold text-zinc-700 hover:bg-stone-50">Upcoming</a>
+          <a href="#in-progress" className="rounded-md px-3 py-3 text-center text-sm font-bold text-zinc-700 hover:bg-stone-50">In progress</a>
+          <a href="#past" className="rounded-md px-3 py-3 text-center text-sm font-bold text-zinc-700 hover:bg-stone-50">Past</a>
+        </nav>
+
+        <section id="attention" className="wmp-panel rounded-lg text-zinc-900 sm:p-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="wmp-eyebrow">
@@ -748,6 +767,21 @@ export default function DashboardPage() {
                 </ActionCard>
               ))}
 
+              {directInvites
+                .filter((request) => request.invitation_status === "pending")
+                .slice(0, 3)
+                .map((request) => (
+                  <ActionCard
+                    key={`invite-${request.id}`}
+                    title="Garden-care request for you"
+                    href={`/requests/${request.id}/chat`}
+                    actionLabel="Open conversation"
+                  >
+                    {request.title} · {formatDateRange(request.start_date, request.end_date)}.
+                    Respond with “I can help” and your total price, or decline.
+                  </ActionCard>
+                ))}
+
               {requestsWithOffers.slice(0, 3).map((request) => {
                 const offerCount = offerCountsByRequestId[request.id] ?? 0;
 
@@ -780,9 +814,8 @@ export default function DashboardPage() {
                     }
                     srActionText=" Book and pay"
                   >
-                    Owner pays through Stripe. The gardener is not paid until
-                    completion. Private beta issues and refunds are handled case by
-                    case.
+                    Pay securely to confirm the booking. The gardener’s share goes
+                    to their Stripe balance and Watch My Plot keeps its 10% fee.
                   </ActionCard>
                 );
               })}
@@ -823,7 +856,7 @@ export default function DashboardPage() {
               {totalUnreadCount > 0 && (
                 <ActionCard
                   title="Unread messages"
-                  href="#live-work"
+                  href="#upcoming"
                   actionLabel="Open live work"
                 >
                   You have {totalUnreadCount} unread{" "}
@@ -932,7 +965,7 @@ export default function DashboardPage() {
         </section>
 
         <section
-          id="live-work"
+          id="upcoming"
           className="wmp-panel rounded-lg text-zinc-900"
         >
           <div className="flex flex-col gap-2">
@@ -1041,9 +1074,9 @@ export default function DashboardPage() {
                           {canBookAndPay && (
                             <div className="w-full rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 sm:max-w-md">
                               <p className="text-sm leading-6 text-emerald-950">
-                                Owner pays through Stripe. The gardener is not paid
-                                until completion. Private beta issues and refunds
-                                are handled case by case.
+                                Pay securely to confirm the booking. The gardener’s
+                                share goes to their Stripe balance and Watch My Plot
+                                keeps its 10% fee.
                               </p>
                               <button
                                 type="button"
@@ -1190,7 +1223,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="wmp-panel rounded-lg text-zinc-900">
+        <section id="in-progress" className="wmp-panel rounded-lg text-zinc-900">
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1379,7 +1412,7 @@ export default function DashboardPage() {
           )}
         </section>
 
-        <section className="wmp-panel rounded-lg text-zinc-900">
+        <section id="past" className="wmp-panel rounded-lg text-zinc-900">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>

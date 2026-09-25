@@ -19,6 +19,9 @@ export default function BookingSuccessPage() {
   const [msg, setMsg] = useState("Confirming payment...");
   const [paid, setPaid] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [requestId, setRequestId] = useState(null);
+  const [gardenerName, setGardenerName] = useState("Your gardener");
+  const [dateText, setDateText] = useState("");
 
   useEffect(() => {
     async function confirm() {
@@ -55,9 +58,39 @@ export default function BookingSuccessPage() {
 
       const { data: bookingRow } = await supabase
         .from("bookings")
-        .select("status, completed_at, payout_status, stripe_transfer_id, request_id")
+        .select("status, completed_at, payout_status, stripe_transfer_id, request_id, gardener_id")
         .eq("id", id)
         .maybeSingle();
+
+      setRequestId(bookingRow?.request_id || null);
+
+      if (bookingRow?.gardener_id) {
+        const { data: gardener } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", bookingRow.gardener_id)
+          .maybeSingle();
+        if (gardener?.full_name?.trim()) setGardenerName(gardener.full_name.trim());
+      }
+
+      if (bookingRow?.request_id) {
+        const { data: request } = await supabase
+          .from("care_requests")
+          .select("start_date, end_date")
+          .eq("id", bookingRow.request_id)
+          .maybeSingle();
+        if (request?.start_date || request?.end_date) {
+          const options = { day: "numeric", month: "long", year: "numeric" };
+          const format = (value) => value
+            ? new Date(`${value}T12:00:00`).toLocaleDateString("en-GB", options)
+            : "date to agree";
+          setDateText(
+            request.start_date === request.end_date
+              ? format(request.start_date)
+              : `${format(request.start_date)} - ${format(request.end_date)}`
+          );
+        }
+      }
 
       if (bookingRow?.status === "completed") {
         setCompleted(true);
@@ -83,12 +116,13 @@ export default function BookingSuccessPage() {
           </p>
 
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-            You're booked.
+            You&apos;re booked.
           </h1>
 
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
-            Your payment has been confirmed. Return to the conversation to message
-            your gardener and keep everything about the visit in one place.
+            {paid
+              ? `${gardenerName} will look after your garden${dateText ? ` · ${dateText}` : ""}.`
+              : "We are confirming your secure payment."}
           </p>
         </section>
 
@@ -123,7 +157,7 @@ export default function BookingSuccessPage() {
             <div className="mt-6 rounded-lg border border-emerald-100 bg-emerald-50/70 p-4 text-sm leading-6 text-emerald-950">
               <p className="font-medium">Booking confirmed and paid securely.</p>
               <p className="mt-1">
-                The gardener's share has been sent to their Stripe balance. Come back
+                The gardener&apos;s share has been sent to their Stripe balance. Come back
                 after the plot care has been carried out to mark the booking complete.
               </p>
             </div>
@@ -131,10 +165,10 @@ export default function BookingSuccessPage() {
 
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              href={`/bookings/${id}`}
+              href={requestId ? `/requests/${requestId}/chat` : `/bookings/${id}`}
               className={`w-full sm:w-auto ${primaryButtonClass}`}
             >
-              View booking
+              Message {gardenerName}
             </Link>
 
             <Link
@@ -145,10 +179,10 @@ export default function BookingSuccessPage() {
             </Link>
 
             <Link
-              href="/requests"
+              href={`/bookings/${id}`}
               className={`w-full sm:w-auto ${secondaryButtonClass}`}
             >
-              Browse jobs
+              View booking
             </Link>
           </div>
         </section>

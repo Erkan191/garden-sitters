@@ -126,7 +126,7 @@ async function createCareRequest(page, requestTitle) {
   await dateInputs.nth(0).fill(futureDate(7));
   await dateInputs.nth(1).fill(futureDate(10));
 
-  await requestForm.getByPlaceholder(/e\.g\. 30/i).fill("1.00");
+  await requestForm.getByPlaceholder(/e\.g\. 30/i).fill("5.00");
   await requestForm
     .getByRole("button", { name: /^(post|create) request$/i })
     .click();
@@ -179,7 +179,7 @@ async function submitOffer(page, requestTitle) {
   await offerForm
     .getByPlaceholder(/briefly explain the visits/i)
     .fill(`Automated smoke offer for ${requestTitle}`);
-  await offerForm.locator('input[type="number"]').fill("1.00");
+  await offerForm.locator('input[type="number"]').fill("5.00");
   await offerForm.getByRole("button", { name: /^send offer$/i }).click();
 
   await expect(
@@ -188,34 +188,8 @@ async function submitOffer(page, requestTitle) {
   ).toContainText(/Offer sent|Your offer has been sent/i, { timeout: 20000 });
 }
 
-async function acceptGardenerOffer(page) {
-  const payoutSetupWarning = page.getByText(
-    /Gardener needs to connect payouts before this offer can be accepted/i
-  );
-
-  if (await isVisible(payoutSetupWarning, 3000)) {
-    throw new Error(
-      "Cannot accept the smoke-test offer because E2E_GARDENER has not completed Stripe payout onboarding."
-    );
-  }
-
-  const acceptButton = page.getByRole("button", { name: /accept offer/i });
-
-  await expect(
-    acceptButton,
-    "Owner should see an enabled Accept offer button"
-  ).toBeVisible({ timeout: 20000 });
-
-  await acceptButton.click();
-
-  await expect(
-    page.locator("body"),
-    "Offer acceptance should update the request"
-  ).toContainText(/Offer accepted|Accepted/i, { timeout: 20000 });
-}
-
 async function startCheckout(page, requestTitle) {
-  const checkoutButtonName = /confirm booking and pay/i;
+  const checkoutButtonName = /book .+£5\.00|confirm booking and pay/i;
   const detailPayButton = page
     .getByRole("button", { name: checkoutButtonName })
     .first();
@@ -443,7 +417,6 @@ test("owner, gardener, checkout, and payout smoke flow", async ({ page }) => {
     "Owner should be able to reopen the smoke-test request"
   ).toBeVisible({ timeout: 20000 });
 
-  await acceptGardenerOffer(page);
   await startCheckout(page, requestTitle);
   await payStripeCheckout(page, smokeEnv.ownerEmail);
 

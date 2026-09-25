@@ -379,6 +379,7 @@ export default function RequestDetailPage() {
 
     const profileIds = [
       requestData?.owner_id,
+      requestData?.invited_gardener_id,
       user?.id,
       ...(bookingRow?.gardener_id ? [bookingRow.gardener_id] : []),
       ...safeOffers.map((o) => o.gardener_id),
@@ -628,7 +629,27 @@ export default function RequestDetailPage() {
   }
 
   async function bookAndPay(offerId) {
-    setMsg("Creating checkout...");
+    const offer = offers.find((row) => row.id === offerId);
+    const gardenerProfile = offer ? profilesById[offer.gardener_id] : null;
+
+    if (!gardenerProfile?.stripe_direct_charges_ready) {
+      setMsg("Gardener needs to connect payouts before this booking can be confirmed.");
+      return;
+    }
+
+    setMsg("Securing your booking...");
+
+    if (offer?.status === "pending") {
+      const { error } = await supabase.rpc("accept_offer_safely", {
+        p_request_id: id,
+        p_offer_id: offerId,
+      });
+
+      if (error) {
+        setMsg(error.message);
+        return;
+      }
+    }
 
     const { data } = await supabase.auth.getSession();
     const token = data?.session?.access_token;
@@ -929,8 +950,11 @@ export default function RequestDetailPage() {
   const acceptedOffer = offers.find((o) => o.status === "accepted");
   const isAcceptedGardener =
     acceptedOffer && userId && acceptedOffer.gardener_id === userId;
+  const isInvitedGardener =
+    userId && req?.invited_gardener_id === userId;
   const canOpenChat =
-    String(req?.status) === "accepted" && (isOwner || isAcceptedGardener);
+    (isOwner || isAcceptedGardener || isInvitedGardener) &&
+    Boolean(req?.invited_gardener_id || String(req?.status) === "accepted");
 
   const ownerProfile = profilesById[req?.owner_id];
   const ownerName = ownerProfile?.full_name?.trim() || "Owner";
@@ -965,6 +989,8 @@ export default function RequestDetailPage() {
   const canSubmitOffer =
     !isOwner &&
     String(req?.status) === "open" &&
+    (!req?.invited_gardener_id || isInvitedGardener) &&
+    req?.invitation_status !== "declined" &&
     !myExistingOffer;
 
   const careTags = buildCareTags(req);
@@ -1050,17 +1076,22 @@ export default function RequestDetailPage() {
   } else if (isOwner) {
     if (String(req?.status) === "open" && offersWithTrust.length === 0) {
       nextStep = {
-        title: "Waiting for offers",
-        body: "Your request is live. You can wait for gardeners to offer or edit the request if the dates, budget, or care instructions need more detail.",
-        href: `/requests/${req.id}/edit`,
-        actionLabel: "Edit request",
+        title: req?.invited_gardener_id ? "Conversation started" : "Waiting for responses",
+        body: req?.invited_gardener_id
+          ? "Message the gardener while they review the dates and care needed. Their price will appear in the conversation."
+          : "Your request is live. Gardeners can respond with availability and a total price.",
+        href: req?.invited_gardener_id ? `/requests/${req.id}/chat` : `/requests/${req.id}/edit`,
+        actionLabel: req?.invited_gardener_id ? "Open conversation" : "Edit request",
       };
     } else if (String(req?.status) === "open" && pendingOffers.length > 0) {
       nextStep = {
-        title: "Review offers",
-        body: "Compare each gardener's profile, message, price, skills, and reviews before choosing who to accept.",
+        title: req?.invited_gardener_id ? "Gardener is available" : "Review responses",
+        body: req?.invited_gardener_id
+          ? "Open the conversation to review the gardener's price and book securely."
+          : "Compare each gardener's profile, message, price, skills, and reviews before booking.",
         href: "#offers",
-        actionLabel: "Review offers",
+        actionLabel: req?.invited_gardener_id ? "Open conversation" : "Review responses",
+        ...(req?.invited_gardener_id ? { href: `/requests/${req.id}/chat` } : {}),
       };
     } else if (
       acceptedOffer &&
@@ -1071,7 +1102,7 @@ export default function RequestDetailPage() {
         title: "Pay to confirm booking",
         body: "Pay securely to confirm the booking. Stripe sends the gardener their share and Watch My Plot keeps its 10% service fee.",
         onClick: () => bookAndPay(acceptedOffer.id),
-        actionLabel: "Confirm booking and pay",
+        actionLabel: `Book ${bookingGardenerName} and pay`,
         srActionText: " securely",
       };
     } else if (booking?.status === "paid") {
@@ -1681,15 +1712,15 @@ export default function RequestDetailPage() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="wmp-eyebrow">
-                  Offers
+                  Responses
                 </p>
                 <h2 className="mt-1 text-2xl font-bold text-zinc-900">
-                  Gardeners offering to help
+                  Gardeners available to help
                 </h2>
               </div>
 
               <p className="text-sm text-zinc-500">
-                {offersWithTrust.length} offer
+                {offersWithTrust.length} response
                 {offersWithTrust.length === 1 ? "" : "s"}
               </p>
             </div>
@@ -1704,7 +1735,7 @@ export default function RequestDetailPage() {
               <div className="mt-4 rounded-lg border border-stone-200 bg-stone-50/70 p-5">
                 <p className="text-sm font-bold text-zinc-900">No offers yet.</p>
                 <p className="mt-1 text-sm leading-6 text-zinc-600">
-                  Gardener offers will appear here. If none arrive, check that
+                  Gardener responses will appear here. If none arrive, check that
                   the dates, rough area, budget, and care instructions are clear.
                 </p>
                 {String(req.status) === "open" && (
@@ -1808,9 +1839,9 @@ export default function RequestDetailPage() {
 
                         {String(req.status) === "open" && o.status === "pending" && (
                           <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/70 p-3 text-sm leading-6 text-emerald-950">
-                            If you accept this offer, you will confirm the booking
-                            and pay securely through Stripe. The gardener receives
-                            their share through their connected Stripe account.
+                            Book this gardener at the agreed total and pay securely
+                            through Stripe. Their share goes to their connected Stripe
+                            balance and Watch My Plot keeps its 10% fee.
                           </div>
                         )}
 
@@ -1818,10 +1849,10 @@ export default function RequestDetailPage() {
                             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                               {o.payoutReady ? (
                                 <button
-                                  onClick={() => acceptOffer(o.id)}
+                                  onClick={() => bookAndPay(o.id)}
                                   className={`w-full sm:w-auto ${primaryButtonClass}`}
                                 >
-                                  Accept offer
+                                  Book {o.gardenerName} — {o.formattedPrice}
                                 </button>
                               ) : (
                                 <button

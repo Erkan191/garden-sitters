@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -47,6 +47,9 @@ function CareCheckbox({ checked, onChange, label, helper }) {
 export default function NewRequestPage() {
   const router = useRouter();
   const [msg, setMsg] = useState("");
+  const [invitedGardener, setInvitedGardener] = useState(null);
+  const [invitedGardenerId, setInvitedGardenerId] = useState(null);
+  const [loadingGardener, setLoadingGardener] = useState(true);
 
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
@@ -63,13 +66,52 @@ export default function NewRequestPage() {
   const [hasPots, setHasPots] = useState(false);
   const [hasSeedlings, setHasSeedlings] = useState(false);
 
+  useEffect(() => {
+    async function loadInvitedGardener() {
+      const gardenerId = new URLSearchParams(window.location.search).get("gardener");
+      setInvitedGardenerId(gardenerId);
+
+      if (!gardenerId) {
+        setLoadingGardener(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, location")
+        .eq("id", gardenerId)
+        .maybeSingle();
+
+      if (error || !data) {
+        setMsg(error?.message || "That gardener profile is no longer available.");
+        setInvitedGardenerId(null);
+      } else {
+        setInvitedGardener(data);
+      }
+
+      setLoadingGardener(false);
+    }
+
+    loadInvitedGardener();
+  }, []);
+
   async function handleCreate(e) {
     e.preventDefault();
     setMsg("Creating request...");
 
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
-    if (!user) return router.push("/login");
+    if (!user) {
+      const next = invitedGardenerId
+        ? `/requests/new?gardener=${encodeURIComponent(invitedGardenerId)}`
+        : "/requests/new";
+      return router.push(`/login?next=${encodeURIComponent(next)}`);
+    }
+
+    if (invitedGardenerId === user.id) {
+      setMsg("You cannot ask yourself to help with a request.");
+      return;
+    }
 
     if (title.trim() === "") {
       setMsg("Please add a title for your request.");
@@ -113,6 +155,8 @@ export default function NewRequestPage() {
         has_veg_beds: hasVegBeds,
         has_pots: hasPots,
         has_seedlings: hasSeedlings,
+        invited_gardener_id: invitedGardenerId,
+        invitation_status: invitedGardenerId ? "pending" : null,
       })
       .select("id")
       .single();
@@ -122,7 +166,11 @@ export default function NewRequestPage() {
       return;
     }
 
-    router.push(`/requests/${createdRequest.id}`);
+    router.push(
+      invitedGardenerId
+        ? `/requests/${createdRequest.id}/chat`
+        : `/requests/${createdRequest.id}`
+    );
   }
 
   const inputClass =
@@ -144,17 +192,19 @@ export default function NewRequestPage() {
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
             <div>
               <p className="wmp-eyebrow">
-                New request
+                {invitedGardener ? `Request for ${invitedGardener.full_name || "gardener"}` : "New request"}
               </p>
 
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-                Post a garden care request.
+                {invitedGardener
+                  ? `Ask ${invitedGardener.full_name || "this gardener"} to help.`
+                  : "Post a garden care request."}
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
-                Tell local growers what needs looking after while you’re away:
-                watering, seedlings, harvesting, greenhouse care, pots, veg beds, or
-                anything else that keeps your garden ticking over.
+                {invitedGardener
+                  ? "Share the dates and care needed. This request stays private between you and the gardener, and opens a conversation where you can agree the price."
+                  : "Tell local growers what needs looking after while you’re away: watering, seedlings, harvesting, greenhouse care, pots, veg beds, or anything else that keeps your garden ticking over."}
               </p>
             </div>
 
@@ -171,6 +221,30 @@ export default function NewRequestPage() {
         </section>
 
         <BetaNotice />
+
+        {invitedGardener && (
+          <section className="wmp-panel rounded-lg border-emerald-100 bg-emerald-50/60">
+            <div className="flex items-center gap-4">
+              {invitedGardener.avatar_url ? (
+                <img
+                  src={invitedGardener.avatar_url}
+                  alt=""
+                  className="h-14 w-14 rounded-full border border-emerald-100 object-cover"
+                />
+              ) : (
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-xl font-bold text-emerald-900">
+                  {(invitedGardener.full_name || "G").slice(0, 1).toUpperCase()}
+                </div>
+              )}
+              <div>
+                <p className="font-bold text-zinc-900">{invitedGardener.full_name || "Gardener"}</p>
+                <p className="text-sm text-zinc-600">
+                  {invitedGardener.location || "Local gardener"} · Private request
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
 
         <form
           onSubmit={handleCreate}
@@ -324,8 +398,8 @@ export default function NewRequestPage() {
                 placeholder="e.g. 30"
               />
               <p className="mt-1 text-xs leading-5 text-zinc-500">
-                Gardeners can send their own total offer. If you accept one, you
-                confirm the booking and pay through Stripe. Paid bookings start
+                Gardeners can send their own total price. When you book, you pay
+                securely through Stripe. Paid bookings start
                 at £5 so fees and bank payouts work reliably.
               </p>
             </div>
@@ -338,8 +412,15 @@ export default function NewRequestPage() {
               instructions clearly.
             </SafetyNotice>
 
-            <button className="wmp-button wmp-button-primary w-full">
-              Post request
+            <button
+              disabled={loadingGardener}
+              className="wmp-button wmp-button-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loadingGardener
+                ? "Loading..."
+                : invitedGardener
+                  ? `Ask ${invitedGardener.full_name || "gardener"} to help`
+                  : "Post request"}
             </button>
 
             {msg && (
@@ -395,8 +476,9 @@ export default function NewRequestPage() {
                 What happens next
               </p>
               <p className="mt-1 text-sm leading-6 text-zinc-600">
-                Your request goes live, gardeners send offers, you choose who to
-                accept, then you pay through Stripe to confirm the booking.
+                {invitedGardener
+                  ? `${invitedGardener.full_name || "The gardener"} receives a private invitation. You can message, agree the total price, then book and pay securely in the same conversation.`
+                  : "Your request goes live, gardeners respond with a total price, and you choose who to book and pay securely through Stripe."}
               </p>
             </div>
           </aside>
