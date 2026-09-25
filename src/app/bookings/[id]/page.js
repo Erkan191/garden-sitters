@@ -447,6 +447,15 @@ export default function BookingDetailPage() {
                 >
                   Open chat
                 </Link>
+
+                {isOwner && booking.status === "completed" && (
+                  <Link
+                    href={`/requests/new?gardener=${booking.gardener_id}`}
+                    className={`w-full sm:w-auto ${secondaryButtonClass}`}
+                  >
+                    Book {gardenerName} again
+                  </Link>
+                )}
               </div>
             </section>
 
