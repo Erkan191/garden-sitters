@@ -205,7 +205,7 @@ function getPayoutStatusBadgeClass(status) {
 }
 
 function getPayoutStatusLabel(status) {
-  if (status === "paid") return "Transfer released";
+  if (status === "paid") return "Gardener payment recorded";
   if (status === "pending") return "Transfer pending";
   if (status === "failed") return "Transfer failed";
   return "Transfer not started";
@@ -1381,7 +1381,7 @@ export default function RequestDetailPage() {
                   </p>
                   {booking && (
                     <p>
-                      <span className="font-medium text-zinc-900">Transfer:</span>{" "}
+                      <span className="font-medium text-zinc-900">Gardener payment:</span>{" "}
                       {payoutStatusLabel}
                     </p>
                   )}
@@ -1420,7 +1420,7 @@ export default function RequestDetailPage() {
                 Platform fee: {formatPrice(booking.platform_fee_gbp) || "No fee"}
               </p>
 
-              <p>Transfer status: {payoutStatusLabel}</p>
+              <p>Gardener payment: {payoutStatusLabel}</p>
 
               {booking.created_at && (
                 <p>Created: {formatDateTime(booking.created_at)}</p>

@@ -51,7 +51,7 @@ function getStatusBadgeClass(status) {
 }
 
 function getPayoutStatusLabel(status) {
-  if (status === "paid") return "Transfer released";
+  if (status === "paid") return "Gardener payment recorded";
   if (status === "pending") return "Transfer pending";
   if (status === "failed") return "Transfer failed";
   return "Transfer not started";
@@ -250,7 +250,7 @@ export default function BookingsPage() {
                         )}
 
                         <p className="mt-1 text-sm text-zinc-600">
-                          Transfer: {getPayoutStatusLabel(b.payout_status || "not_started")}
+                          Gardener payment: {getPayoutStatusLabel(b.payout_status || "not_started")}
                         </p>
                       </div>
 

@@ -404,8 +404,8 @@ export default function NewRequestPage() {
               </p>
             </div>
 
-            <SafetyNotice title="Before posting">
-              Keep public details broad. Do not share exact addresses, access
+            <SafetyNotice title={invitedGardener ? "Before sending" : "Before posting"}>
+              {invitedGardener ? "Keep sensitive access details private for now." : "Keep public details broad."} Do not share exact addresses, access
               codes, key locations, alarm information, or other sensitive access
               details until you are comfortable with the gardener. You are
               responsible for agreeing dates, price, access, keys, and care

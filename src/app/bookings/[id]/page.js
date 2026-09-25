@@ -66,7 +66,7 @@ function getPayoutStatusBadgeClass(status) {
 }
 
 function getPayoutStatusLabel(status) {
-  if (status === "paid") return "Transfer released";
+  if (status === "paid") return "Gardener payment recorded";
   if (status === "pending") return "Transfer pending";
   if (status === "failed") return "Transfer failed";
   return "Transfer not started";
