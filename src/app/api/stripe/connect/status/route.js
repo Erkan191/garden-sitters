@@ -59,7 +59,7 @@ export async function POST(request) {
 
     const { data: profile, error: profileErr } = await supabaseAdmin
       .from("profiles")
-      .select("stripe_account_id")
+      .select("stripe_account_id, country")
       .eq("id", userId)
       .maybeSingle();
 
@@ -70,7 +70,8 @@ export async function POST(request) {
 
     const acct = await stripe.accounts.retrieve(profile.stripe_account_id);
 
-    const directChargesReady = isDirectChargeAccount(acct);
+    const directChargesReady =
+      isDirectChargeAccount(acct) && acct.country === profile.country;
     const onboardingComplete = Boolean(acct.details_submitted) && directChargesReady;
 
     const { error: updateErr } = await supabaseAdmin
@@ -90,6 +91,8 @@ export async function POST(request) {
       details_submitted: acct.details_submitted,
       charges_enabled: acct.charges_enabled,
       payouts_enabled: acct.payouts_enabled,
+      country: acct.country,
+      profileCountry: profile.country,
       onboardingComplete,
       directChargesReady,
       migrationRequired:

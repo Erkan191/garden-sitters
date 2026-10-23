@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import { formatMoney, getMarket, useSelectedCountry } from "@/lib/markets";
 
 function buildReviewStats(reviews) {
   const map = {};
@@ -89,20 +90,6 @@ function formatDateRange(start, end) {
   return `${formatShortDate(start)} → ${formatShortDate(end)}`;
 }
 
-function formatPrice(value) {
-  if (value == null) return null;
-  const number = Number(value);
-
-  if (!Number.isFinite(number)) return null;
-
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
-}
-
 function getStatusBadgeClass(status) {
   if (status === "open") {
     return "bg-emerald-50 text-emerald-800 border-emerald-100";
@@ -149,6 +136,8 @@ function friendlyError(message) {
 }
 
 export default function RequestsPage() {
+  const [country] = useSelectedCountry();
+  const market = getMarket(country);
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState([]);
   const [profilesById, setProfilesById] = useState({});
@@ -171,6 +160,8 @@ export default function RequestsPage() {
     const postcode = params.get("postcode");
 
     if (postcode) {
+      // This one-time URL hydration intentionally seeds the client-side filter.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPostcodeQuery(postcode);
     }
   }, []);
@@ -186,9 +177,10 @@ export default function RequestsPage() {
       const { data, error } = await supabase
         .from("care_requests")
         .select(
-          "id, owner_id, title, postcode, start_date, end_date, price_offered_gbp, status, created_at, visit_frequency, need_watering, need_harvesting, has_greenhouse, has_veg_beds, has_pots, has_seedlings"
+          "id, owner_id, title, postcode, start_date, end_date, price_offered, country, currency, status, created_at, visit_frequency, need_watering, need_harvesting, has_greenhouse, has_veg_beds, has_pots, has_seedlings"
         )
         .eq("status", "open")
+        .eq("country", country)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -266,7 +258,7 @@ export default function RequestsPage() {
     }
 
     load();
-  }, []);
+  }, [country]);
 
   const requestCards = useMemo(() => {
     return requests.map((request) => {
@@ -279,7 +271,7 @@ export default function RequestsPage() {
         request.start_date,
         request.end_date
       );
-      const formattedPrice = formatPrice(request.price_offered_gbp);
+      const formattedPrice = formatMoney(request.price_offered, request.currency);
       const statusLabel = getStatusLabel(request.status);
       const statusBadgeClass = getStatusBadgeClass(request.status);
 
@@ -334,14 +326,14 @@ export default function RequestsPage() {
       }
 
       if (sortBy === "lowest_price") {
-        const aPrice = a.price_offered_gbp ?? Number.POSITIVE_INFINITY;
-        const bPrice = b.price_offered_gbp ?? Number.POSITIVE_INFINITY;
+        const aPrice = a.price_offered ?? Number.POSITIVE_INFINITY;
+        const bPrice = b.price_offered ?? Number.POSITIVE_INFINITY;
         return aPrice - bPrice;
       }
 
       if (sortBy === "highest_price") {
-        const aPrice = a.price_offered_gbp ?? Number.NEGATIVE_INFINITY;
-        const bPrice = b.price_offered_gbp ?? Number.NEGATIVE_INFINITY;
+        const aPrice = a.price_offered ?? Number.NEGATIVE_INFINITY;
+        const bPrice = b.price_offered ?? Number.NEGATIVE_INFINITY;
         return bPrice - aPrice;
       }
 
@@ -403,6 +395,9 @@ export default function RequestsPage() {
                 Browse live requests before signing up. Filter by area, visit
                 pattern, and practical growing tasks like watering, harvesting,
                 seedlings, greenhouse care, pots, and veg beds.
+              </p>
+              <p className="mt-2 text-sm font-semibold text-emerald-900">
+                Showing {market.flag} {market.fullLabel} jobs · prices in {market.currency}
               </p>
             </div>
 

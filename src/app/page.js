@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { BetaNotice } from "./LaunchNotices";
+import { useSelectedCountry } from "@/lib/markets";
+import { formatMoney, getMarket } from "@/lib/marketConfig";
 
 const buttonBase = "wmp-button w-full sm:w-auto";
 const secondaryButton = `${buttonBase} wmp-button-secondary`;
@@ -189,7 +193,7 @@ function StepList({ title, steps, accent = "emerald" }) {
   );
 }
 
-function GardenPanel() {
+function GardenPanel({ currency }) {
   return (
     <div className="relative mx-auto w-full max-w-xl lg:self-start lg:-mt-3">
       <div className="mb-3 flex justify-center lg:mb-4">
@@ -245,7 +249,9 @@ function GardenPanel() {
 
           <div className="rounded-lg border border-emerald-900/10 bg-white p-3">
             <p className="text-xs font-bold text-zinc-500">Offer</p>
-            <p className="mt-1 text-2xl font-bold text-emerald-950">£28</p>
+            <p className="mt-1 text-2xl font-bold text-emerald-950">
+              {formatMoney(28, currency)}
+            </p>
             <p className="mt-1 text-xs leading-5 text-zinc-600">
               4 visits, greenhouse and pots
             </p>
@@ -269,6 +275,9 @@ function GardenPanel() {
 }
 
 export default function HomePage() {
+  const [country] = useSelectedCountry();
+  const market = getMarket(country);
+
   return (
     <main className="text-zinc-950">
       <section className="relative overflow-hidden border-b border-emerald-950/10 bg-[#f7f7f1]">
@@ -355,7 +364,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <GardenPanel />
+          <GardenPanel currency={market.currency} />
         </div>
       </section>
 

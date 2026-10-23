@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { formatMoney, getMarket } from "@/lib/marketConfig";
 import { PaymentSafetyNotice, SafetyNotice } from "../../LaunchNotices";
 
 function buildReviewStats(reviews) {
@@ -145,20 +146,6 @@ function formatDateTime(value) {
   return new Date(value).toLocaleString();
 }
 
-function formatPrice(value) {
-  if (value == null) return null;
-  const number = Number(value);
-
-  if (!Number.isFinite(number)) return null;
-
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
-}
-
 function getStatusBadgeClass(status) {
   if (status === "open") return "bg-emerald-50 text-emerald-800 border-emerald-100";
   if (status === "accepted") return "bg-amber-50 text-amber-800 border-amber-100";
@@ -262,8 +249,8 @@ function NextStepPanel({ step }) {
   );
 }
 
-const MAX_PRICE_GBP = 999999.99;
-const MIN_PAID_BOOKING_GBP = 5;
+const MAX_PRICE = 999999.99;
+const MIN_PAID_BOOKING = 5;
 
 export default function RequestDetailPage() {
   const router = useRouter();
@@ -324,7 +311,7 @@ export default function RequestDetailPage() {
     if (user) {
       const { data: offersData, error: offersError } = await supabase
         .from("offers")
-        .select("id, message, proposed_price_gbp, status, created_at, gardener_id")
+        .select("id, message, proposed_price, country, currency, status, created_at, gardener_id")
         .eq("request_id", id)
         .order("created_at", { ascending: false });
 
@@ -343,7 +330,7 @@ export default function RequestDetailPage() {
     const { data: bookingRow, error: bookingError } = await supabase
       .from("bookings")
       .select(
-        "id, request_id, offer_id, owner_id, gardener_id, amount_gbp, platform_fee_gbp, status, stripe_checkout_session_id, stripe_payment_intent_id, stripe_charge_model, created_at, payout_status, payout_error, completed_at"
+        "id, request_id, offer_id, owner_id, gardener_id, amount, platform_fee, country, currency, status, stripe_checkout_session_id, stripe_payment_intent_id, stripe_charge_model, created_at, payout_status, payout_error, completed_at"
       )
       .eq("request_id", id)
       .order("created_at", { ascending: false })
@@ -395,6 +382,8 @@ export default function RequestDetailPage() {
           full_name,
           avatar_url,
           location,
+          country,
+          currency,
           skill_watering,
           skill_harvesting,
           skill_greenhouse,
@@ -466,17 +455,27 @@ export default function RequestDetailPage() {
       return;
     }
 
+    const currentProfile = profilesById[user.id];
+    if (!currentProfile?.country) {
+      setMsg("Complete your profile and choose your country before sending an offer.");
+      return;
+    }
+    if (currentProfile.country !== req?.country) {
+      setMsg(`This job is in ${getMarket(req?.country).fullLabel}. You can only offer on jobs in your profile country.`);
+      return;
+    }
+
     const parsedOfferPrice = offerPrice === "" ? null : Number(offerPrice);
 
     if (
       parsedOfferPrice !== null &&
       (!Number.isFinite(parsedOfferPrice) ||
-        parsedOfferPrice < MIN_PAID_BOOKING_GBP ||
-        parsedOfferPrice > MAX_PRICE_GBP ||
+        parsedOfferPrice < MIN_PAID_BOOKING ||
+        parsedOfferPrice > MAX_PRICE ||
         Math.round(parsedOfferPrice * 100) !== parsedOfferPrice * 100)
     ) {
       setMsg(
-        "Price must be between £5.00 and £999,999.99, with no more than 2 decimal places."
+        `Price must be between ${formatMoney(MIN_PAID_BOOKING, req?.currency)} and ${formatMoney(MAX_PRICE, req?.currency)}, with no more than 2 decimal places.`
       );
       return;
     }
@@ -485,7 +484,9 @@ export default function RequestDetailPage() {
       request_id: id,
       gardener_id: user.id,
       message: offerMessage.trim() === "" ? null : offerMessage.trim(),
-      proposed_price_gbp: parsedOfferPrice,
+      proposed_price: parsedOfferPrice,
+      country: req.country,
+      currency: req.currency,
     });
 
     if (error) {
@@ -982,7 +983,7 @@ export default function RequestDetailPage() {
   const payoutStatusLabel = getPayoutStatusLabel(payoutStatus);
   const payoutStatusBadgeClass = getPayoutStatusBadgeClass(payoutStatus);
   const formattedRequestDateRange = formatDateRange(req?.start_date, req?.end_date);
-  const formattedRequestPrice = formatPrice(req?.price_offered_gbp);
+  const formattedRequestPrice = formatMoney(req?.price_offered, req?.currency);
 
   const myExistingOffer = offers.find((o) => o.gardener_id === userId);
 
@@ -1045,7 +1046,7 @@ export default function RequestDetailPage() {
         missingSkills: matchData.missingSkills,
         statusLabel: getStatusLabel(offer.status),
         statusBadgeClass: getOfferStatusBadgeClass(offer.status),
-        formattedPrice: formatPrice(offer.proposed_price_gbp),
+        formattedPrice: formatMoney(offer.proposed_price, offer.currency),
       };
     });
   }, [offers, profilesById, reviewStatsByUserId, req]);
@@ -1414,10 +1415,10 @@ export default function RequestDetailPage() {
 
               <p>Trust: {bookingGardenerRating}</p>
 
-              <p>Amount: {formatPrice(booking.amount_gbp) || "No amount"}</p>
+              <p>Amount: {formatMoney(booking.amount, booking.currency) || "No amount"}</p>
 
               <p>
-                Platform fee: {formatPrice(booking.platform_fee_gbp) || "No fee"}
+                Platform fee: {formatMoney(booking.platform_fee, booking.currency) || "No fee"}
               </p>
 
               <p>Gardener payment: {payoutStatusLabel}</p>
@@ -1629,7 +1630,7 @@ export default function RequestDetailPage() {
 
               <div>
                 <label className="text-sm text-zinc-700">
-                  Total price (GBP) (optional)
+                  Total price ({req?.currency || "GBP"}) (optional)
                 </label>
                 <input
                   className="mt-1 wmp-field rounded-lg"
@@ -1642,7 +1643,7 @@ export default function RequestDetailPage() {
                   inputMode="decimal"
                 />
                 <p className="mt-1 text-xs text-zinc-500">
-                  Minimum £5.00. Use the total price for the whole job.
+                  Minimum {formatMoney(MIN_PAID_BOOKING, req?.currency)}. Use the total price for the whole job.
                 </p>
               </div>
 
@@ -1678,8 +1679,8 @@ export default function RequestDetailPage() {
                 {getStatusLabel(myExistingOffer.status)}
               </span>
 
-              {myExistingOffer.proposed_price_gbp != null && (
-                <span>• {formatPrice(myExistingOffer.proposed_price_gbp)}</span>
+              {myExistingOffer.proposed_price != null && (
+                <span>• {formatMoney(myExistingOffer.proposed_price, myExistingOffer.currency)}</span>
               )}
             </div>
 

@@ -42,7 +42,7 @@ export async function POST(request) {
   const { data: booking, error: bookErr } = await supabase
     .from("bookings")
     .select(
-      "id, owner_id, gardener_id, amount_gbp, platform_fee_gbp, status, stripe_payment_intent_id, stripe_account_id, stripe_transfer_id, stripe_charge_model, payout_status"
+      "id, owner_id, gardener_id, amount, platform_fee, currency, status, stripe_payment_intent_id, stripe_account_id, stripe_transfer_id, stripe_charge_model, payout_status"
     )
     .eq("id", bookingId)
     .maybeSingle();
@@ -146,8 +146,8 @@ export async function POST(request) {
     return Response.json({ error: "Gardener Stripe onboarding not complete" }, { status: 400 });
   }
 
-  const amount = Number(booking.amount_gbp);
-  const fee = Number(booking.platform_fee_gbp);
+  const amount = Number(booking.amount);
+  const fee = Number(booking.platform_fee);
   const payout = amount - fee;
 
   if (!payout || Number.isNaN(payout) || payout <= 0) {
@@ -182,7 +182,7 @@ export async function POST(request) {
     const transfer = await stripe.transfers.create(
       {
         amount: payoutPence,
-        currency: "gbp",
+        currency: booking.currency.toLowerCase(),
         destination: gardenerProfile.stripe_account_id,
         source_transaction: sourceChargeId,
         metadata: {

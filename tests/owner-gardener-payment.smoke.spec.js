@@ -189,7 +189,7 @@ async function submitOffer(page, requestTitle) {
 }
 
 async function startCheckout(page, requestTitle) {
-  const checkoutButtonName = /book .+£5\.00|confirm booking and pay/i;
+  const checkoutButtonName = /book .+(?:£|A\$|NZ\$)5\.00|confirm booking and pay/i;
   const detailPayButton = page
     .getByRole("button", { name: checkoutButtonName })
     .first();

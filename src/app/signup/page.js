@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { getMarket, MARKET_LIST, useSelectedCountry } from "@/lib/markets";
 import { BetaNotice } from "../LaunchNotices";
 
 function SignupPageContent() {
@@ -14,6 +15,8 @@ function SignupPageContent() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [msg, setMsg] = useState("");
+  const [country, setCountry] = useSelectedCountry();
+  const market = getMarket(country);
 
   const isGardenerIntent = searchParams.get("intent") === "gardener";
   const onboardingPath = isGardenerIntent
@@ -30,6 +33,8 @@ function SignupPageContent() {
       options: {
         data: {
           signup_intent: isGardenerIntent ? "gardener" : "owner",
+          country,
+          currency: market.currency,
         },
       },
     });
@@ -125,6 +130,24 @@ function SignupPageContent() {
           </div>
 
           <form onSubmit={handleSignup} className="mt-6 space-y-4">
+            <div>
+              <label className="wmp-label">Country</label>
+              <select
+                className={inputClass}
+                value={country}
+                onChange={(event) => setCountry(event.target.value)}
+                required
+              >
+                {MARKET_LIST.map((item) => (
+                  <option key={item.country} value={item.country}>
+                    {item.flag} {item.fullLabel}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-zinc-500">
+                Your jobs, gardeners, bookings, and payments will use {market.currency}.
+              </p>
+            </div>
             <div>
               <label className="wmp-label">Email</label>
               <input

@@ -5,10 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { MARKET_LIST, useSelectedCountry } from "@/lib/markets";
 
 export default function Header() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [country, setCountry] = useSelectedCountry();
 
   useEffect(() => {
     let mounted = true;
@@ -60,6 +62,21 @@ export default function Header() {
         </Link>
 
         <nav className="flex flex-wrap items-center gap-1.5 text-sm font-semibold text-zinc-700">
+          <label className="relative">
+            <span className="sr-only">Current country</span>
+            <select
+              aria-label="Current country"
+              value={country}
+              onChange={(event) => setCountry(event.target.value)}
+              className="cursor-pointer rounded-lg border border-emerald-900/15 bg-white px-3 py-2 pr-8 font-semibold text-emerald-950 shadow-sm hover:border-emerald-900/30"
+            >
+              {MARKET_LIST.map((market) => (
+                <option key={market.country} value={market.country}>
+                  {market.flag} {market.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <Link
             href="/"
             className="rounded-lg px-3 py-2 hover:bg-emerald-50 hover:text-emerald-950"

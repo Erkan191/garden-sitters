@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { formatMoney } from "@/lib/marketConfig";
 
 function formatShortDate(value) {
   if (!value) return "";
@@ -20,18 +21,8 @@ function formatDateRange(start, end) {
   return `${formatShortDate(start)} → ${formatShortDate(end)}`;
 }
 
-function formatPrice(value) {
-  if (value == null) return null;
-  const number = Number(value);
-
-  if (!Number.isFinite(number)) return null;
-
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
+function formatPrice(value, currency) {
+  return formatMoney(value, currency);
 }
 
 function formatVisitFrequency(value) {
@@ -258,14 +249,14 @@ export default function DashboardPage() {
         supabase
           .from("care_requests")
           .select(
-            "id, owner_id, title, postcode, start_date, end_date, price_offered_gbp, status, created_at, visit_frequency, need_watering, need_harvesting, has_greenhouse, has_veg_beds, has_pots, has_seedlings"
+            "id, owner_id, title, postcode, start_date, end_date, price_offered, country, currency, status, created_at, visit_frequency, need_watering, need_harvesting, has_greenhouse, has_veg_beds, has_pots, has_seedlings"
           )
           .eq("owner_id", currentUser.id)
           .order("created_at", { ascending: false }),
 
         supabase
           .from("offers")
-          .select("id, request_id, message, proposed_price_gbp, status, created_at")
+          .select("id, request_id, message, proposed_price, country, currency, status, created_at")
           .eq("gardener_id", currentUser.id)
           .order("created_at", { ascending: false }),
 
@@ -344,7 +335,7 @@ export default function DashboardPage() {
         } else {
           const { data: ownerOfferRows, error: ownerOfferError } = await supabase
             .from("offers")
-            .select("id, request_id, proposed_price_gbp, status")
+            .select("id, request_id, proposed_price, country, currency, status")
             .in("request_id", ownerRequestIds);
 
           if (ownerOfferError) {
@@ -408,7 +399,7 @@ export default function DashboardPage() {
 
       const { data: relatedRequestRows, error: relatedRequestsError } = await supabase
         .from("care_requests")
-        .select("id, title, postcode, start_date, end_date, status")
+        .select("id, title, postcode, start_date, end_date, country, currency, status")
         .in("id", requestIds);
 
       if (relatedRequestsError) {
@@ -1058,7 +1049,7 @@ export default function DashboardPage() {
                             </span>
                           )}
 
-                          <span>{formatPrice(request.price_offered_gbp) || "No price"}</span>
+                          <span>{formatPrice(request.price_offered, request.currency) || "No price"}</span>
                           <span>•</span>
                           <span>{unreadCount} unread</span>
                         </div>
@@ -1191,8 +1182,8 @@ export default function DashboardPage() {
                           )}
 
                           <span>
-                            {offer.proposed_price_gbp != null
-                              ? formatPrice(offer.proposed_price_gbp)
+                            {offer.proposed_price != null
+                              ? formatPrice(offer.proposed_price, offer.currency)
                               : "No price"}
                           </span>
                           <span>•</span>
@@ -1342,7 +1333,7 @@ export default function DashboardPage() {
 
                       <div className="sm:text-right">
                         <div className="text-sm font-medium text-zinc-700">
-                          {formatPrice(request.price_offered_gbp) || "No price"}
+                          {formatPrice(request.price_offered, request.currency) || "No price"}
                         </div>
 
                         <div className="mt-1 text-sm text-zinc-500">
@@ -1505,9 +1496,9 @@ export default function DashboardPage() {
                             {getStatusLabel(offer.status)}
                           </span>
 
-                          {offer.proposed_price_gbp != null && (
+                          {offer.proposed_price != null && (
                             <span className="text-sm text-zinc-600">
-                              {formatPrice(offer.proposed_price_gbp)}
+                              {formatPrice(offer.proposed_price, offer.currency)}
                             </span>
                           )}
 

@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { formatMoney, getMarket, useSelectedCountry } from "@/lib/markets";
 import { BetaNotice, SafetyNotice } from "../../LaunchNotices";
 
-const MAX_PRICE_GBP = 999999.99;
-const MIN_PAID_BOOKING_GBP = 5;
+const MAX_PRICE = 999999.99;
+const MIN_PAID_BOOKING = 5;
 
 function friendlyError(message) {
   const text = String(message || "");
@@ -46,6 +47,8 @@ function CareCheckbox({ checked, onChange, label, helper }) {
 
 export default function NewRequestPage() {
   const router = useRouter();
+  const [country] = useSelectedCountry();
+  const market = getMarket(country);
   const [msg, setMsg] = useState("");
   const [invitedGardener, setInvitedGardener] = useState(null);
   const [invitedGardenerId, setInvitedGardenerId] = useState(null);
@@ -78,12 +81,15 @@ export default function NewRequestPage() {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url, location")
+        .select("id, full_name, avatar_url, location, country, currency")
         .eq("id", gardenerId)
         .maybeSingle();
 
       if (error || !data) {
         setMsg(error?.message || "That gardener profile is no longer available.");
+        setInvitedGardenerId(null);
+      } else if (data.country !== country) {
+        setMsg(`That gardener is registered in ${getMarket(data.country).fullLabel}. Switch country to send them a request.`);
         setInvitedGardenerId(null);
       } else {
         setInvitedGardener(data);
@@ -93,7 +99,7 @@ export default function NewRequestPage() {
     }
 
     loadInvitedGardener();
-  }, []);
+  }, [country]);
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -113,6 +119,27 @@ export default function NewRequestPage() {
       return;
     }
 
+    const { data: ownerProfile, error: ownerProfileError } = await supabase
+      .from("profiles")
+      .select("country, currency")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (ownerProfileError || !ownerProfile) {
+      setMsg("Complete your profile and choose your country before posting a request.");
+      return;
+    }
+
+    if (ownerProfile.country !== country) {
+      setMsg(`Your profile is registered in ${getMarket(ownerProfile.country).fullLabel}. Switch the header country or update your profile before posting.`);
+      return;
+    }
+
+    if (invitedGardener && invitedGardener.country !== ownerProfile.country) {
+      setMsg("Direct requests can only be sent to gardeners in your country.");
+      return;
+    }
+
     if (title.trim() === "") {
       setMsg("Please add a title for your request.");
       return;
@@ -128,12 +155,12 @@ export default function NewRequestPage() {
     if (
       parsedPrice !== null &&
         (!Number.isFinite(parsedPrice) ||
-        parsedPrice < MIN_PAID_BOOKING_GBP ||
-        parsedPrice > MAX_PRICE_GBP ||
+        parsedPrice < MIN_PAID_BOOKING ||
+        parsedPrice > MAX_PRICE ||
         Math.round(parsedPrice * 100) !== parsedPrice * 100)
     ) {
       setMsg(
-        "Price must be between £5.00 and £999,999.99, with no more than 2 decimal places."
+        `Price must be between ${formatMoney(MIN_PAID_BOOKING, ownerProfile.currency)} and ${formatMoney(MAX_PRICE, ownerProfile.currency)}, with no more than 2 decimal places.`
       );
       return;
     }
@@ -147,7 +174,9 @@ export default function NewRequestPage() {
         postcode: postcode.trim() === "" ? null : postcode.trim(),
         start_date: startDate,
         end_date: endDate,
-        price_offered_gbp: parsedPrice,
+        price_offered: parsedPrice,
+        country: ownerProfile.country,
+        currency: ownerProfile.currency,
         visit_frequency: visitFrequency,
         need_watering: needWatering,
         need_harvesting: needHarvesting,
@@ -385,7 +414,7 @@ export default function NewRequestPage() {
             </div>
 
             <div>
-              <label className={labelClass}>Budget / price offered (GBP) optional</label>
+              <label className={labelClass}>Budget / price offered ({market.currency}) optional</label>
               <input
                 className={inputClass}
                 type="number"
@@ -400,7 +429,7 @@ export default function NewRequestPage() {
               <p className="mt-1 text-xs leading-5 text-zinc-500">
                 Gardeners can send their own total price. When you book, you pay
                 securely through Stripe. Paid bookings start
-                at £5 so fees and bank payouts work reliably.
+                at {formatMoney(MIN_PAID_BOOKING, market.currency)} so fees and bank payouts work reliably.
               </p>
             </div>
 

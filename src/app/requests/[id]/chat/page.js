@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { formatMoney, getMarket } from "@/lib/marketConfig";
 
 function formatDateRange(start, end) {
   if (!start && !end) return "Dates to be agreed";
@@ -58,7 +59,7 @@ export default function ChatPage() {
 
     const { data: requestData, error: requestError } = await supabase
       .from("care_requests")
-      .select("id, title, status, owner_id, invited_gardener_id, invitation_status, postcode, start_date, end_date, need_watering, need_harvesting, has_greenhouse, has_veg_beds, has_pots, has_seedlings")
+      .select("id, title, status, owner_id, invited_gardener_id, invitation_status, postcode, start_date, end_date, country, currency, need_watering, need_harvesting, has_greenhouse, has_veg_beds, has_pots, has_seedlings")
       .eq("id", id)
       .maybeSingle();
     if (requestError || !requestData) {
@@ -71,8 +72,8 @@ export default function ChatPage() {
 
     const [messageResult, offerResult, bookingResult] = await Promise.all([
       supabase.from("messages").select("id, body, sender_id, created_at").eq("request_id", id).order("created_at", { ascending: true }),
-      supabase.from("offers").select("id, gardener_id, proposed_price_gbp, message, status, created_at").eq("request_id", id).order("created_at", { ascending: false }),
-      supabase.from("bookings").select("id, offer_id, gardener_id, owner_id, amount_gbp, status").eq("request_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("offers").select("id, gardener_id, proposed_price, country, currency, message, status, created_at").eq("request_id", id).order("created_at", { ascending: false }),
+      supabase.from("bookings").select("id, offer_id, gardener_id, owner_id, amount, country, currency, status").eq("request_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
     const error = messageResult.error || offerResult.error || bookingResult.error;
     if (error) setMsg(error.message);
@@ -87,7 +88,7 @@ export default function ChatPage() {
       bookingResult.data?.gardener_id,
     ].filter(Boolean))];
     if (profileIds.length) {
-      const { data } = await supabase.from("profiles").select("id, full_name, avatar_url, stripe_direct_charges_ready").in("id", profileIds);
+      const { data } = await supabase.from("profiles").select("id, full_name, avatar_url, country, currency, stripe_direct_charges_ready").in("id", profileIds);
       setProfiles(Object.fromEntries((data || []).map((profile) => [profile.id, profile])));
     }
     setLoading(false);
@@ -128,14 +129,20 @@ export default function ChatPage() {
     event.preventDefault();
     const amount = Number(offerPrice);
     if (!Number.isFinite(amount) || amount < 5 || Math.round(amount * 100) !== amount * 100) {
-      setMsg("Enter a total price of at least £5, with no more than two decimal places.");
+      setMsg(`Enter a total price of at least ${formatMoney(5, req?.currency)}, with no more than two decimal places.`);
+      return;
+    }
+    if (profiles[userId]?.country !== req?.country) {
+      setMsg(`This request is in ${getMarket(req?.country).fullLabel}. Your profile must be in the same country to respond.`);
       return;
     }
     setWorking(true);
     const { error } = await supabase.from("offers").insert({
       request_id: id,
       gardener_id: userId,
-      proposed_price_gbp: amount,
+      proposed_price: amount,
+      country: req.country,
+      currency: req.currency,
       message: offerMessage.trim() || null,
       status: "pending",
     });
@@ -224,10 +231,10 @@ export default function ChatPage() {
 
         {isPaid && <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-emerald-950"><p className="text-lg font-bold">✓ You’re booked</p><p className="mt-1 text-sm">{gardener?.full_name || "Your gardener"} will look after the garden. Keep practical details in this conversation.</p>{booking?.id && <Link href={`/bookings/${booking.id}`} className="mt-3 inline-flex font-bold underline">View booking</Link>}</section>}
 
-        {canOffer && <section className="wmp-panel rounded-lg"><p className="wmp-eyebrow">Your response</p><h2 className="mt-1 text-2xl font-bold text-zinc-900">Can you help?</h2><form onSubmit={respondWithOffer} className="mt-5 grid gap-4 md:grid-cols-[0.3fr_1fr_auto] md:items-end"><label className="wmp-label">Total price (£)<input className="mt-1 wmp-field rounded-lg" type="number" min="5" step="0.01" value={offerPrice} onChange={(e) => setOfferPrice(e.target.value)} placeholder="10" required /></label><label className="wmp-label">Message (optional)<input className="mt-1 wmp-field rounded-lg" value={offerMessage} onChange={(e) => setOfferMessage(e.target.value)} placeholder="I can help on those dates." /></label><button disabled={working} className="wmp-button wmp-button-primary">I can help</button></form><button type="button" disabled={working} onClick={declineInvitation} className="mt-3 text-sm font-bold text-zinc-600 underline">Decline</button></section>}
+        {canOffer && <section className="wmp-panel rounded-lg"><p className="wmp-eyebrow">Your response</p><h2 className="mt-1 text-2xl font-bold text-zinc-900">Can you help?</h2><form onSubmit={respondWithOffer} className="mt-5 grid gap-4 md:grid-cols-[0.3fr_1fr_auto] md:items-end"><label className="wmp-label">Total price ({req?.currency})<input className="mt-1 wmp-field rounded-lg" type="number" min="5" step="0.01" value={offerPrice} onChange={(e) => setOfferPrice(e.target.value)} placeholder="10" required /></label><label className="wmp-label">Message (optional)<input className="mt-1 wmp-field rounded-lg" value={offerMessage} onChange={(e) => setOfferMessage(e.target.value)} placeholder="I can help on those dates." /></label><button disabled={working} className="wmp-button wmp-button-primary">I can help</button></form><button type="button" disabled={working} onClick={declineInvitation} className="mt-3 text-sm font-bold text-zinc-600 underline">Decline</button></section>}
         {isInvitedGardener && req?.invitation_status === "declined" && <section className="wmp-panel rounded-lg text-sm text-zinc-600">You declined this request.</section>}
-        {myOffer && !isPaid && <section className="wmp-panel rounded-lg"><p className="wmp-eyebrow">Price proposed</p><h2 className="mt-1 text-2xl font-bold text-zinc-900">£{Number(myOffer.proposed_price_gbp).toFixed(2)} total</h2><p className="mt-2 text-sm text-zinc-600">{myOffer.status === "accepted" ? "The owner agreed your price. Payment is the next step." : "Waiting for the owner to book."}</p></section>}
-        {isOwner && actionableOffer && !isPaid && <section className="wmp-panel rounded-lg border-emerald-100"><p className="wmp-eyebrow">Ready to book</p><h2 className="mt-1 text-2xl font-bold text-zinc-900">{gardener?.full_name || "Your gardener"} is available — £{Number(actionableOffer.proposed_price_gbp).toFixed(2)} total</h2><p className="mt-2 text-sm leading-6 text-zinc-600">Pay securely now to confirm the booking. Watch My Plot keeps its 15% fee and Stripe sends the gardener’s share to their Stripe balance.</p><button disabled={working || !gardener?.stripe_direct_charges_ready} onClick={() => startCheckout(actionableOffer)} className="mt-5 wmp-button wmp-button-primary disabled:cursor-not-allowed disabled:opacity-60">{working ? "Opening secure payment..." : `Book ${gardener?.full_name || "gardener"} — £${Number(actionableOffer.proposed_price_gbp).toFixed(2)}`}</button>{!gardener?.stripe_direct_charges_ready && <p className="mt-3 text-sm text-amber-700">The gardener needs to finish Stripe payout setup before payment can be taken.</p>}</section>}
+        {myOffer && !isPaid && <section className="wmp-panel rounded-lg"><p className="wmp-eyebrow">Price proposed</p><h2 className="mt-1 text-2xl font-bold text-zinc-900">{formatMoney(myOffer.proposed_price, myOffer.currency)} total</h2><p className="mt-2 text-sm text-zinc-600">{myOffer.status === "accepted" ? "The owner agreed your price. Payment is the next step." : "Waiting for the owner to book."}</p></section>}
+        {isOwner && actionableOffer && !isPaid && <section className="wmp-panel rounded-lg border-emerald-100"><p className="wmp-eyebrow">Ready to book</p><h2 className="mt-1 text-2xl font-bold text-zinc-900">{gardener?.full_name || "Your gardener"} is available — {formatMoney(actionableOffer.proposed_price, actionableOffer.currency)} total</h2><p className="mt-2 text-sm leading-6 text-zinc-600">Pay securely now to confirm the booking. Watch My Plot keeps its 15% fee and Stripe sends the gardener’s share to their Stripe balance.</p><button disabled={working || !gardener?.stripe_direct_charges_ready} onClick={() => startCheckout(actionableOffer)} className="mt-5 wmp-button wmp-button-primary disabled:cursor-not-allowed disabled:opacity-60">{working ? "Opening secure payment..." : `Book ${gardener?.full_name || "gardener"} — ${formatMoney(actionableOffer.proposed_price, actionableOffer.currency)}`}</button>{!gardener?.stripe_direct_charges_ready && <p className="mt-3 text-sm text-amber-700">The gardener needs to finish Stripe payout setup before payment can be taken.</p>}</section>}
 
         <section className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
           <div className="border-b border-stone-200 p-5 sm:p-6"><p className="wmp-eyebrow">Messages</p><h2 className="mt-1 text-2xl font-bold text-zinc-900">Conversation</h2></div>

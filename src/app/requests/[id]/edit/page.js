@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { formatMoney } from "@/lib/marketConfig";
 
-const MAX_PRICE_GBP = 999999.99;
-const MIN_PAID_BOOKING_GBP = 5;
+const MAX_PRICE = 999999.99;
+const MIN_PAID_BOOKING = 5;
 
 function CareCheckbox({ checked, onChange, label, helper }) {
   return (
@@ -42,6 +43,7 @@ export default function EditRequestPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState("GBP");
 
   const [visitFrequency, setVisitFrequency] = useState("daily");
   const [needWatering, setNeedWatering] = useState(true);
@@ -75,7 +77,8 @@ export default function EditRequestPage() {
           postcode,
           start_date,
           end_date,
-          price_offered_gbp,
+          price_offered,
+          currency,
           visit_frequency,
           need_watering,
           need_harvesting,
@@ -121,10 +124,11 @@ export default function EditRequestPage() {
       setStartDate(requestRow.start_date || "");
       setEndDate(requestRow.end_date || "");
       setPrice(
-        requestRow.price_offered_gbp == null
+        requestRow.price_offered == null
           ? ""
-          : String(requestRow.price_offered_gbp)
+          : String(requestRow.price_offered)
       );
+      setCurrency(requestRow.currency || "GBP");
 
       setVisitFrequency(requestRow.visit_frequency || "daily");
       setNeedWatering(Boolean(requestRow.need_watering));
@@ -175,12 +179,12 @@ export default function EditRequestPage() {
     if (
       parsedPrice !== null &&
       (!Number.isFinite(parsedPrice) ||
-        parsedPrice < MIN_PAID_BOOKING_GBP ||
-        parsedPrice > MAX_PRICE_GBP ||
+        parsedPrice < MIN_PAID_BOOKING ||
+        parsedPrice > MAX_PRICE ||
         Math.round(parsedPrice * 100) !== parsedPrice * 100)
     ) {
       setMsg(
-        "Price must be between £5.00 and £999,999.99, with no more than 2 decimal places."
+        `Price must be between ${formatMoney(MIN_PAID_BOOKING, currency)} and ${formatMoney(MAX_PRICE, currency)}, with no more than 2 decimal places.`
       );
       return;
     }
@@ -193,7 +197,7 @@ export default function EditRequestPage() {
         postcode: postcode.trim() === "" ? null : postcode.trim(),
         start_date: startDate,
         end_date: endDate,
-        price_offered_gbp: parsedPrice,
+        price_offered: parsedPrice,
         visit_frequency: visitFrequency,
         need_watering: needWatering,
         need_harvesting: needHarvesting,
@@ -432,7 +436,7 @@ export default function EditRequestPage() {
               </div>
 
               <div>
-                <label className={labelClass}>Price offered (£) optional</label>
+                <label className={labelClass}>Price offered ({currency}) optional</label>
                 <input
                   className={inputClass}
                   type="number"
@@ -445,7 +449,7 @@ export default function EditRequestPage() {
                   placeholder="e.g. 30"
                 />
                 <p className="mt-1 text-xs leading-5 text-zinc-500">
-                  Paid bookings start at £5 so fees and bank payouts work reliably.
+                  Paid bookings start at {formatMoney(MIN_PAID_BOOKING, currency)} so fees and bank payouts work reliably.
                 </p>
               </div>
 

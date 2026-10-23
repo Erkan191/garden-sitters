@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import { formatMoney, getMarket, useSelectedCountry } from "@/lib/markets";
 
 const skillFilters = [
   { key: "watering", label: "Watering" },
@@ -84,20 +85,6 @@ function averageRating(stats) {
   return stats.total / stats.count;
 }
 
-function formatPrice(value) {
-  if (value == null) return null;
-  const number = Number(value);
-
-  if (!Number.isFinite(number)) return null;
-
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
-}
-
 function friendlyError(message) {
   const text = String(message || "");
   const lower = text.toLowerCase();
@@ -145,13 +132,15 @@ function hasGardenerSignal(profile) {
     role === "both" ||
     Boolean(profile?.stripe_onboarding_complete) ||
     Boolean(profile?.stripe_account_id) ||
-    Boolean(profile?.price_per_visit_gbp) ||
+    Boolean(profile?.price_per_visit) ||
     Boolean(profile?.experience_level) ||
     tags.length > 0
   );
 }
 
 export default function SittersPage() {
+  const [country] = useSelectedCountry();
+  const market = getMarket(country);
   const [loading, setLoading] = useState(true);
   const [profiles, setProfiles] = useState([]);
   const [reviewStatsByUserId, setReviewStatsByUserId] = useState({});
@@ -166,6 +155,8 @@ export default function SittersPage() {
     const area = params.get("area") || params.get("postcode");
 
     if (area) {
+      // This one-time URL hydration intentionally seeds the client-side filter.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAreaQuery(area);
     }
   }, []);
@@ -178,8 +169,9 @@ export default function SittersPage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id, role, display_name, full_name, location, postcode, bio, avatar_url, skills, experience_level, price_per_visit_gbp, stripe_account_id, stripe_onboarding_complete, created_at, updated_at, skill_watering, skill_harvesting, skill_greenhouse, skill_veg_beds, skill_pots, skill_seedlings"
+          "id, role, display_name, full_name, location, postcode, bio, avatar_url, skills, experience_level, price_per_visit, country, currency, stripe_account_id, stripe_onboarding_complete, created_at, updated_at, skill_watering, skill_harvesting, skill_greenhouse, skill_veg_beds, skill_pots, skill_seedlings"
         )
+        .eq("country", country)
         .order("updated_at", { ascending: false });
 
       if (error) {
@@ -215,7 +207,7 @@ export default function SittersPage() {
     }
 
     load();
-  }, []);
+  }, [country]);
 
   const sitterCards = useMemo(() => {
     return profiles.map((profile) => {
@@ -229,7 +221,7 @@ export default function SittersPage() {
         "Area not listed";
       const skillTags = buildSkillTags(profile);
       const stats = reviewStatsByUserId[profile.id];
-      const price = formatPrice(profile.price_per_visit_gbp);
+      const price = formatMoney(profile.price_per_visit, profile.currency);
 
       return {
         ...profile,
@@ -274,8 +266,8 @@ export default function SittersPage() {
       }
 
       if (sortBy === "lowest_price") {
-        const aPrice = a.price_per_visit_gbp ?? Number.POSITIVE_INFINITY;
-        const bPrice = b.price_per_visit_gbp ?? Number.POSITIVE_INFINITY;
+        const aPrice = a.price_per_visit ?? Number.POSITIVE_INFINITY;
+        const bPrice = b.price_per_visit ?? Number.POSITIVE_INFINITY;
         return aPrice - bPrice;
       }
 
@@ -318,6 +310,9 @@ export default function SittersPage() {
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                 Browse local garden sitters before you post.
               </h1>
+              <p className="mt-2 text-sm font-semibold text-emerald-900">
+                Showing {market.flag} {market.fullLabel} gardeners · prices in {market.currency}
+              </p>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
                 Look through public gardener profiles, skills, reviews, and broad
                 areas first. When you find the right kind of help, post a request

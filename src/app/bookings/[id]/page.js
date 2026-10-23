@@ -4,21 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { formatMoney } from "@/lib/marketConfig";
 import { BetaNotice, PaymentSafetyNotice } from "../../LaunchNotices";
-
-function formatPrice(value) {
-  if (value == null) return "Not set";
-  const number = Number(value);
-
-  if (!Number.isFinite(number)) return "Not set";
-
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
-}
 
 function formatDateTime(value) {
   if (!value) return "";
@@ -355,12 +342,12 @@ export default function BookingDetailPage() {
               <div className="mt-4 space-y-3 text-sm text-zinc-600">
                 <p>
                   <span className="font-medium text-zinc-900">Amount:</span>{" "}
-                  {formatPrice(booking.amount_gbp)}
+                  {formatMoney(booking.amount, booking.currency) || "Not set"}
                 </p>
 
                 <p>
                   <span className="font-medium text-zinc-900">Platform fee:</span>{" "}
-                  {formatPrice(booking.platform_fee_gbp)}
+                  {formatMoney(booking.platform_fee, booking.currency) || "Not set"}
                 </p>
 
                 {booking.created_at && (

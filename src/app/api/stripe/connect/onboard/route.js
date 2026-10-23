@@ -61,11 +61,17 @@ export async function POST(request) {
     // direct-charge bookings because their fee payer is immutable.
     const { data: profile, error: profileErr } = await supabaseAdmin
       .from("profiles")
-      .select("stripe_account_id, stripe_legacy_account_id")
+      .select("stripe_account_id, stripe_legacy_account_id, country, currency")
       .eq("id", userId)
       .maybeSingle();
 
     if (profileErr) return Response.json({ error: profileErr.message }, { status: 400 });
+    if (!profile?.country || !profile?.currency) {
+      return Response.json(
+        { error: "Choose your country and save your profile before connecting Stripe." },
+        { status: 400 }
+      );
+    }
 
     let stripeAccountId = profile?.stripe_account_id;
     let existingAccount = null;
@@ -74,10 +80,14 @@ export async function POST(request) {
       existingAccount = await stripe.accounts.retrieve(stripeAccountId);
     }
 
-    if (!existingAccount || !isDirectChargeConfiguration(existingAccount)) {
+    if (
+      !existingAccount ||
+      !isDirectChargeConfiguration(existingAccount) ||
+      existingAccount.country !== profile.country
+    ) {
       const legacyAccountId = stripeAccountId || profile?.stripe_legacy_account_id || null;
       const account = await stripe.accounts.create({
-        country: "GB",
+        country: profile.country,
         email: userData.user.email || undefined,
         controller: {
           fees: { payer: "account" },
@@ -91,6 +101,8 @@ export async function POST(request) {
         },
         metadata: {
           watch_my_plot_user_id: userId,
+          watch_my_plot_country: profile.country,
+          watch_my_plot_currency: profile.currency,
           ...(legacyAccountId
             ? { migrated_from_account_id: legacyAccountId }
             : {}),

@@ -5,20 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { BetaNotice } from "../LaunchNotices";
-
-function formatPrice(value) {
-  if (value == null) return "Not set";
-  const number = Number(value);
-
-  if (!Number.isFinite(number)) return "Not set";
-
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
-}
+import { formatMoney } from "@/lib/marketConfig";
 
 function formatDateTime(value) {
   if (!value) return "";
@@ -97,7 +84,7 @@ export default function BookingsPage() {
 
       const { data, error } = await supabase
         .from("bookings")
-        .select("id, status, amount_gbp, platform_fee_gbp, payout_status, created_at, request_id, offer_id")
+        .select("id, status, amount, platform_fee, country, currency, payout_status, created_at, request_id, offer_id")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -227,7 +214,7 @@ export default function BookingsPage() {
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-xl font-bold">
-                            {formatPrice(b.amount_gbp)}
+                            {formatMoney(b.amount, b.currency) || "Not set"}
                           </p>
 
                           <span
@@ -243,9 +230,9 @@ export default function BookingsPage() {
                           Created: {formatDateTime(b.created_at)}
                         </p>
 
-                        {b.platform_fee_gbp != null && (
+                        {b.platform_fee != null && (
                           <p className="mt-1 text-sm text-zinc-600">
-                            Platform fee: {formatPrice(b.platform_fee_gbp)}
+                            Platform fee: {formatMoney(b.platform_fee, b.currency)}
                           </p>
                         )}
 

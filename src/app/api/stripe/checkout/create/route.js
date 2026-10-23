@@ -9,13 +9,14 @@ import {
   calculatePlatformFeePence,
   PLATFORM_FEE_PERCENT,
 } from "@/lib/platformFees";
+import { formatMoney } from "@/lib/marketConfig";
 
 export const runtime = "nodejs";
 
-const MAX_PRICE_GBP = 999999.99;
+const MAX_PRICE = 999999.99;
 const MAX_STRIPE_AMOUNT_PENCE = 99999999;
-const MIN_PAID_BOOKING_GBP = 5;
-const MIN_PAID_BOOKING_PENCE = MIN_PAID_BOOKING_GBP * 100;
+const MIN_PAID_BOOKING = 5;
+const MIN_PAID_BOOKING_PENCE = MIN_PAID_BOOKING * 100;
 
 function supabaseFromToken(token) {
   return createClient(
@@ -37,7 +38,7 @@ function getStripe() {
 function moneyToPence(value) {
   if (!Number.isFinite(value)) return null;
   if (value <= 0) return null;
-  if (value > MAX_PRICE_GBP) return null;
+  if (value > MAX_PRICE) return null;
 
   const pence = Math.round(value * 100);
 
@@ -104,7 +105,7 @@ export async function POST(request) {
 
     const { data: offer, error: offerErr } = await supabase
       .from("offers")
-      .select("id, request_id, gardener_id, proposed_price_gbp, status")
+      .select("id, request_id, gardener_id, proposed_price, country, currency, status")
       .eq("id", offerId)
       .maybeSingle();
 
@@ -117,7 +118,7 @@ export async function POST(request) {
 
     const { data: reqRow, error: reqErr } = await supabase
       .from("care_requests")
-      .select("id, owner_id, title, price_offered_gbp, status")
+      .select("id, owner_id, title, price_offered, country, currency, status")
       .eq("id", offer.request_id)
       .maybeSingle();
 
@@ -146,6 +147,13 @@ export async function POST(request) {
       );
     }
 
+    if (offer.country !== reqRow.country || offer.currency !== reqRow.currency) {
+      return Response.json(
+        { error: "Offer and request markets do not match." },
+        { status: 400 }
+      );
+    }
+
     const supabaseAdmin = createSupabaseAdminClient();
     if (!supabaseAdmin) {
       return Response.json(
@@ -158,7 +166,7 @@ export async function POST(request) {
       await supabaseAdmin
         .from("profiles")
         .select(
-          "stripe_account_id, stripe_onboarding_complete, stripe_direct_charges_ready"
+          "stripe_account_id, stripe_onboarding_complete, stripe_direct_charges_ready, country, currency"
         )
         .eq("id", offer.gardener_id)
         .maybeSingle();
@@ -187,11 +195,39 @@ export async function POST(request) {
       );
     }
 
+    const { data: ownerProfile, error: ownerProfileError } = await supabaseAdmin
+      .from("profiles")
+      .select("country, currency")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (ownerProfileError || !ownerProfile) {
+      return Response.json(
+        { error: ownerProfileError?.message || "Owner profile not found." },
+        { status: 400 }
+      );
+    }
+
+    if (
+      ownerProfile.country !== reqRow.country ||
+      ownerProfile.currency !== reqRow.currency ||
+      gardenerProfile.country !== reqRow.country ||
+      gardenerProfile.currency !== reqRow.currency
+    ) {
+      return Response.json(
+        { error: "Owner, gardener, and request must be in the same country." },
+        { status: 400 }
+      );
+    }
+
     const connectedAccount = await stripe.accounts.retrieve(
       gardenerProfile.stripe_account_id
     );
 
-    if (!isDirectChargeAccount(connectedAccount)) {
+    if (
+      !isDirectChargeAccount(connectedAccount) ||
+      connectedAccount.country !== reqRow.country
+    ) {
       return Response.json(
         {
           error:
@@ -201,13 +237,13 @@ export async function POST(request) {
       );
     }
 
-    let amount = Number(offer.proposed_price_gbp ?? reqRow.price_offered_gbp ?? 0);
+    let amount = Number(offer.proposed_price ?? reqRow.price_offered ?? 0);
 
     if (!isValidMoneyAmount(amount)) {
       return Response.json(
         {
           error:
-            "Amount must be between £5.00 and £999,999.99, with no more than 2 decimal places.",
+            `Amount must be between ${formatMoney(MIN_PAID_BOOKING, reqRow.currency)} and ${formatMoney(MAX_PRICE, reqRow.currency)}, with no more than 2 decimal places.`,
         },
         { status: 400 }
       );
@@ -226,7 +262,7 @@ export async function POST(request) {
       return Response.json(
         {
           error:
-            "Paid bookings must be at least £5.00 so Stripe fees and bank payouts work reliably.",
+            `Paid bookings must be at least ${formatMoney(MIN_PAID_BOOKING, reqRow.currency)} so Stripe fees and bank payouts work reliably.`,
         },
         { status: 400 }
       );
@@ -245,7 +281,7 @@ export async function POST(request) {
     const { data: existingBooking, error: existingBookingErr } = await supabaseAdmin
       .from("bookings")
       .select(
-        "id, status, amount_gbp, platform_fee_gbp, stripe_charge_model"
+        "id, status, amount, platform_fee, country, currency, stripe_charge_model"
       )
       .eq("request_id", reqRow.id)
       .eq("offer_id", offer.id)
@@ -272,7 +308,17 @@ export async function POST(request) {
     let bookingId = existingBooking?.id;
 
     if (existingBooking?.status === "pending_payment") {
-      const storedAmount = Number(existingBooking.amount_gbp ?? amount);
+      if (
+        existingBooking.country !== reqRow.country ||
+        existingBooking.currency !== reqRow.currency
+      ) {
+        return Response.json(
+          { error: "Existing booking market does not match this request." },
+          { status: 400 }
+        );
+      }
+
+      const storedAmount = Number(existingBooking.amount ?? amount);
 
       if (!isValidMoneyAmount(storedAmount)) {
         return Response.json(
@@ -294,8 +340,10 @@ export async function POST(request) {
           offer_id: offer.id,
           owner_id: reqRow.owner_id,
           gardener_id: offer.gardener_id,
-          amount_gbp: amount,
-          platform_fee_gbp: fee,
+          amount,
+          platform_fee: fee,
+          country: reqRow.country,
+          currency: reqRow.currency,
           status: "pending_payment",
           stripe_account_id: gardenerProfile.stripe_account_id,
           stripe_charge_model: STRIPE_CHARGE_MODEL_DIRECT,
@@ -326,7 +374,7 @@ export async function POST(request) {
       return Response.json(
         {
           error:
-            "Paid bookings must be at least £5.00 so Stripe fees and bank payouts work reliably.",
+            `Paid bookings must be at least ${formatMoney(MIN_PAID_BOOKING, reqRow.currency)} so Stripe fees and bank payouts work reliably.`,
         },
         { status: 400 }
       );
@@ -344,7 +392,6 @@ export async function POST(request) {
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
-        payment_method_types: ["card"],
         success_url: `${siteUrl}/bookings/${bookingId}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${siteUrl}/bookings/${bookingId}/cancel`,
         payment_intent_data: {
@@ -359,7 +406,7 @@ export async function POST(request) {
           {
             quantity: 1,
             price_data: {
-              currency: "gbp",
+              currency: reqRow.currency.toLowerCase(),
               unit_amount: amountPence,
               product_data: {
                 name: "Garden care booking",
@@ -386,7 +433,7 @@ export async function POST(request) {
         stripe_checkout_session_id: session.id,
         stripe_account_id: gardenerProfile.stripe_account_id,
         stripe_charge_model: STRIPE_CHARGE_MODEL_DIRECT,
-        platform_fee_gbp: fee,
+        platform_fee: fee,
       })
       .eq("id", bookingId);
 

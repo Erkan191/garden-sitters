@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { getMarket, MARKET_LIST, useSelectedCountry } from "@/lib/markets";
 
 const PROFILE_PHOTO_BUCKET = "profile-photos";
 const MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024;
@@ -61,6 +62,8 @@ function MyProfilePageContent() {
 
   const [userId, setUserId] = useState(null);
   const [email, setEmail] = useState("");
+  const [country, setCountry] = useSelectedCountry();
+  const market = getMarket(country);
 
   const [stripeAccountId, setStripeAccountId] = useState("");
   const [stripeOnboardingComplete, setStripeOnboardingComplete] = useState(false);
@@ -113,7 +116,9 @@ function MyProfilePageContent() {
           skill_seedlings,
           stripe_account_id,
           stripe_onboarding_complete,
-          stripe_direct_charges_ready
+          stripe_direct_charges_ready,
+          country,
+          currency
         `)
         .eq("id", user.id)
         .maybeSingle();
@@ -128,6 +133,7 @@ function MyProfilePageContent() {
       setLocation(profile?.location || "");
       setBio(profile?.bio || "");
       setAvatarUrl(profile?.avatar_url || "");
+      setCountry(profile?.country || user.user_metadata?.country || "GB");
 
       setSkillWatering(Boolean(profile?.skill_watering));
       setSkillHarvesting(Boolean(profile?.skill_harvesting));
@@ -145,7 +151,7 @@ function MyProfilePageContent() {
     }
 
     load();
-  }, [router]);
+  }, [router, setCountry]);
 
   useEffect(() => {
     const stripeState = searchParams.get("stripe");
@@ -276,6 +282,10 @@ function MyProfilePageContent() {
       skill_veg_beds: skillVegBeds,
       skill_pots: skillPots,
       skill_seedlings: skillSeedlings,
+      country,
+      currency: market.currency,
+      ...(isGardenerWelcome ? { role: "gardener" } : {}),
+      ...(isOwnerWelcome ? { role: "owner" } : {}),
     };
 
     const { error } = await supabase
@@ -540,6 +550,25 @@ function MyProfilePageContent() {
                 />
                 <p className="mt-1 text-xs text-zinc-500">
                   Keep it broad, like Enfield, Palmers Green, or North London.
+                </p>
+              </div>
+
+              <div>
+                <label className={labelClass}>Country</label>
+                <select
+                  className={inputClass}
+                  value={country}
+                  onChange={(event) => setCountry(event.target.value)}
+                  required
+                >
+                  {MARKET_LIST.map((item) => (
+                    <option key={item.country} value={item.country}>
+                      {item.flag} {item.fullLabel}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Your discovery results, jobs, bookings, and Stripe payments use {market.currency}.
                 </p>
               </div>
 
