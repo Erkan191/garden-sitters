@@ -165,40 +165,46 @@ export default function NewRequestPage() {
       return;
     }
 
-    const { data: createdRequest, error } = await supabase
-      .from("care_requests")
-      .insert({
-        owner_id: user.id,
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) {
+      return router.push(`/login?next=${encodeURIComponent("/requests/new")}`);
+    }
+
+    const response = await fetch("/api/requests/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
         title: title.trim(),
         details: details.trim() === "" ? null : details.trim(),
         postcode: postcode.trim() === "" ? null : postcode.trim(),
-        start_date: startDate,
-        end_date: endDate,
-        price_offered: parsedPrice,
-        country: ownerProfile.country,
-        currency: ownerProfile.currency,
-        visit_frequency: visitFrequency,
-        need_watering: needWatering,
-        need_harvesting: needHarvesting,
-        has_greenhouse: hasGreenhouse,
-        has_veg_beds: hasVegBeds,
-        has_pots: hasPots,
-        has_seedlings: hasSeedlings,
-        invited_gardener_id: invitedGardenerId,
-        invitation_status: invitedGardenerId ? "pending" : null,
-      })
-      .select("id")
-      .single();
+        startDate,
+        endDate,
+        price: parsedPrice,
+        visitFrequency,
+        needWatering,
+        needHarvesting,
+        hasGreenhouse,
+        hasVegBeds,
+        hasPots,
+        hasSeedlings,
+        invitedGardenerId,
+      }),
+    });
+    const result = await response.json().catch(() => ({}));
 
-    if (error) {
-      setMsg(error.message);
+    if (!response.ok) {
+      setMsg(result.error || "We could not create this request. Please try again.");
       return;
     }
 
     router.push(
       invitedGardenerId
-        ? `/requests/${createdRequest.id}/chat`
-        : `/requests/${createdRequest.id}`
+        ? `/requests/${result.requestId}/chat`
+        : `/requests/${result.requestId}`
     );
   }
 

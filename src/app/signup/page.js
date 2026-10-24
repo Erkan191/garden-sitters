@@ -27,24 +27,32 @@ function SignupPageContent() {
     e.preventDefault();
     setMsg("Creating your account...");
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          signup_intent: isGardenerIntent ? "gardener" : "owner",
-          country,
-          currency: market.currency,
-        },
-      },
+    const response = await fetch("/api/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        password,
+        intent: isGardenerIntent ? "gardener" : "owner",
+        country,
+      }),
     });
+    const result = await response.json().catch(() => ({}));
 
-    if (error) {
-      setMsg(error.message);
+    if (!response.ok) {
+      setMsg(result.error || "We could not create your account. Please try again.");
       return;
     }
 
-    if (data?.session) {
+    if (result.session) {
+      const { error: sessionError } = await supabase.auth.setSession(result.session);
+      if (sessionError) {
+        setMsg("Account created. Log in to finish your profile.");
+        router.push(
+          `/login?created=${isGardenerIntent ? "gardener" : "owner"}&next=${encodeURIComponent(onboardingPath)}`
+        );
+        return;
+      }
       setMsg("Account created. Taking you to your profile...");
       router.push(onboardingPath);
       return;
