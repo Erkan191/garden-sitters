@@ -61,7 +61,7 @@ export async function POST(request) {
     // direct-charge bookings because their fee payer is immutable.
     const { data: profile, error: profileErr } = await supabaseAdmin
       .from("profiles")
-      .select("stripe_account_id, stripe_legacy_account_id, country, currency")
+      .select("stripe_account_id, stripe_legacy_account_id, country, currency, age_confirmed_at")
       .eq("id", userId)
       .maybeSingle();
 
@@ -70,6 +70,13 @@ export async function POST(request) {
       return Response.json(
         { error: "Choose your country and save your profile before connecting Stripe." },
         { status: 400 }
+      );
+    }
+
+    if (!profile.age_confirmed_at) {
+      return Response.json(
+        { error: "Confirm that you are 18 or over in your profile before connecting Stripe." },
+        { status: 403 }
       );
     }
 

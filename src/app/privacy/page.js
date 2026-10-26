@@ -46,7 +46,9 @@ export default function PrivacyPage() {
         <Section title="Information we collect">
           <p>
             We collect account details such as your email address and login
-            account identifier.
+            account identifier. We also record when you confirm that you are 18
+            or over; we do not ask for your date of birth as part of the standard
+            signup journey.
           </p>
           <p>
             If you fill in your profile, we collect profile information such as
@@ -84,6 +86,17 @@ export default function PrivacyPage() {
           <p>
             Some profile, request, offer, message, booking, and review information
             may be visible to other users where needed for the marketplace to work.
+          </p>
+          <p>
+            Public requests display only the broad area supplied by the owner. UK
+            full postcodes are shortened before storage. Booking participants can
+            use private messages to agree necessary access information, but should
+            avoid recording alarm codes or key locations unless genuinely needed.
+          </p>
+          <p>
+            We record payment identifiers and status information supplied by Stripe,
+            including successful payments, refunds, failed delayed payments, and
+            disputes. Watch My Plot does not store full card numbers.
           </p>
         </Section>
 

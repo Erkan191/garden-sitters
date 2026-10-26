@@ -1,6 +1,7 @@
 import { formatMoney, getMarket } from "@/lib/marketConfig";
 import { sendAdminAlert } from "@/lib/adminAlerts";
 import { createAuthenticatedServerClient } from "@/lib/supabaseServer";
+import { normalisePublicArea } from "@/lib/publicArea";
 
 export const runtime = "nodejs";
 
@@ -67,7 +68,7 @@ export async function POST(request) {
 
     const { data: ownerProfile, error: ownerProfileError } = await supabase
       .from("profiles")
-      .select("full_name, location, country, currency")
+      .select("full_name, location, country, currency, age_confirmed_at")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -75,6 +76,13 @@ export async function POST(request) {
       return Response.json(
         { error: "Complete your profile and choose your country before posting a request." },
         { status: 400 }
+      );
+    }
+
+    if (!ownerProfile.age_confirmed_at) {
+      return Response.json(
+        { error: "Confirm that you are 18 or over in your profile before posting a request." },
+        { status: 403 }
       );
     }
 
@@ -122,7 +130,7 @@ export async function POST(request) {
       owner_id: user.id,
       title,
       details: optionalString(body.details),
-      postcode: optionalString(body.postcode),
+      postcode: normalisePublicArea(ownerProfile.country, body.postcode),
       start_date: startDate,
       end_date: endDate,
       price_offered: parsedPrice,

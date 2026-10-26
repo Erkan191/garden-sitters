@@ -34,6 +34,10 @@ function getStatusBadgeClass(status) {
     return "bg-emerald-50 text-emerald-800 border-emerald-100";
   }
 
+  if (status === "refunded") {
+    return "bg-violet-50 text-violet-800 border-violet-100";
+  }
+
   return "bg-stone-100 text-stone-700 border-stone-200";
 }
 
@@ -84,7 +88,7 @@ export default function BookingsPage() {
 
       const { data, error } = await supabase
         .from("bookings")
-        .select("id, status, amount, platform_fee, country, currency, payout_status, created_at, request_id, offer_id")
+        .select("id, status, amount, platform_fee, country, currency, payout_status, refund_status, refund_amount, dispute_status, created_at, request_id, offer_id")
         .order("created_at", { ascending: false });
 
       if (error) {

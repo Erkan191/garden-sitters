@@ -14,6 +14,7 @@ function SignupPageContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [msg, setMsg] = useState("");
   const [country, setCountry] = useSelectedCountry();
   const market = getMarket(country);
@@ -35,6 +36,7 @@ function SignupPageContent() {
         password,
         intent: isGardenerIntent ? "gardener" : "owner",
         country,
+        ageConfirmed,
       }),
     });
     const result = await response.json().catch(() => ({}));
@@ -229,6 +231,20 @@ function SignupPageContent() {
                 Password must be at least 6 characters.
               </p>
             </div>
+
+            <label className="flex items-start gap-3 rounded-lg border border-stone-200 bg-stone-50 p-4 text-sm leading-6 text-zinc-700">
+              <input
+                type="checkbox"
+                checked={ageConfirmed}
+                onChange={(event) => setAgeConfirmed(event.target.checked)}
+                required
+                className="mt-1 accent-emerald-900"
+              />
+              <span>
+                I confirm that I am 18 or over and may enter into bookings on
+                Watch My Plot.
+              </span>
+            </label>
 
             <button className="wmp-button wmp-button-primary w-full">
               {isGardenerIntent ? "Create gardener account" : "Sign up"}

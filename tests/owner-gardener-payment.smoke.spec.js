@@ -92,6 +92,18 @@ async function saveProfileIfPossible(page) {
     return;
   }
 
+  const adultConfirmation = page.getByRole("checkbox", {
+    name: /I confirm that I am 18 or over/i,
+  });
+
+  if (
+    (await isVisible(adultConfirmation, 5000)) &&
+    (await adultConfirmation.isEnabled()) &&
+    !(await adultConfirmation.isChecked())
+  ) {
+    await adultConfirmation.check();
+  }
+
   await saveButton.click();
 
   await expect(
@@ -405,6 +417,7 @@ test("owner, gardener, checkout, and payout smoke flow", async ({ page }) => {
   await logout(page);
 
   await loginAs(page, smokeEnv.gardenerEmail, smokeEnv.gardenerPassword, "gardener");
+  await saveProfileIfPossible(page);
   await openRequestFromBrowse(page, requestTitle);
   await submitOffer(page, requestTitle);
   await logout(page);

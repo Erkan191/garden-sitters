@@ -63,6 +63,13 @@ export default function ContactPage() {
             date of the issue, and what happened. Do not send card numbers or
             passwords.
           </p>
+          <p>
+            To request a cancellation or refund, contact us before the job starts
+            whenever possible. Include the booking title, booking date, reason,
+            whether any work was completed, and any relevant messages or photographs.
+            Never send card numbers, bank details, passwords, alarm codes, or key
+            locations by email.
+          </p>
         </ContactCard>
 
         <ContactCard title="Safety or report issues">

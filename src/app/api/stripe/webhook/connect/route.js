@@ -1,5 +1,10 @@
 import Stripe from "stripe";
 import { recordCompletedCheckout } from "@/lib/stripeCheckoutCompletion";
+import {
+  recordAsyncPaymentFailure,
+  recordChargeRefunded,
+  recordDispute,
+} from "@/lib/stripeBookingEvents";
 
 export const runtime = "nodejs";
 
@@ -27,7 +32,10 @@ export async function POST(request) {
 
     const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
 
-    if (event.type === "checkout.session.completed") {
+    if (
+      event.type === "checkout.session.completed" ||
+      event.type === "checkout.session.async_payment_succeeded"
+    ) {
       if (!event.account) {
         return Response.json(
           { error: "Connected-account event is missing its account ID" },
@@ -38,6 +46,31 @@ export async function POST(request) {
       return Response.json(
         await recordCompletedCheckout(event.data.object, event.account)
       );
+    }
+
+    if (!event.account) {
+      return Response.json(
+        { error: "Connected-account event is missing its account ID" },
+        { status: 400 }
+      );
+    }
+
+    if (event.type === "checkout.session.async_payment_failed") {
+      return Response.json(
+        await recordAsyncPaymentFailure(event.data.object, event.account)
+      );
+    }
+
+    if (event.type === "charge.refunded") {
+      return Response.json(await recordChargeRefunded(event.data.object, event.account));
+    }
+
+    if (
+      event.type === "charge.dispute.created" ||
+      event.type === "charge.dispute.updated" ||
+      event.type === "charge.dispute.closed"
+    ) {
+      return Response.json(await recordDispute(event.data.object, event.account));
     }
 
     return Response.json({ received: true });

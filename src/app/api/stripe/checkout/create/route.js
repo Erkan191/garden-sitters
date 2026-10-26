@@ -166,7 +166,7 @@ export async function POST(request) {
       await supabaseAdmin
         .from("profiles")
         .select(
-          "stripe_account_id, stripe_onboarding_complete, stripe_direct_charges_ready, country, currency"
+          "stripe_account_id, stripe_onboarding_complete, stripe_direct_charges_ready, country, currency, age_confirmed_at"
         )
         .eq("id", offer.gardener_id)
         .maybeSingle();
@@ -197,7 +197,7 @@ export async function POST(request) {
 
     const { data: ownerProfile, error: ownerProfileError } = await supabaseAdmin
       .from("profiles")
-      .select("country, currency")
+      .select("country, currency, age_confirmed_at")
       .eq("id", userId)
       .maybeSingle();
 
@@ -205,6 +205,13 @@ export async function POST(request) {
       return Response.json(
         { error: ownerProfileError?.message || "Owner profile not found." },
         { status: 400 }
+      );
+    }
+
+    if (!ownerProfile.age_confirmed_at || !gardenerProfile.age_confirmed_at) {
+      return Response.json(
+        { error: "Both the owner and gardener must confirm they are 18 or over before payment." },
+        { status: 403 }
       );
     }
 

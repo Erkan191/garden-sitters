@@ -18,6 +18,7 @@ export async function POST(request) {
     const email = typeof body.email === "string" ? body.email.trim() : "";
     const password = typeof body.password === "string" ? body.password : "";
     const intent = body.intent === "gardener" ? "gardener" : "owner";
+    const ageConfirmed = body.ageConfirmed === true;
     const country =
       typeof body.country === "string" ? body.country.trim().toUpperCase() : "";
 
@@ -32,6 +33,13 @@ export async function POST(request) {
       return Response.json({ error: "Choose a supported country." }, { status: 400 });
     }
 
+    if (!ageConfirmed) {
+      return Response.json(
+        { error: "Watch My Plot is only available to people aged 18 or over." },
+        { status: 400 }
+      );
+    }
+
     const market = getMarket(country);
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -41,6 +49,7 @@ export async function POST(request) {
           signup_intent: intent,
           country,
           currency: market.currency,
+          age_confirmed: true,
         },
       },
     });

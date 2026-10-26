@@ -76,6 +76,8 @@ function MyProfilePageContent() {
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [ageConfirmedAt, setAgeConfirmedAt] = useState(null);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   const [skillWatering, setSkillWatering] = useState(false);
   const [skillHarvesting, setSkillHarvesting] = useState(false);
@@ -118,7 +120,8 @@ function MyProfilePageContent() {
           stripe_onboarding_complete,
           stripe_direct_charges_ready,
           country,
-          currency
+          currency,
+          age_confirmed_at
         `)
         .eq("id", user.id)
         .maybeSingle();
@@ -134,6 +137,8 @@ function MyProfilePageContent() {
       setBio(profile?.bio || "");
       setAvatarUrl(profile?.avatar_url || "");
       setCountry(profile?.country || user.user_metadata?.country || "GB");
+      setAgeConfirmedAt(profile?.age_confirmed_at || null);
+      setAgeConfirmed(Boolean(profile?.age_confirmed_at));
 
       setSkillWatering(Boolean(profile?.skill_watering));
       setSkillHarvesting(Boolean(profile?.skill_harvesting));
@@ -270,6 +275,12 @@ function MyProfilePageContent() {
     setSaving(true);
     setMsg("Saving profile...");
 
+    if (!ageConfirmed) {
+      setMsg("Confirm that you are 18 or over before saving your profile.");
+      setSaving(false);
+      return;
+    }
+
     const payload = {
       id: userId,
       full_name: fullName.trim() === "" ? null : fullName.trim(),
@@ -284,6 +295,7 @@ function MyProfilePageContent() {
       skill_seedlings: skillSeedlings,
       country,
       currency: market.currency,
+      age_confirmed_at: ageConfirmedAt || new Date().toISOString(),
       ...(isGardenerWelcome ? { role: "gardener" } : {}),
       ...(isOwnerWelcome ? { role: "owner" } : {}),
     };
@@ -303,6 +315,7 @@ function MyProfilePageContent() {
         ? "Gardener profile saved. Next, connect Stripe payouts before taking paid work."
         : "Profile saved ✅"
     );
+    if (!ageConfirmedAt) setAgeConfirmedAt(payload.age_confirmed_at);
     setSaving(false);
   }
 
@@ -571,6 +584,21 @@ function MyProfilePageContent() {
                   Your discovery results, jobs, bookings, and Stripe payments use {market.currency}.
                 </p>
               </div>
+
+              <label className="flex items-start gap-3 rounded-lg border border-emerald-100 bg-emerald-50/60 p-4 text-sm leading-6 text-zinc-700">
+                <input
+                  type="checkbox"
+                  checked={ageConfirmed}
+                  onChange={(event) => setAgeConfirmed(event.target.checked)}
+                  disabled={Boolean(ageConfirmedAt)}
+                  required
+                  className="mt-1 accent-emerald-900"
+                />
+                <span>
+                  I confirm that I am 18 or over. Watch My Plot accounts and
+                  bookings are for adults only.
+                </span>
+              </label>
 
               <div className="rounded-lg border border-stone-200 bg-white p-4">
                 <p className={labelClass}>Profile photo</p>

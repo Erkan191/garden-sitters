@@ -121,12 +121,17 @@ export default function NewRequestPage() {
 
     const { data: ownerProfile, error: ownerProfileError } = await supabase
       .from("profiles")
-      .select("country, currency")
+      .select("country, currency, age_confirmed_at")
       .eq("id", user.id)
       .maybeSingle();
 
     if (ownerProfileError || !ownerProfile) {
       setMsg("Complete your profile and choose your country before posting a request.");
+      return;
+    }
+
+    if (!ownerProfile.age_confirmed_at) {
+      setMsg("Confirm that you are 18 or over in your profile before posting a request.");
       return;
     }
 
@@ -318,15 +323,17 @@ export default function NewRequestPage() {
             </div>
 
             <div>
-              <label className={labelClass}>Postcode / area</label>
+              <label className={labelClass}>Broad area</label>
               <input
                 className={inputClass}
                 value={postcode}
                 onChange={(e) => setPostcode(e.target.value)}
-                placeholder="e.g. N13"
+                placeholder={country === "GB" ? "e.g. N13 or Palmers Green" : "e.g. suburb, town, or postal area"}
               />
               <p className="mt-1 text-xs text-zinc-500">
-                Keep it rough. You can share exact details later once the job is agreed.
+                This is displayed publicly. UK full postcodes are automatically
+                shortened. Share the exact address privately only after agreeing
+                the booking.
               </p>
             </div>
 

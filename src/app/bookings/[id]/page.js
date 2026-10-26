@@ -33,6 +33,10 @@ function getStatusBadgeClass(status) {
     return "bg-emerald-50 text-emerald-800 border-emerald-100";
   }
 
+  if (status === "refunded") {
+    return "bg-violet-50 text-violet-800 border-violet-100";
+  }
+
   return "bg-stone-100 text-stone-700 border-stone-200";
 }
 
@@ -369,6 +373,28 @@ export default function BookingDetailPage() {
         </section>
 
         <MarketplaceNotice />
+
+        {booking.refund_status && booking.refund_status !== "none" && (
+          <section className="rounded-lg border border-violet-100 bg-violet-50 p-5 text-sm leading-6 text-violet-900">
+            <p className="font-bold">Refund: {getStatusLabel(booking.refund_status)}</p>
+            <p className="mt-1">
+              Stripe has recorded {formatMoney(booking.refund_amount, booking.currency) || "a refund"}
+              {booking.refunded_at ? ` on ${formatDateTime(booking.refunded_at)}` : ""}.
+            </p>
+          </section>
+        )}
+
+        {booking.dispute_status && booking.dispute_status !== "none" && (
+          <section className="rounded-lg border border-red-100 bg-red-50 p-5 text-sm leading-6 text-red-900">
+            <p className="font-bold">Payment dispute: {getStatusLabel(booking.dispute_status)}</p>
+            <p className="mt-1">
+              {booking.dispute_reason
+                ? `Stripe reason: ${booking.dispute_reason}. `
+                : ""}
+              Contact Watch My Plot support and keep all booking evidence and messages.
+            </p>
+          </section>
+        )}
 
         {msg && (
           <div className="wmp-card rounded-lg text-sm leading-6 text-zinc-600">

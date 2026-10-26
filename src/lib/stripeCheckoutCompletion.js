@@ -60,6 +60,7 @@ export async function recordCompletedCheckout(session, connectedAccountId = null
       status: "paid",
       stripe_checkout_session_id: session.id,
       stripe_payment_intent_id: getPaymentIntentId(session),
+      payment_failure_reason: null,
       ...(connectedAccountId ? { payout_status: "paid", payout_error: null } : {}),
     })
     .eq("id", bookingId);
