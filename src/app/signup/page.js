@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { getMarket, MARKET_LIST, useSelectedCountry } from "@/lib/markets";
-import { BetaNotice } from "../LaunchNotices";
+import { MarketplaceNotice } from "../LaunchNotices";
 
 function SignupPageContent() {
   const router = useRouter();
@@ -94,7 +94,7 @@ function SignupPageContent() {
               : "Browse without signing up, then create an account when you want to take action: post a request, send an offer, manage bookings, or build trust through reviews."}
           </p>
 
-          <BetaNotice className="mt-6" />
+          <MarketplaceNotice className="mt-6" />
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <div className="rounded-lg border border-stone-200 bg-[#fbfbf7] p-4">
@@ -235,7 +235,7 @@ function SignupPageContent() {
             </button>
 
             <p className="text-xs leading-5 text-zinc-500">
-              By signing up for the private beta, you agree to the{" "}
+              By signing up, you agree to the{" "}
               <Link
                 href="/terms"
                 className="font-medium text-emerald-900 hover:underline"

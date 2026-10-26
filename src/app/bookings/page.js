@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { BetaNotice } from "../LaunchNotices";
+import { MarketplaceNotice } from "../LaunchNotices";
 import { formatMoney } from "@/lib/marketConfig";
 
 function formatDateTime(value) {
@@ -131,7 +131,7 @@ export default function BookingsPage() {
           </div>
         </section>
 
-        <BetaNotice />
+        <MarketplaceNotice />
 
         <section className="wmp-panel rounded-lg">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { formatMoney, getMarket, useSelectedCountry } from "@/lib/markets";
-import { BetaNotice, SafetyNotice } from "../../LaunchNotices";
+import { MarketplaceNotice, SafetyNotice } from "../../LaunchNotices";
 
 const MAX_PRICE = 999999.99;
 const MIN_PAID_BOOKING = 5;
@@ -255,7 +255,7 @@ export default function NewRequestPage() {
           </div>
         </section>
 
-        <BetaNotice />
+        <MarketplaceNotice />
 
         {invitedGardener && (
           <section className="wmp-panel rounded-lg border-emerald-100 bg-emerald-50/60">

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { BetaNotice } from "../LaunchNotices";
+import { MarketplaceNotice } from "../LaunchNotices";
 
 export const metadata = {
   title: "Privacy | Watch My Plot",
-  description: "Private beta privacy information for Watch My Plot.",
+  description: "Privacy information for Watch My Plot.",
 };
 
 function Section({ title, children }) {
@@ -33,15 +33,15 @@ export default function PrivacyPage() {
             Privacy
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-            How Watch My Plot handles beta data.
+            How Watch My Plot handles your data.
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
-            This page gives practical privacy information for the private beta. It
-            is not final legal advice and may be updated as the service changes.
+            This page gives practical privacy information. It is not final legal
+            advice and may be updated as the service changes.
           </p>
         </section>
 
-        <BetaNotice />
+        <MarketplaceNotice />
 
         <Section title="Information we collect">
           <p>
@@ -77,7 +77,7 @@ export default function PrivacyPage() {
 
         <Section title="How data is used">
           <p>
-            We use your data to run the beta, show requests and offers, support
+            We use your data to run the service, show requests and offers, support
             bookings, enable messages and reviews, process payments, improve the
             service, and respond to support or safety issues.
           </p>
@@ -91,7 +91,7 @@ export default function PrivacyPage() {
           <p>
             For deletion requests, data questions, or privacy concerns, contact us
             through the <Link href="/contact" className="font-medium text-emerald-900 hover:underline">contact page</Link>.
-            During private beta, response times may vary.
+            Response times may vary.
           </p>
         </Section>
       </div>

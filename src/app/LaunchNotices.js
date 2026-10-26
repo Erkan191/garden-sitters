@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 
-export function BetaNotice({ className = "" }) {
+export function MarketplaceNotice({ className = "" }) {
   return (
     <section
       className={`rounded-lg border border-clay-200 bg-[#fff7ed] p-4 text-sm leading-6 text-clay-900 shadow-sm ${className}`}
     >
-      <p className="font-semibold">Private beta</p>
+      <p className="font-semibold">Marketplace notice</p>
       <p className="mt-1">
-        Watch My Plot is being tested with a small group. The app helps connect
-        garden owners and gardeners, and features, payments, policies, and
-        availability may change during beta.
+        Watch My Plot helps connect garden owners and gardeners. Users remain
+        responsible for choosing who to work with and agreeing the job, access,
+        care instructions, and price. Features, payments, and policies may change
+        as the service develops.
       </p>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium">
         <Link href="/privacy" className="underline underline-offset-2">

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { BetaNotice } from "../LaunchNotices";
+import { MarketplaceNotice } from "../LaunchNotices";
 
 export const metadata = {
   title: "Contact | Watch My Plot",
-  description: "Contact information for Watch My Plot private beta support.",
+  description: "Contact and support information for Watch My Plot.",
 };
 
 function ContactCard({ title, children }) {
@@ -36,12 +36,12 @@ export default function ContactPage() {
             Contact Watch My Plot.
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
-            Use this page for private beta support, payment questions, safety
+            Use this page for support, payment questions, safety
             concerns, and data requests.
           </p>
         </section>
 
-        <BetaNotice />
+        <MarketplaceNotice />
 
         <ContactCard title="Support email">
           <p>
@@ -79,8 +79,8 @@ export default function ContactPage() {
 
         <ContactCard title="Response times">
           <p>
-            Watch My Plot is a private beta, so response times may vary. Payment,
-            safety, and account access issues should be prioritised where possible.
+            Response times may vary. Payment, safety, and account access issues
+            should be prioritised where possible.
           </p>
         </ContactCard>
       </div>

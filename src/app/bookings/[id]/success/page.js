@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { BetaNotice } from "../../../LaunchNotices";
+import { MarketplaceNotice } from "../../../LaunchNotices";
 
 const primaryButtonClass =
   "wmp-button wmp-button-primary inline-flex justify-center";
@@ -126,7 +126,7 @@ export default function BookingSuccessPage() {
           </p>
         </section>
 
-        <BetaNotice />
+        <MarketplaceNotice />
 
         <section className="wmp-panel rounded-lg">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

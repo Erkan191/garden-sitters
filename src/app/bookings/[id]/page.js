@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { formatMoney } from "@/lib/marketConfig";
-import { BetaNotice, PaymentSafetyNotice } from "../../LaunchNotices";
+import { MarketplaceNotice, PaymentSafetyNotice } from "../../LaunchNotices";
 
 function formatDateTime(value) {
   if (!value) return "";
@@ -368,7 +368,7 @@ export default function BookingDetailPage() {
           </div>
         </section>
 
-        <BetaNotice />
+        <MarketplaceNotice />
 
         {msg && (
           <div className="wmp-card rounded-lg text-sm leading-6 text-zinc-600">

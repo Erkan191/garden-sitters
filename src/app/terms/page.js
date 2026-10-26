@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { BetaNotice } from "../LaunchNotices";
+import { MarketplaceNotice } from "../LaunchNotices";
 
 export const metadata = {
   title: "Terms | Watch My Plot",
-  description: "Private beta terms for Watch My Plot.",
+  description: "Terms for Watch My Plot.",
 };
 
 function Section({ title, children }) {
@@ -33,15 +33,15 @@ export default function TermsPage() {
             Terms
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-            Practical private beta terms.
+            Practical marketplace terms.
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
-            These terms are written for the Watch My Plot private beta. They are
-            plain practical wording and are not final legal advice.
+            These terms use plain practical wording and are not final legal
+            advice.
           </p>
         </section>
 
-        <BetaNotice />
+        <MarketplaceNotice />
 
         <Section title="Marketplace role">
           <p>
@@ -51,11 +51,10 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="Private beta">
+        <Section title="Service changes">
           <p>
-            The service is in private beta. Features, pricing, policies, payment
-            flows, availability, and support processes may change while the product
-            is tested.
+            Features, pricing, policies, payment flows, availability, and support
+            processes may change as the service develops.
           </p>
         </Section>
 
@@ -99,9 +98,8 @@ export default function TermsPage() {
 
         <Section title="Cancellations and refunds">
           <p>
-            During private beta, cancellations and refunds are handled case by
-            case. Contact us promptly if a booking, payment, access, or care issue
-            needs review.
+            Cancellations and refunds are handled case by case. Contact us promptly
+            if a booking, payment, access, or care issue needs review.
           </p>
         </Section>
 
@@ -116,7 +114,7 @@ export default function TermsPage() {
         <Section title="Contact">
           <p>
             For support, payment problems, safety concerns, or questions about
-            these beta terms, use the <Link href="/contact" className="font-medium text-emerald-900 hover:underline">contact page</Link>.
+            these terms, use the <Link href="/contact" className="font-medium text-emerald-900 hover:underline">contact page</Link>.
           </p>
         </Section>
       </div>

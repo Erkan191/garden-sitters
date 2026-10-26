@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { BetaNotice } from "../../../LaunchNotices";
+import { MarketplaceNotice } from "../../../LaunchNotices";
 
 export default function BookingCancelPage() {
   const { id } = useParams();
@@ -29,7 +29,7 @@ export default function BookingCancelPage() {
           </p>
         </section>
 
-        <BetaNotice />
+        <MarketplaceNotice />
 
         <section className="wmp-panel rounded-lg">
           <h2 className="text-2xl font-bold text-zinc-900">

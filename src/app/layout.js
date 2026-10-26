@@ -65,13 +65,13 @@ export default function RootLayout({ children }) {
                   <span>Watch My Plot</span>
                 </Link>
                 <p className="mt-4 max-w-xl leading-6 text-zinc-200">
-                  Private beta marketplace for owners who need garden care and
+                  Marketplace for owners who need garden care and
                   local gardeners who can help with watering, harvesting,
                   greenhouses, pots, seedlings, and veg beds.
                 </p>
                 <p className="mt-3 text-xs leading-5 text-zinc-400">
                   Payments are handled through Stripe. Watch My Plot helps
-                  connect users during beta but does not guarantee outcomes,
+                  connect users but does not guarantee outcomes,
                   vet every user, or provide insurance.
                 </p>
               </div>

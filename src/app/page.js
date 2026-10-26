@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { BetaNotice } from "./LaunchNotices";
+import { MarketplaceNotice } from "./LaunchNotices";
 import { useSelectedCountry } from "@/lib/markets";
 import { formatMoney, getMarket } from "@/lib/marketConfig";
 
@@ -101,7 +101,7 @@ const faqs = [
   {
     question: "Is Watch My Plot live?",
     answer:
-      "Yes. Watch My Plot is in private beta. A small group is testing the marketplace, so features, support processes, and availability may change.",
+      "Yes. Watch My Plot is live for owners and gardeners in the United Kingdom, Australia, and New Zealand. Features, support processes, and availability may change as the service develops.",
   },
   {
     question: "How do payments work?",
@@ -121,12 +121,12 @@ const faqs = [
   {
     question: "Are gardeners vetted or insured?",
     answer:
-      "During private beta, Watch My Plot helps users connect but does not guarantee outcomes, vet every user, or provide insurance.",
+      "Watch My Plot helps users connect but does not guarantee outcomes, vet every user, or provide insurance.",
   },
   {
     question: "What happens if something goes wrong?",
     answer:
-      "Contact Watch My Plot with the booking details. During private beta, refunds, access problems, safety concerns, and care issues are handled case by case.",
+      "Contact Watch My Plot with the booking details. Refunds, access problems, safety concerns, and care issues are handled case by case.",
   },
 ];
 
@@ -494,7 +494,7 @@ export default function HomePage() {
           <SectionIntro
             eyebrow="How money works"
             title="Payments stay clear from offer to completion."
-            copy="The money flow is deliberately simple for private beta testing."
+            copy="The money flow is deliberately simple from booking through payout."
             tone="light"
           />
 
@@ -502,7 +502,7 @@ export default function HomePage() {
             {[
               "Owners pay through Stripe when they book.",
               "The gardener's share goes to their Stripe balance after payment, less Stripe costs and Watch My Plot's 15% fee.",
-              "During private beta, refunds and issues are handled case by case.",
+              "Refunds and issues are handled case by case.",
             ].map((item) => (
               <div
                 key={item}
@@ -595,7 +595,7 @@ export default function HomePage() {
 
       <section className="bg-white py-12">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <BetaNotice />
+          <MarketplaceNotice />
         </div>
       </section>
 
@@ -603,7 +603,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <SectionIntro
             eyebrow="FAQ"
-            title="Private beta questions"
+            title="Common questions"
             copy="Short answers for owners and gardeners before they try the marketplace."
             align="center"
           />
@@ -630,10 +630,10 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-6 px-4 sm:px-6 md:grid-cols-[1fr_auto] md:items-center">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-clay-200">
-              Private beta
+              Garden care marketplace
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Ready to test Watch My Plot?
+              Ready to use Watch My Plot?
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/80">
               Try the core marketplace flow: post a garden care request or
