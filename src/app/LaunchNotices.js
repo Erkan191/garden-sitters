@@ -50,10 +50,12 @@ export function SafetyNotice({
 export function PaymentSafetyNotice({ className = "" }) {
   return (
     <SafetyNotice title="Before paying" className={className}>
-      Payments are handled by Stripe. Pay only when you are comfortable with the
-      gardener, dates, price, access arrangements, exact address, keys, and care
-      instructions. Watch My Plot does not guarantee plant outcomes, user
-      skills, property safety, or insurance.
+      Payments are handled by Stripe. If either party cancels before any work
+      starts, the owner receives a full refund and Watch My Plot returns its fee.
+      After work starts, statutory rights and the published cancellation policy
+      apply. Pay only when you are comfortable with the gardener, dates, price,
+      access arrangements and care instructions. Watch My Plot does not provide
+      insurance or a booking guarantee.
     </SafetyNotice>
   );
 }

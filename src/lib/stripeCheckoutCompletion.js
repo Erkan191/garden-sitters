@@ -3,6 +3,7 @@ import {
   STRIPE_CHARGE_MODEL_DIRECT,
   STRIPE_CHARGE_MODEL_LEGACY,
 } from "@/lib/stripeConnect";
+import { sendBookingConfirmationEmails } from "@/lib/bookingConfirmationEmail";
 
 function getPaymentIntentId(session) {
   return typeof session.payment_intent === "string"
@@ -30,7 +31,7 @@ export async function recordCompletedCheckout(session, connectedAccountId = null
 
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
-    .select("id, status, stripe_account_id, stripe_charge_model")
+    .select("id, status, stripe_account_id, stripe_charge_model, confirmation_email_sent_at")
     .eq("id", bookingId)
     .maybeSingle();
 
@@ -52,19 +53,30 @@ export async function recordCompletedCheckout(session, connectedAccountId = null
     return { received: true, ignored: true, reason: "Connected account mismatch" };
   }
 
-  if (booking.status === "completed") return { ok: true, status: "completed" };
+  if (!['paid', 'completed'].includes(booking.status)) {
+    const { error: updateError } = await supabase
+      .from("bookings")
+      .update({
+        status: "paid",
+        stripe_checkout_session_id: session.id,
+        stripe_payment_intent_id: getPaymentIntentId(session),
+        payment_failure_reason: null,
+        ...(connectedAccountId ? { payout_status: "paid", payout_error: null } : {}),
+      })
+      .eq("id", bookingId);
 
-  const { error: updateError } = await supabase
-    .from("bookings")
-    .update({
-      status: "paid",
-      stripe_checkout_session_id: session.id,
-      stripe_payment_intent_id: getPaymentIntentId(session),
-      payment_failure_reason: null,
-      ...(connectedAccountId ? { payout_status: "paid", payout_error: null } : {}),
-    })
-    .eq("id", bookingId);
+    if (updateError) throw new Error(updateError.message);
+  }
 
-  if (updateError) throw new Error(updateError.message);
+  if (!booking.confirmation_email_sent_at) {
+    await sendBookingConfirmationEmails(bookingId);
+    const { error: confirmationUpdateError } = await supabase
+      .from("bookings")
+      .update({ confirmation_email_sent_at: new Date().toISOString() })
+      .eq("id", bookingId);
+
+    if (confirmationUpdateError) throw new Error(confirmationUpdateError.message);
+  }
+
   return { ok: true };
 }

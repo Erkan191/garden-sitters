@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { bookingConsentPayload, confirmBookingTerms } from "@/lib/bookingConsent";
 import { formatMoney, getMarket } from "@/lib/marketConfig";
 
 function formatDateRange(start, end) {
@@ -165,6 +166,8 @@ export default function ChatPage() {
   }
 
   async function startCheckout(offer) {
+    if (!confirmBookingTerms()) return;
+
     setWorking(true);
     setMsg("Securing your booking...");
     if (offer.status === "pending") {
@@ -179,7 +182,7 @@ export default function ChatPage() {
     const response = await fetch("/api/stripe/checkout/create", {
       method: "POST",
       headers: { Authorization: `Bearer ${data?.session?.access_token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ offerId: offer.id }),
+      body: JSON.stringify({ offerId: offer.id, ...bookingConsentPayload() }),
     });
     const json = await response.json();
     if (!response.ok) {

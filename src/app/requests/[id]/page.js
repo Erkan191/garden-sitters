@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { bookingConsentPayload, confirmBookingTerms } from "@/lib/bookingConsent";
 import { formatMoney, getMarket } from "@/lib/marketConfig";
 import { PaymentSafetyNotice, SafetyNotice } from "../../LaunchNotices";
 
@@ -638,6 +639,8 @@ export default function RequestDetailPage() {
       return;
     }
 
+    if (!confirmBookingTerms()) return;
+
     setMsg("Securing your booking...");
 
     if (offer?.status === "pending") {
@@ -666,7 +669,7 @@ export default function RequestDetailPage() {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ offerId }),
+      body: JSON.stringify({ offerId, ...bookingConsentPayload() }),
     });
 
     const json = await res.json();

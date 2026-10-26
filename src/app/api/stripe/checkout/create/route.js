@@ -10,6 +10,10 @@ import {
   PLATFORM_FEE_PERCENT,
 } from "@/lib/platformFees";
 import { formatMoney } from "@/lib/marketConfig";
+import {
+  BOOKING_TERMS_VERSION,
+  CANCELLATION_POLICY_VERSION,
+} from "@/lib/bookingConsent";
 
 export const runtime = "nodejs";
 
@@ -103,6 +107,19 @@ export async function POST(request) {
       return Response.json({ error: "Missing offerId" }, { status: 400 });
     }
 
+    if (
+      body.termsAccepted !== true ||
+      body.cancellationPolicyAccepted !== true ||
+      body.earlyPerformanceRequested !== true ||
+      body.termsVersion !== BOOKING_TERMS_VERSION ||
+      body.cancellationPolicyVersion !== CANCELLATION_POLICY_VERSION
+    ) {
+      return Response.json(
+        { error: "Review and accept the current booking and cancellation terms before paying." },
+        { status: 400 }
+      );
+    }
+
     const { data: offer, error: offerErr } = await supabase
       .from("offers")
       .select("id, request_id, gardener_id, proposed_price, country, currency, status")
@@ -118,7 +135,7 @@ export async function POST(request) {
 
     const { data: reqRow, error: reqErr } = await supabase
       .from("care_requests")
-      .select("id, owner_id, title, price_offered, country, currency, status")
+      .select("id, owner_id, title, price_offered, start_date, end_date, country, currency, status")
       .eq("id", offer.request_id)
       .maybeSingle();
 
@@ -354,6 +371,11 @@ export async function POST(request) {
           status: "pending_payment",
           stripe_account_id: gardenerProfile.stripe_account_id,
           stripe_charge_model: STRIPE_CHARGE_MODEL_DIRECT,
+          terms_version: BOOKING_TERMS_VERSION,
+          terms_accepted_at: new Date().toISOString(),
+          cancellation_policy_version: CANCELLATION_POLICY_VERSION,
+          cancellation_policy_accepted_at: new Date().toISOString(),
+          early_performance_requested_at: new Date().toISOString(),
         })
         .select("id")
         .maybeSingle();
@@ -366,6 +388,24 @@ export async function POST(request) {
       }
 
       bookingId = booking.id;
+    }
+
+    const consentRecordedAt = new Date().toISOString();
+    const { error: consentError } = await supabaseAdmin
+      .from("bookings")
+      .update({
+        terms_version: BOOKING_TERMS_VERSION,
+        terms_accepted_at: consentRecordedAt,
+        cancellation_policy_version: CANCELLATION_POLICY_VERSION,
+        cancellation_policy_accepted_at: consentRecordedAt,
+        early_performance_requested_at: consentRecordedAt,
+      })
+      .eq("id", bookingId)
+      .eq("owner_id", userId)
+      .eq("status", "pending_payment");
+
+    if (consentError) {
+      return Response.json({ error: consentError.message }, { status: 400 });
     }
 
     const amountPence = moneyToPence(amount);
@@ -401,12 +441,20 @@ export async function POST(request) {
         mode: "payment",
         success_url: `${siteUrl}/bookings/${bookingId}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${siteUrl}/bookings/${bookingId}/cancel`,
+        custom_text: {
+          submit: {
+            message:
+              "Full refund if either party cancels before work starts. After work starts, statutory rights and the published cancellation policy apply.",
+          },
+        },
         payment_intent_data: {
           application_fee_amount: feePence,
           metadata: {
             booking_id: bookingId,
             request_id: reqRow.id,
             offer_id: offer.id,
+            terms_version: BOOKING_TERMS_VERSION,
+            cancellation_policy_version: CANCELLATION_POLICY_VERSION,
           },
         },
         line_items: [
@@ -426,6 +474,8 @@ export async function POST(request) {
           booking_id: bookingId,
           request_id: reqRow.id,
           offer_id: offer.id,
+          terms_version: BOOKING_TERMS_VERSION,
+          cancellation_policy_version: CANCELLATION_POLICY_VERSION,
         },
       },
       {

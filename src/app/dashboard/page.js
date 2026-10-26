@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { bookingConsentPayload, confirmBookingTerms } from "@/lib/bookingConsent";
 import { formatMoney } from "@/lib/marketConfig";
 
 function formatShortDate(value) {
@@ -429,6 +430,8 @@ export default function DashboardPage() {
   }
 
   async function bookAndPay(offerId, requestId) {
+    if (!confirmBookingTerms()) return;
+
     setPayingOfferId(offerId);
     setPaymentErrorByRequestId((prev) => ({
       ...prev,
@@ -454,7 +457,7 @@ export default function DashboardPage() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ offerId }),
+        body: JSON.stringify({ offerId, ...bookingConsentPayload() }),
       });
 
       const json = await res.json();

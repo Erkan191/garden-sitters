@@ -64,9 +64,20 @@ export default function ContactPage() {
             passwords.
           </p>
           <p>
-            To request a cancellation or refund, contact us before the job starts
-            whenever possible. Include the booking title, booking date, reason,
-            whether any work was completed, and any relevant messages or photographs.
+            If either party cancels before any work starts, the owner receives a full
+            refund. The amount kept from the owner is £0, A$0 or NZ$0. If the gardener
+            cancels or does not attend and no work was supplied, the same full-refund
+            rule applies and Watch My Plot returns its fee.
+          </p>
+          <p>
+            To cancel, email a clear statement such as: “I cancel booking [title or
+            reference], booked on [date], for service starting [date].” Include your
+            account email and whether any work has started. After work starts, quality,
+            crop-loss, damage and partly completed-job concerns are reviewed using the
+            evidence and applicable legal rights; compensation is not guaranteed by
+            Watch My Plot.
+          </p>
+          <p>
             Never send card numbers, bank details, passwords, alarm codes, or key
             locations by email.
           </p>

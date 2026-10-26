@@ -28,8 +28,9 @@ test("public safeguards and current marketplace terms are visible", async ({ pag
   ).toBeVisible();
 
   await page.goto("/terms");
-  await expect(page.getByRole("heading", { name: "Adults only" })).toBeVisible();
+  await expect(page.getByText(/strictly for people aged 18 or over/i)).toBeVisible();
   await expect(page.getByText(/platform fee equal to 15%/i)).toBeVisible();
-  await expect(page.getByText(/does not currently provide an insurance policy/i)).toBeVisible();
+  await expect(page.getByText(/does not currently provide platform insurance/i)).toBeVisible();
+  await expect(page.getByText(/cancels before any work begins/i)).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/\bbeta\b/i);
 });

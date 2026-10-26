@@ -202,12 +202,20 @@ async function submitOffer(page, requestTitle) {
 
 async function startCheckout(page, requestTitle) {
   const checkoutButtonName = /book .+(?:£|A\$|NZ\$)5\.00|confirm booking and pay/i;
+  const clickWithConsent = async (button) => {
+    page.once("dialog", async (dialog) => {
+      expect(dialog.message()).toMatch(/full refund.*before any work starts/i);
+      expect(dialog.message()).toMatch(/expressly request.*begin.*cancellation period/i);
+      await dialog.accept();
+    });
+    await button.click();
+  };
   const detailPayButton = page
     .getByRole("button", { name: checkoutButtonName })
     .first();
 
   if (await isVisible(detailPayButton, 10000)) {
-    await detailPayButton.click();
+    await clickWithConsent(detailPayButton);
   } else {
     await page.goto("/dashboard");
 
@@ -231,7 +239,7 @@ async function startCheckout(page, requestTitle) {
       "Owner should be able to start checkout from the accepted request"
     ).toBeVisible({ timeout: 20000 });
 
-    await dashboardPayButton.click();
+    await clickWithConsent(dashboardPayButton);
   }
 
   await expect
