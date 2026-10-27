@@ -1,4 +1,4 @@
-export const BOOKING_TERMS_VERSION = "2026-10-26-v2";
+export const BOOKING_TERMS_VERSION = "2026-10-27-v3";
 export const CANCELLATION_POLICY_VERSION = "launch-full-refund-before-start-v1";
 
 const CONSENT_MESSAGE = `Before payment:

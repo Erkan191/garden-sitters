@@ -74,6 +74,11 @@ export default function RootLayout({ children }) {
                   connect users but does not guarantee outcomes,
                   vet every user, or provide insurance.
                 </p>
+                <p className="mt-3 text-xs leading-5 text-zinc-400">
+                  Watch My Plot is a trading name of Free Life Ventures Ltd,
+                  registered in England and Wales under company number 17547215.
+                  Registered office: 132 The Larches, London, N13 5QE, England.
+                </p>
               </div>
 
               <nav className="grid grid-cols-2 gap-x-6 gap-y-3 text-zinc-300 md:justify-self-end">

@@ -75,6 +75,7 @@ export async function sendBookingConfirmationEmails(bookingId) {
   const from = `Watch My Plot bookings <bookings@${domain}>`;
   const termsUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.watchmyplot.com"}/terms`;
   const common = [
+    "Watch My Plot is operated by Free Life Ventures Ltd (company number 17547215).",
     `Booking: ${request.title}`,
     `Dates: ${dateRange}`,
     `Terms version: ${termsVersion}`,

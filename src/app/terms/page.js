@@ -27,7 +27,7 @@ export default function TermsPage() {
             Watch My Plot marketplace terms
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
-            Version 2026-10-26-v2. These terms apply to use of Watch My Plot and
+            Version 2026-10-27-v3. These terms apply to use of Watch My Plot and
             bookings made through it. Save or print a copy for your records.
           </p>
         </section>
@@ -36,14 +36,15 @@ export default function TermsPage() {
 
         <Section title="Operator and contact">
           <p>
-            The service trades as Watch My Plot and operates watchmyplot.com. For
-            support, cancellations, complaints, safety reports and legal notices,
-            email <span className="font-medium text-zinc-900">support@watchmyplot.com</span>.
+            Watch My Plot is a trading name of Free Life Ventures Ltd, a private
+            company limited by shares registered in England and Wales under company
+            number 17547215. The company operates watchmyplot.com.
           </p>
           <p>
-            The operator’s full legal name and geographic service address must also
-            be provided to users. Those details are being finalised and will be added
-            before wider commercial promotion.
+            Registered office and geographic service address: 132 The Larches,
+            London, N13 5QE, England. For support, cancellations, complaints, safety
+            reports and legal notices, email
+            <span className="font-medium text-zinc-900"> support@watchmyplot.com</span>.
           </p>
         </Section>
 
@@ -69,7 +70,8 @@ export default function TermsPage() {
             instructions, the agreed result and appropriate safety standards.
           </p>
           <p>
-            Your contract for use of the platform is with Watch My Plot. The
+            Your contract for use of the platform is with Free Life Ventures Ltd,
+            trading as Watch My Plot. The
             garden-care contract is between the owner and gardener and is formed when
             the owner accepts the offer and completes payment. Watch My Plot is not
             the gardener and does not itself perform the garden care.

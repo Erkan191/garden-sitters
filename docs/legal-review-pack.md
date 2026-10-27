@@ -1,10 +1,11 @@
 # Watch My Plot legal review pack
 
-Prepared: 26 October 2026. This is a factual hand-off for a UK solicitor, not legal advice.
+Updated: 27 October 2026. This is a factual hand-off for a UK solicitor, not legal advice.
 
 ## Business and launch position
 
 - Watch My Plot is an online marketplace for adult garden owners and adult gardeners in the UK, Australia and New Zealand.
+- Watch My Plot is operated by Free Life Ventures Ltd, a private company limited by shares registered in England and Wales under company number 17547215. Watch My Plot is its trading name.
 - Registration is free. The owner pays the displayed booking price. The gardener pays Watch My Plot 15% of the job price plus Stripe processing charges.
 - Payments use Stripe Connect direct charges on the gardener's connected Stripe account. Watch My Plot takes an application fee.
 - Watch My Plot is not the gardener's employer and does not direct how gardening work is performed. The legal classification must nevertheless be assessed from the real relationship, not this label.
@@ -25,7 +26,7 @@ Prepared: 26 October 2026. This is a factual hand-off for a UK solicitor, not le
 
 ## Questions requiring legal review
 
-1. Confirm the legal operator's name, business form, service address, company number and VAT number (if applicable), and the exact disclosures required on every relevant page and confirmation.
+1. Confirm that the published operator name, business form, registered office, geographic service address and company number disclosures are sufficient, and whether a VAT number must be added if the company later registers for VAT.
 2. Confirm whether each gardener must declare whether they act as a trader or private individual, how this must be displayed before booking, and which consumer obligations follow.
 3. Confirm the Consumer Contracts Regulations analysis for: the platform contract; the owner-gardener service contract; bookings beginning within 14 days; services fully performed inside 14 days; and owner-to-private-individual bookings.
 4. Confirm that the single pre-payment acceptance and express early-performance request are sufficiently prominent and separate, or specify the exact checkbox wording required.
@@ -38,7 +39,7 @@ Prepared: 26 October 2026. This is a factual hand-off for a UK solicitor, not le
 
 ## Pre-solicitor actions for the operator
 
-- Supply the operator's verified legal name and geographic service address. Do not invent or conceal these details in the published terms or privacy notice.
+- Keep the operator identity, company number and geographic service address accurate on the published terms, privacy notice, contact page and site footer.
 - Complete the ICO data-protection fee self-assessment and pay/register if required.
 - Determine the platform operator's business form for HMRC digital-platform reporting. The UK registration and reporting position differs for a sole trader operator and a company or partnership.
 - Document a complaints and refund runbook: identity check, booking evidence, no-work confirmation, refund amount, application-fee return, Stripe action, user notification and booking audit record.

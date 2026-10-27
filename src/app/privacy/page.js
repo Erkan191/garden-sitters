@@ -27,7 +27,7 @@ export default function PrivacyPage() {
             How Watch My Plot uses personal information
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
-            Version 2026-10-26-v2. This notice applies to owners, gardeners,
+            Version 2026-10-27-v3. This notice applies to owners, gardeners,
             website visitors and people who contact Watch My Plot.
           </p>
         </section>
@@ -36,15 +36,15 @@ export default function PrivacyPage() {
 
         <Section title="Controller and contact">
           <p>
-            Watch My Plot decides why and how the platform’s personal information is
-            used and is therefore the controller for that processing. Privacy requests
-            and complaints should be sent to
-            <span className="font-medium text-zinc-900"> support@watchmyplot.com</span>.
+            Free Life Ventures Ltd, trading as Watch My Plot, decides why and how the
+            platform’s personal information is used and is therefore the controller
+            for that processing. It is a company registered in England and Wales under
+            company number 17547215.
           </p>
           <p>
-            The operator’s full legal name and geographic address must be added here
-            before wider commercial promotion. This notice will be updated when those
-            details are finalised.
+            Registered office and geographic contact address: 132 The Larches,
+            London, N13 5QE, England. Privacy requests and complaints should be sent to
+            <span className="font-medium text-zinc-900"> support@watchmyplot.com</span>.
           </p>
         </Section>
 

@@ -43,6 +43,17 @@ export default function ContactPage() {
 
         <MarketplaceNotice />
 
+        <ContactCard title="Business details">
+          <p>
+            Watch My Plot is a trading name of Free Life Ventures Ltd, registered in
+            England and Wales under company number 17547215.
+          </p>
+          <p>
+            Registered office and geographic contact address: 132 The Larches,
+            London, N13 5QE, England.
+          </p>
+        </ContactCard>
+
         <ContactCard title="Support email">
           <p>
             Email:{" "}
