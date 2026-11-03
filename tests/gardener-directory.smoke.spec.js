@@ -3,7 +3,7 @@ const { test, expect } = require("@playwright/test");
 const userId = "00000000-0000-4000-8000-000000000001";
 const complete = { id: userId, role: "both", full_name: "Complete Gardener", location: "Enfield", bio: "I care for gardens.", country: "GB", currency: "GBP", signup_role_applied: true, age_confirmed_at: "2026-10-01T00:00:00Z" };
 
-test("directory uses roles and completeness, not Stripe or skills", async ({ page }) => {
+test("directory requires a gardener role, name and area, but not a bio", async ({ page }) => {
   await page.route("**/rest/v1/profiles?**", async (route) => {
     expect(new URL(route.request().url()).searchParams.get("role")).toBe("in.(gardener,both)");
     await route.fulfill({ json: [complete,
@@ -17,8 +17,8 @@ test("directory uses roles and completeness, not Stripe or skills", async ({ pag
   await page.goto("/sitters");
   await expect(page.getByRole("heading", { name: "Complete Gardener", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Legacy Gardener", exact: true })).toBeVisible();
-  await expect(page.getByText("Showing 2 of 2 sitters")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Needs Bio" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Needs Bio" })).toBeVisible();
+  await expect(page.getByText("Showing 3 of 3 sitters")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Owner With Skills" })).toHaveCount(0);
 });
 
@@ -76,7 +76,7 @@ test("provider-created account consumes delayed gardener intent once", async ({ 
   await page.goto("/profile?welcome=gardener");
   await expect(page.getByLabel("How you use Watch My Plot")).toHaveValue("gardener");
   expect(metadataWrites).toHaveLength(1);
-  await expect(page.getByRole("status")).toContainText("Add your bio");
+  await expect(page.getByRole("status")).toContainText("listed in the sitter directory");
   await page.reload();
   await expect(page.getByLabel("How you use Watch My Plot")).toHaveValue("gardener");
   expect(metadataWrites).toHaveLength(1);

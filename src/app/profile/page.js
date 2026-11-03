@@ -603,8 +603,9 @@ function MyProfilePageContent() {
                 </select>
                 <p className="mt-2 text-sm text-emerald-900" role="status">{directoryStatus}</p>
                 <p className="mt-1 text-xs text-zinc-500">
-                  Listings need a name, broad area, and bio. Save your changes to update
-                  your listing. Stripe setup is needed for paid work, not for listing.
+                  Listings need a name and broad area. A bio, photo, and skills help
+                  owners choose you. Save your changes to update your listing. Stripe
+                  setup is needed for paid work, not for listing.
                 </p>
               </div>
 

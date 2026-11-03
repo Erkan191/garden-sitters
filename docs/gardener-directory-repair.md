@@ -25,14 +25,16 @@ profile keeps it out of the public directory without altering its payment setup.
 
 `profiles.role` is the source of gardener eligibility: `gardener` or `both`.
 The directory additionally requires a nonblank name (`full_name` or legacy
-`display_name`), broad area (`location` or legacy `postcode`), and bio. It filters
+`display_name`) and broad area (`location` or legacy `postcode`). A bio is strongly
+recommended but is not required for listing. The directory filters
 by selected country, then optional area/skill filters. Stripe setup, photos,
 rates, reviews and skills are not listing requirements. These rules appear on
 the directory and profile form; the form explains missing saved details.
 
-At repair time all 18 accounts were in GB. Eight profiles met the listing rule;
-seven lacked name/area/bio, and three named profiles needed a bio. No accounts
-were excluded by country. AU and NZ had zero registered/visible gardeners.
+At repair time all 18 accounts were in GB. Eleven profiles met the final listing
+rule; seven lacked a name and area. Three of the eleven visible profiles still
+needed a bio. No accounts were excluded by country. AU and NZ had zero
+registered/visible gardeners.
 
 ## Signup and role choices
 

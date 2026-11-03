@@ -321,8 +321,8 @@ export default function SittersPage() {
                 Want to be listed here?
               </p>
               <p className="mt-1 text-sm leading-6 text-zinc-600">
-                Choose Gardener or Both in your profile and add your name, broad
-                area, and bio to appear here. Photos and skills help owners choose
+                Choose Gardener or Both in your profile and add your name and broad
+                area to appear here. A bio, photo, and skills help owners choose
                 you. Stripe payouts are needed for paid work, not for listing.
               </p>
               <Link
