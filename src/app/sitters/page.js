@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import { isDirectoryEligible } from "@/lib/gardenerDirectory";
 import { formatMoney, getMarket, useSelectedCountry } from "@/lib/markets";
 
 const skillFilters = [
@@ -123,21 +124,6 @@ function Avatar({ profile, fallback }) {
   );
 }
 
-function hasGardenerSignal(profile) {
-  const role = profile?.role;
-  const tags = buildSkillTags(profile);
-
-  return (
-    role === "gardener" ||
-    role === "both" ||
-    Boolean(profile?.stripe_onboarding_complete) ||
-    Boolean(profile?.stripe_account_id) ||
-    Boolean(profile?.price_per_visit) ||
-    Boolean(profile?.experience_level) ||
-    tags.length > 0
-  );
-}
-
 export default function SittersPage() {
   const [country] = useSelectedCountry();
   const market = getMarket(country);
@@ -172,6 +158,7 @@ export default function SittersPage() {
           "id, role, display_name, full_name, location, postcode, bio, avatar_url, skills, experience_level, price_per_visit, country, currency, stripe_account_id, stripe_onboarding_complete, created_at, updated_at, skill_watering, skill_harvesting, skill_greenhouse, skill_veg_beds, skill_pots, skill_seedlings"
         )
         .eq("country", country)
+        .in("role", ["gardener", "both"])
         .order("updated_at", { ascending: false });
 
       if (error) {
@@ -182,7 +169,7 @@ export default function SittersPage() {
         return;
       }
 
-      const sitterProfiles = (data || []).filter(hasGardenerSignal);
+      const sitterProfiles = (data || []).filter(isDirectoryEligible);
       setProfiles(sitterProfiles);
 
       const sitterIds = sitterProfiles.map((profile) => profile.id).filter(Boolean);
@@ -334,8 +321,9 @@ export default function SittersPage() {
                 Want to be listed here?
               </p>
               <p className="mt-1 text-sm leading-6 text-zinc-600">
-                Create a gardener profile with your broad area, skills, bio, and
-                Stripe payout setup.
+                Choose Gardener or Both in your profile and add your name, broad
+                area, and bio to appear here. Photos and skills help owners choose
+                you. Stripe payouts are needed for paid work, not for listing.
               </p>
               <Link
                 href="/signup?intent=gardener"

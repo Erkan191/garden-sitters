@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { isGardenerCapable, missingDirectoryDetails } from "@/lib/gardenerDirectory";
 import { getMarket, MARKET_LIST, useSelectedCountry } from "@/lib/markets";
 
 const PROFILE_PHOTO_BUCKET = "profile-photos";
@@ -62,6 +63,9 @@ function MyProfilePageContent() {
 
   const [userId, setUserId] = useState(null);
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("owner");
+  const [roleChanged, setRoleChanged] = useState(false);
+  const [directoryStatus, setDirectoryStatus] = useState("");
   const [country, setCountry] = useSelectedCountry();
   const market = getMarket(country);
 
@@ -102,10 +106,14 @@ function MyProfilePageContent() {
       setUserId(user.id);
       setEmail(user.email || "");
 
-      const { data: profile, error: profileErr } = await supabase
+      const { data: loadedProfile, error: profileErr } = await supabase
         .from("profiles")
         .select(`
           id,
+          role,
+          signup_role_applied,
+          display_name,
+          postcode,
           full_name,
           location,
           bio,
@@ -132,6 +140,38 @@ function MyProfilePageContent() {
         return;
       }
 
+      let profile = loadedProfile;
+      if (!profile) {
+        setMsg("We couldn't find your profile. Please refresh or contact support.");
+        setLoading(false);
+        return;
+      }
+
+      // OAuth intent may arrive after account creation. The database applies it
+      // only once; established roles and explicit profile choices always win.
+      if (!profile.signup_role_applied && ["gardener", "owner"].includes(welcomeState)) {
+        const { error: intentError } = await supabase.auth.updateUser({
+          data: { signup_intent: welcomeState },
+        });
+        if (intentError) {
+          setMsg(intentError.message);
+          setLoading(false);
+          return;
+        }
+        const { data: refreshed, error: refreshError } = await supabase
+          .from("profiles").select("role, signup_role_applied").eq("id", user.id).single();
+        if (refreshError) {
+          setMsg(refreshError.message);
+          setLoading(false);
+          return;
+        }
+        profile = { ...profile, ...refreshed };
+      }
+
+      setRole(profile.role);
+      setRoleChanged(false);
+      updateDirectoryStatus(profile);
+
       setFullName(profile?.full_name || "");
       setLocation(profile?.location || "");
       setBio(profile?.bio || "");
@@ -156,7 +196,16 @@ function MyProfilePageContent() {
     }
 
     load();
-  }, [router, setCountry]);
+  }, [router, setCountry, welcomeState]);
+
+  function updateDirectoryStatus(profile) {
+    const missing = missingDirectoryDetails(profile);
+    setDirectoryStatus(!isGardenerCapable(profile)
+      ? "Choose Gardener or Both to be eligible for the sitter directory."
+      : missing.length
+        ? `You are registered as a gardener. Add your ${missing.join(", ")} to appear in the sitter directory.`
+        : "Your profile is listed in the sitter directory for your country.");
+  }
 
   useEffect(() => {
     const stripeState = searchParams.get("stripe");
@@ -296,13 +345,13 @@ function MyProfilePageContent() {
       country,
       currency: market.currency,
       age_confirmed_at: ageConfirmedAt || new Date().toISOString(),
-      ...(isGardenerWelcome ? { role: "gardener" } : {}),
-      ...(isOwnerWelcome ? { role: "owner" } : {}),
+      ...(roleChanged ? { role } : {}),
     };
 
-    const { error } = await supabase
+    const { data: savedProfile, error } = await supabase
       .from("profiles")
-      .upsert(payload, { onConflict: "id" });
+      .update(payload).eq("id", userId)
+      .select("role, full_name, display_name, location, postcode, bio").single();
 
     if (error) {
       setMsg(error.message);
@@ -316,6 +365,9 @@ function MyProfilePageContent() {
         : "Profile saved ✅"
     );
     if (!ageConfirmedAt) setAgeConfirmedAt(payload.age_confirmed_at);
+    setRole(savedProfile.role);
+    setRoleChanged(false);
+    updateDirectoryStatus(savedProfile);
     setSaving(false);
   }
 
@@ -540,6 +592,21 @@ function MyProfilePageContent() {
                   {msg}
                 </div>
               )}
+
+              <div>
+                <label htmlFor="profile-role" className={labelClass}>How you use Watch My Plot</label>
+                <select id="profile-role" className={inputClass} value={role}
+                  onChange={(event) => { setRole(event.target.value); setRoleChanged(true); }}>
+                  <option value="owner">Garden owner</option>
+                  <option value="gardener">Gardener</option>
+                  <option value="both">Both — garden owner and gardener</option>
+                </select>
+                <p className="mt-2 text-sm text-emerald-900" role="status">{directoryStatus}</p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Listings need a name, broad area, and bio. Save your changes to update
+                  your listing. Stripe setup is needed for paid work, not for listing.
+                </p>
+              </div>
 
               <div>
                 <label className={labelClass}>Name</label>
