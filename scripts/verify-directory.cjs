@@ -3,11 +3,13 @@ const { chromium } = require('@playwright/test');
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage();
+    const extraHTTPHeaders = process.env.VERCEL_OIDC_TOKEN
+      ? { "x-vercel-trusted-oidc-idp-token": process.env.VERCEL_OIDC_TOKEN }
+      : undefined;
+    const page = await browser.newPage({ extraHTTPHeaders });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     const origin = process.env.DIRECTORY_ORIGIN || 'https://www.watchmyplot.com';
-    if (process.env.DIRECTORY_SHARE_URL) await page.goto(process.env.DIRECTORY_SHARE_URL);
     await page.goto(`${origin}/sitters`);
     await page.getByText(/Showing \d+ of \d+ sitters?/).waitFor({ timeout: 30000 });
     const count = await page.getByText(/Showing \d+ of \d+ sitters?/).innerText();
