@@ -59,14 +59,18 @@ export async function POST(request) {
     }
 
     const isNewUser = (data?.user?.identities?.length || 0) > 0;
-    if (intent === "gardener" && data?.user && isNewUser) {
+    if (data?.user && isNewUser) {
       try {
         await sendAdminAlert({
-          subject: `New gardener signup — ${market.fullLabel}`,
-          heading: "A new gardener signed up to Watch My Plot",
-          idempotencyKey: `gardener-signup/${data.user.id}`,
+          subject: `New Watch My Plot signup — ${market.fullLabel}`,
+          heading: "A new account signed up to Watch My Plot",
+          idempotencyKey: `account-signup/${data.user.id}`,
           fields: [
             { label: "Email", value: data.user.email || email },
+            {
+              label: "Signup path",
+              value: intent === "gardener" ? "Gardener" : "Owner / general signup",
+            },
             { label: "Country", value: market.fullLabel },
             { label: "Currency", value: market.currency },
             { label: "User ID", value: data.user.id },
@@ -74,7 +78,7 @@ export async function POST(request) {
           ],
         });
       } catch (alertError) {
-        console.error("Gardener signup alert failed", alertError);
+        console.error("Account signup alert failed", alertError);
       }
     }
 
