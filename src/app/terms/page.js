@@ -27,7 +27,7 @@ export default function TermsPage() {
             Watch My Plot marketplace terms
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
-            Version 2026-10-27-v3. These terms apply to use of Watch My Plot and
+            Version 2026-11-20-v4. These terms apply to use of Watch My Plot and
             bookings made through it. Save or print a copy for your records.
           </p>
         </section>
@@ -191,7 +191,7 @@ export default function TermsPage() {
             work starts, the owner is entitled to a full refund of the amount paid.
             Watch My Plot will return its 15% platform fee as part of that full refund.
             The owner is not charged a cancellation fee, so the non-refundable amount
-            before work starts is £0, A$0 or NZ$0 as applicable.
+            before work starts is £0, A$0, NZ$0 or $0 as applicable.
           </p>
           <p>
             The same full-refund rule applies if the gardener does not attend or
@@ -312,8 +312,9 @@ export default function TermsPage() {
           <p>
             These terms are governed by the law of England and Wales, but this does not
             remove mandatory rights or courts available to a consumer in their home
-            country. Australian Consumer Law and New Zealand consumer guarantees may
-            apply where the platform or a gardener supplies services to consumers there.
+            country. Australian Consumer Law, New Zealand consumer guarantees, and
+            applicable United States federal or state consumer protections may apply
+            where the platform or a gardener supplies services to consumers there.
           </p>
         </Section>
 

@@ -143,6 +143,7 @@ function SignupPageContent() {
             <div>
               <label className="wmp-label">Country</label>
               <select
+                aria-label="Signup country"
                 className={inputClass}
                 value={country}
                 onChange={(event) => setCountry(event.target.value)}

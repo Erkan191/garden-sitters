@@ -18,6 +18,20 @@ test("country selection persists and updates displayed currency", async ({ page 
   await selector.selectOption("NZ");
   await expect(selector).toHaveValue("NZ");
   await expect(page.getByText("NZ$28.00", { exact: true })).toBeVisible();
+
+  await selector.selectOption("US");
+  await expect(selector).toHaveValue("US");
+  await expect(page.getByText("$28.00", { exact: true })).toBeVisible();
+
+  await page.reload();
+  await expect(selector).toHaveValue("US");
+  await expect(page.getByText("$28.00", { exact: true })).toBeVisible();
+
+  await page.goto("/sitters");
+  await expect(page.getByText(/United States gardeners.*USD/i)).toBeVisible();
+
+  await page.goto("/requests");
+  await expect(page.getByText(/United States jobs.*USD/i)).toBeVisible();
 });
 
 test("public safeguards and current marketplace terms are visible", async ({ page }) => {
@@ -26,11 +40,14 @@ test("public safeguards and current marketplace terms are visible", async ({ pag
   await expect(
     page.getByRole("checkbox", { name: /I confirm that I am 18 or over/i })
   ).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: "Signup country" })
+  ).toContainText("United States");
 
   await page.goto("/terms");
   await expect(page.getByText(/strictly for people aged 18 or over/i)).toBeVisible();
   await expect(page.getByText(/platform fee equal to 15%/i)).toBeVisible();
   await expect(page.getByText(/does not currently provide platform insurance/i)).toBeVisible();
-  await expect(page.getByText(/cancels before any work begins/i)).toBeVisible();
+  await expect(page.getByText(/cancels before any booked work starts/i)).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/\bbeta\b/i);
 });

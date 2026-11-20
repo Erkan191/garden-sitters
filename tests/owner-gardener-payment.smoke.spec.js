@@ -201,7 +201,7 @@ async function submitOffer(page, requestTitle) {
 }
 
 async function startCheckout(page, requestTitle) {
-  const checkoutButtonName = /book .+(?:£|A\$|NZ\$)5\.00|confirm booking and pay/i;
+  const checkoutButtonName = /book .+(?:£|A\$|NZ\$|\$)5\.00|confirm booking and pay/i;
   const clickWithConsent = async (button) => {
     page.once("dialog", async (dialog) => {
       expect(dialog.message()).toMatch(/full refund.*before any work starts/i);

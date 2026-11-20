@@ -27,7 +27,7 @@ export default function PrivacyPage() {
             How Watch My Plot uses personal information
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">
-            Version 2026-10-27-v3. This notice applies to owners, gardeners,
+            Version 2026-11-20-v4. This notice applies to owners, gardeners,
             website visitors and people who contact Watch My Plot.
           </p>
         </section>
@@ -154,7 +154,7 @@ export default function PrivacyPage() {
         <Section title="International processing">
           <p>
             Some providers or their support teams may process information outside the
-            United Kingdom, Australia or New Zealand. Where UK restricted-transfer rules
+            United Kingdom, Australia, New Zealand or the United States. Where UK restricted-transfer rules
             apply, Watch My Plot relies on an adequacy regulation or appropriate
             contractual and organisational safeguards supplied by the provider. Contact
             us for information about the relevant safeguard for a particular transfer.
@@ -196,7 +196,9 @@ export default function PrivacyPage() {
             within one month. UK users may complain to the Information Commissioner’s
             Office; Australian users may contact the Office of the Australian Information
             Commissioner where its jurisdiction applies; New Zealand users may contact
-            the Office of the Privacy Commissioner.
+            the Office of the Privacy Commissioner; United States users may exercise
+            privacy rights or contact the appropriate regulator where federal or state
+            law gives them that right.
           </p>
         </Section>
 

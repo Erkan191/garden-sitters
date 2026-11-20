@@ -101,7 +101,7 @@ const faqs = [
   {
     question: "Is Watch My Plot live?",
     answer:
-      "Yes. Watch My Plot is live for owners and gardeners in the United Kingdom, Australia, and New Zealand. Features, support processes, and availability may change as the service develops.",
+      "Yes. Watch My Plot is live for owners and gardeners in the United Kingdom, Australia, New Zealand, and the United States. Features, support processes, and availability may change as the service develops.",
   },
   {
     question: "How do payments work?",

@@ -2,6 +2,7 @@ export const MARKETS = {
   GB: { country: "GB", currency: "GBP", flag: "🇬🇧", label: "UK", fullLabel: "United Kingdom", locale: "en-GB" },
   AU: { country: "AU", currency: "AUD", flag: "🇦🇺", label: "Australia", fullLabel: "Australia", locale: "en-AU" },
   NZ: { country: "NZ", currency: "NZD", flag: "🇳🇿", label: "New Zealand", fullLabel: "New Zealand", locale: "en-NZ" },
+  US: { country: "US", currency: "USD", flag: "🇺🇸", label: "USA", fullLabel: "United States", locale: "en-US" },
 };
 
 export const MARKET_LIST = Object.values(MARKETS);

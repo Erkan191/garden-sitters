@@ -76,7 +76,7 @@ export default function ContactPage() {
           </p>
           <p>
             If either party cancels before any work starts, the owner receives a full
-            refund. The amount kept from the owner is £0, A$0 or NZ$0. If the gardener
+            refund. The amount kept from the owner is £0, A$0, NZ$0 or $0. If the gardener
             cancels or does not attend and no work was supplied, the same full-refund
             rule applies and Watch My Plot returns its fee.
           </p>
